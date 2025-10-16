@@ -1,0 +1,81 @@
+/* Enhanced scrolling styles for ComponentSidebar */
+
+.scrollContainer {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+/* Webkit scrollbar styles for Chromium browsers */
+.scrollContainer::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollContainer::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.scrollContainer::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
+/* Smooth scrolling behavior */
+.scrollContainer {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+  .scrollContainer::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollContainer {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.scrollContainer:focus {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: -2px;
+}
+
+/* Ensure cards don't wrap and maintain minimum width */
+.cardContainer {
+  flex-shrink: 0;
+  min-width: 140px;
+  max-width: 160px;
+}
+
+/* Animation for smooth hover effects */
+.cardContainer:hover {
+  transform: scale(1.02);
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Scroll indicator styles */
+.scrollIndicator {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(203, 213, 225, 0.3);
+  border-radius: 9999px;
+  padding: 4px 8px;
+  color: rgb(100, 116, 139);
+  user-select: none;
+  pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .scrollIndicator {
+    background: rgba(0, 0, 0, 0.5);
+    color: rgb(148, 163, 184);
+  }
+}

@@ -1,0 +1,78 @@
+
+name: React Build & Deploy to S3 and EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create .env for build
+        run: |
+          echo "VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL }}" >> .env
+          echo "VITE_REDIRECT_URI=${{ secrets.VITE_REDIRECT_URI }}" >> .env
+          echo "VITE_FRONTEND_URL=${{ secrets.VITE_FRONTEND_URL }}" >> .env
+          echo "VITE_COGNITO_DOMAIN=${{ secrets.VITE_COGNITO_DOMAIN }}" >> .env
+          echo "VITE_COGNITO_CLIENT_ID=${{ secrets.VITE_COGNITO_CLIENT_ID }}" >> .env
+          echo "VITE_APPSYNC2_URL=${{ secrets.VITE_APPSYNC2_URL }}" >> .env
+          echo "VITE_APPSYNC2_API_KEY=${{ secrets.VITE_APPSYNC2_API_KEY }}" >> .env
+          echo "VITE_APPSYNC_API_KEY=${{ secrets.VITE_APPSYNC_API_KEY }}" >> .env
+          echo "VITE_PUBLIC_MEDIA_BASE=${{ secrets.VITE_PUBLIC_MEDIA_BASE }}" >> .env
+          echo "VITE_MEDIA_BUCKET=${{ secrets.VITE_MEDIA_BUCKET }}" >> .env
+      - name: Build project
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload dist to S3
+        run: |
+          aws s3 rm s3://my-react-deploy-bucket/frontend --recursive
+          aws s3 sync dist/ s3://my-react-deploy-bucket/frontend
+      - name: Upload server files to S3
+        run: |
+          aws s3 sync server/ s3://my-react-deploy-bucket/server \
+            --exclude "dist/*" \
+            --exclude "node_modules/*" \
+            --exclude ".git/*" \
+            --exclude "ecosystem.config.cjs" \
+            --delete
+          # Upload ecosystem.config.cjs separately without delete flag
+          aws s3 cp server/ecosystem.config.cjs s3://my-react-deploy-bucket/server/ecosystem.config.cjs
+
+      - name: Trigger EC2 update via SSM
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["pkill -f unified-server || true","mkdir -p /home/brewpost/brewpost/server","mkdir -p /home/brewpost/brewpost/dist","cd /home/brewpost/brewpost/server","aws s3 sync s3://my-react-deploy-bucket/server /home/brewpost/brewpost/server --exclude dist/* --exclude node_modules/* --delete","rm -rf node_modules package-lock.json","npm install --omit=dev","aws secretsmanager get-secret-value --secret-id env --query SecretString --output text | jq -r '\''to_entries[] | \"\\(.key)=\\(.value)\"'\'' > .env","sudo chown -R ssm-user:ssm-user /home/brewpost/brewpost/dist","rm -rf /home/brewpost/brewpost/dist/*","aws s3 sync s3://my-react-deploy-bucket/frontend /home/brewpost/brewpost/dist","sudo chown -R www-data:www-data /home/brewpost/brewpost/dist","sudo chmod -R 755 /home/brewpost/brewpost/dist","sudo chmod +x /home/brewpost/brewpost","sudo chmod +x /home/brewpost","PORT=8080 nohup node unified-server.js > server.log 2>&1 &","sudo systemctl reload nginx || true"]' \
+            --region ${{ secrets.AWS_REGION }} \
+            --query 'Command.CommandId' \
+            --output text)
+
+          echo "Command ID: $COMMAND_ID"
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ secrets.EC2_INSTANCE_ID }}" \
+            --region ${{ secrets.AWS_REGION }}
+
+          echo "Deployment completed!"

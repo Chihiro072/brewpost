@@ -1,0 +1,74 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-brewpost-dev-ca937-authRole",
+      "UnauthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-dev-ca937-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-dev-ca937-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-brewpost-dev-ca937-deployment",
+      "UnauthRoleName": "amplify-brewpost-dev-ca937-unauthRole",
+      "StackName": "amplify-brewpost-dev-ca937",
+      "StackId": "arn:aws:cloudformation:us-east-1:339924580670:stack/amplify-brewpost-dev-ca937/f4305380-a024-11f0-8a86-0eb8826c64a5",
+      "AmplifyAppId": "d1fs3z7ojksmm7"
+    },
+    "categories": {
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d1fs3z7ojksmm7",
+          "type": "manual"
+        }
+      },
+      "api": {
+        "brewpost": {}
+      }
+    }
+  },
+  "test": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-brewpost-test-ea124-authRole",
+      "UnauthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-test-ea124-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-test-ea124-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-brewpost-test-ea124-deployment",
+      "UnauthRoleName": "amplify-brewpost-test-ea124-unauthRole",
+      "StackName": "amplify-brewpost-test-ea124",
+      "StackId": "arn:aws:cloudformation:us-east-1:339924580670:stack/amplify-brewpost-test-ea124/4b414b10-a030-11f0-9a7d-12b38b1ac8b9",
+      "AmplifyAppId": "d1fs3z7ojksmm7"
+    },
+    "categories": {
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d1fs3z7ojksmm7",
+          "type": "manual"
+        }
+      },
+      "api": {
+        "brewpost": {}
+      }
+    }
+  },
+  "testable": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-brewpost-testable-b0ab6-authRole",
+      "UnauthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-testable-b0ab6-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::339924580670:role/amplify-brewpost-testable-b0ab6-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-brewpost-testable-b0ab6-deployment",
+      "UnauthRoleName": "amplify-brewpost-testable-b0ab6-unauthRole",
+      "StackName": "amplify-brewpost-testable-b0ab6",
+      "StackId": "arn:aws:cloudformation:us-east-1:339924580670:stack/amplify-brewpost-testable-b0ab6/91d76cb0-a069-11f0-a793-0affd77cfa87",
+      "AmplifyAppId": "d1fs3z7ojksmm7"
+    },
+    "categories": {
+      "hosting": {
+        "amplifyhosting": {
+          "appId": "d1fs3z7ojksmm7",
+          "type": "manual"
+        }
+      },
+      "api": {
+        "brewpost": {}
+      }
+    }
+  }
+}

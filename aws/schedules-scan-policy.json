@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowDynamoDBReadOnSchedulesTable",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:Scan",
+        "dynamodb:Query",
+        "dynamodb:GetItem",
+        "dynamodb:BatchGetItem"
+      ],
+      "Resource": "arn:aws:dynamodb:us-east-1:879323652373:table/Schedules"
+    }
+  ]
+}

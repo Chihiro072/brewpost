@@ -1,0 +1,23 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.chartWrapper {
+  width: 420px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.legendItem { display:flex; gap:8px; align-items:center }
+.labelColor { width:14px; height:14px; border-radius:4px }
+.centerNumber { font-size:28px; font-weight:700 }
+.fadeIn { opacity:0; transform: translateY(12px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.9,.3,1) }
+.fadeIn.visible { opacity:1; transform: translateY(0) }
+.visible { opacity:1; transform: translateY(0) }
