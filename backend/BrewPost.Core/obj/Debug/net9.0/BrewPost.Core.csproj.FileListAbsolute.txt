@@ -1,0 +1,12 @@
+C:\DDAC\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.deps.json
+C:\DDAC\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.dll
+C:\DDAC\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.pdb
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfoInputs.cache
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfo.cs
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.csproj.CoreCompileInputs.cache
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.sourcelink.json
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
+C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll
