@@ -167,3 +167,29 @@ public class UploadMultipleAssetsRequest
 {
     public IEnumerable<IFormFile>? Files { get; set; }
 }
+
+// Canvas Generate Request DTOs
+public class CanvasGenerateRequest
+{
+    public string? NodeId { get; set; }
+    public string? ImagePrompt { get; set; }
+    public string? Title { get; set; }
+    public string? Content { get; set; }
+    public List<ComponentDto>? SelectedComponents { get; set; }
+    public List<ComponentDto>? Components { get; set; }
+    public TemplateDto? Template { get; set; }
+}
+
+public class ComponentDto
+{
+    public string? Id { get; set; }
+    public string? Name { get; set; }
+    public string? Category { get; set; }
+}
+
+public class TemplateDto
+{
+    public string? CompanyName { get; set; }
+    public string? ColorPalette { get; set; }
+    public string? LogoUrl { get; set; }
+}

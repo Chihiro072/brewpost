@@ -9,10 +9,22 @@ using Amazon.S3;
 using Amazon.Extensions.NETCore.Setup;
 using DotNetEnv;
 
-// Load .env file
-Env.Load("../.env");
+// Load .env file from root (go up 2 levels from BrewPost.API)
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env");
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+    Console.WriteLine($"✅ Loaded .env file from: {envPath}");
+}
+else
+{
+    Console.WriteLine($"⚠️ .env file not found at: {envPath}");
+}
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add environment variables to configuration - this should take precedence
+builder.Configuration.AddEnvironmentVariables();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -65,15 +77,24 @@ builder.Services.AddAuthorization();
 // Configure AWS S3
 var awsOptions = new AWSOptions
 {
-    Region = Amazon.RegionEndpoint.GetBySystemName(builder.Configuration["AWS:Region"] ?? "us-east-1")
+    Region = Amazon.RegionEndpoint.GetBySystemName(
+        builder.Configuration["REGION"] ?? 
+        builder.Configuration["AWS:Region"] ?? 
+        "us-east-1")
 };
 
 // Add AWS credentials if provided (for local development)
-var accessKey = builder.Configuration["AWS:AccessKey"];
-var awsSecretKey = builder.Configuration["AWS:SecretKey"];
+// Try environment variables first (from .env), then fall back to appsettings
+var accessKey = builder.Configuration["ACCESS_KEY_ID"] ?? builder.Configuration["AWS:AccessKey"];
+var awsSecretKey = builder.Configuration["SECRET_ACCESS_KEY"] ?? builder.Configuration["AWS:SecretKey"];
 if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(awsSecretKey))
 {
+    Console.WriteLine($"✅ AWS credentials loaded - Access Key: {accessKey.Substring(0, 4)}****");
     awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(accessKey, awsSecretKey);
+}
+else
+{
+    Console.WriteLine("⚠️ No AWS credentials found in configuration");
 }
 
 builder.Services.AddDefaultAWSOptions(awsOptions);

@@ -10,3 +10,15 @@ C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
 C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
 C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
 C:\DDAC\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.deps.json
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.dll
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.pdb
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfoInputs.cache
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfo.cs
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.csproj.CoreCompileInputs.cache
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.sourcelink.json
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\DDAC\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {}
+    "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {}
   },
   "projects": {
-    "C:\\DDAC\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
+    "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\DDAC\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
+        "projectUniqueName": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
         "projectName": "BrewPost.Core",
-        "projectPath": "C:\\DDAC\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
-        "packagesPath": "C:\\Users\\cklim\\.nuget\\packages\\",
-        "outputPath": "C:\\DDAC\\brewpost\\backend\\BrewPost.Core\\obj\\",
+        "projectPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
+        "packagesPath": "C:\\Users\\Bryan\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\cklim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -65,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
