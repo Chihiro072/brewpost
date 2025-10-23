@@ -119,6 +119,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "AWSSDK.BedrockRuntime": {
+              "target": "Package",
+              "version": "[4.0.7.5, )"
+            },
             "AWSSDK.DynamoDBv2": {
               "target": "Package",
               "version": "[4.0.8, )"

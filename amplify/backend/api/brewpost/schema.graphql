@@ -15,6 +15,7 @@ type Node @model @auth(rules: [{ allow: public }]) {
   type: String
   day: String
   imageUrl: String
+  imageUrls: [String]
   imagePrompt: String
   scheduledDate: AWSDateTime
   createdAt: AWSDateTime!

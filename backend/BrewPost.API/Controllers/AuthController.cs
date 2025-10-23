@@ -252,6 +252,33 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Logged out successfully" });
     }
 
+    [HttpGet("status")]
+    [Authorize]
+    public async Task<IActionResult> GetAuthStatus()
+    {
+        try
+        {
+            var userId = User.FindFirst("user_id")?.Value;
+            if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            {
+                return Ok(new { authenticated = false });
+            }
+
+            var user = await _context.Users.FindAsync(userGuid);
+            if (user == null)
+            {
+                return Ok(new { authenticated = false });
+            }
+
+            return Ok(new { authenticated = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking auth status");
+            return Ok(new { authenticated = false });
+        }
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()

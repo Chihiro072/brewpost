@@ -7,6 +7,10 @@ using BrewPost.Core.Interfaces;
 using BrewPost.Infrastructure.Services;
 using Amazon.S3;
 using Amazon.Extensions.NETCore.Setup;
+using DotNetEnv;
+
+// Load .env file
+Env.Load("../.env");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,11 +78,13 @@ if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(awsSecretKey))
 
 builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddAWSService<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
 
 // Register application services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IOAuthService, OAuthService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
+builder.Services.AddScoped<IBedrockService, BedrockService>();
 builder.Services.AddHttpClient<IOAuthService, OAuthService>();
 
 // Configure CORS
@@ -86,7 +92,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // React dev servers
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://localhost:8081") // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

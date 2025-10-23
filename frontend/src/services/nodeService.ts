@@ -1,6 +1,13 @@
 // src/services/nodeService.ts
 import apiClient from './apiService';
 import type { ContentNode } from '@/components/planning/PlanningPanel';
+import { generateClient } from 'aws-amplify/api';
+import { listNodes, listEdges } from '@/graphql/queries';
+import { createNode, updateNode, deleteNode } from '@/graphql/mutations';
+
+// Initialize the Amplify GraphQL client
+const client = generateClient();
+
 // Direct AppSync endpoint (matches amplify-config.ts)
 const APPSYNC_ENDPOINT = 'https://hgaezqpz7jbztedzzsrn74hqki.appsync-api.us-east-1.amazonaws.com/graphql';
 
@@ -82,7 +89,14 @@ export const NodeAPI = {
       const filter = { projectId: { eq: projectId } };
       const response = await (client.graphql as any)({ query: listNodes, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
       console.log('List nodes response:', response);
-      const items = (response as any).data.listNodes.items || [];
+      
+      // Check for GraphQL errors
+      if ((response as any).errors && (response as any).errors.length > 0) {
+        console.error('GraphQL errors:', (response as any).errors);
+        throw new Error(`GraphQL error: ${(response as any).errors[0].message}`);
+      }
+      
+      const items = (response as any).data?.listNodes?.items || [];
       console.log('List nodes data:', items);
       return items as NodeDTO[];
     } catch (error) {

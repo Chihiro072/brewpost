@@ -84,7 +84,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
     
     setIsGeneratingPrompt(true);
     try {
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:8081';
+      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
       
       const response = await fetch(`${BACKEND_URL}/api/generate-enhanced-prompt`, {
         method: 'POST',
@@ -133,7 +133,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
     
     setIsGeneratingImage(true);
     try {
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:8081';
+      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
       
       // Enhance prompt with template settings and stronger color emphasis
       let enhancedPrompt = enhanceImagePromptWithTemplate(node.imagePrompt || node.title || node.content || '');

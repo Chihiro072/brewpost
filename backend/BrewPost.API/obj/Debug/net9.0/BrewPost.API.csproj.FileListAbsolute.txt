@@ -155,3 +155,6 @@ C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis
 C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\AWSSDK.Extensions.NETCore.Setup.dll
+C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\AWSSDK.BedrockRuntime.dll
+C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\DotNetEnv.dll
+C:\DDAC\brewpost\backend\BrewPost.API\bin\Debug\net9.0\Sprache.dll

@@ -414,7 +414,7 @@ Return only the refined prompt, nothing else.`
         }
       ];
 
-      const apiUrl = '/api/generate';
+      const apiUrl = '/generate';
       
       const resp = await fetch(apiUrl, {
         method: 'POST',
@@ -446,7 +446,7 @@ Return only the refined prompt, nothing else.`
     }
   };
 
-  type GenerateResponse = { imageUrl: string; captions: string[]; text?: string };
+  type GenerateResponse = { content?: string; imageUrl?: string; captions?: string[]; text?: string };
 
   // later in the component: replace your existing handleSend with this
   const handleSend = async () => {
@@ -477,12 +477,17 @@ Return only the refined prompt, nothing else.`
     setIsGenerating(true);
 
     try {
-      const apiUrl = '/api/generate';
+      const apiUrl = '/generate';
+      
+      // Convert messages to a single prompt string for the backend
+      const prompt = messagesForBackend
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
       
       const resp = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: messagesForBackend }),
+        body: JSON.stringify({ Prompt: prompt }),
       });
 
       if (!resp.ok) {
@@ -491,8 +496,8 @@ Return only the refined prompt, nothing else.`
       }
       const data: GenerateResponse = await resp.json();
 
-      if (data.text) {
-        let raw = data.text;
+      if (data.content || data.text) {
+        let raw = data.content || data.text || '';
         // If it's a planner response, clean it
         if (isPlannerMessage(raw)) {
           raw = cleanAIResponse(raw);

@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v9.0": {
       "BrewPost.Infrastructure/1.0.0": {
         "dependencies": {
+          "AWSSDK.BedrockRuntime": "4.0.7.5",
           "AWSSDK.DynamoDBv2": "4.0.8",
           "AWSSDK.S3": "4.0.7.11",
           "BrewPost.Core": "1.0.0",
@@ -20,17 +21,28 @@
           "BrewPost.Infrastructure.dll": {}
         }
       },
-      "AWSSDK.Core/4.0.1": {
+      "AWSSDK.BedrockRuntime/4.0.7.5": {
+        "dependencies": {
+          "AWSSDK.Core": "4.0.1.1"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.BedrockRuntime.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.7.5"
+          }
+        }
+      },
+      "AWSSDK.Core/4.0.1.1": {
         "runtime": {
           "lib/net8.0/AWSSDK.Core.dll": {
             "assemblyVersion": "4.0.0.0",
-            "fileVersion": "4.0.1.0"
+            "fileVersion": "4.0.1.1"
           }
         }
       },
       "AWSSDK.DynamoDBv2/4.0.8": {
         "dependencies": {
-          "AWSSDK.Core": "4.0.1"
+          "AWSSDK.Core": "4.0.1.1"
         },
         "runtime": {
           "lib/net8.0/AWSSDK.DynamoDBv2.dll": {
@@ -41,7 +53,7 @@
       },
       "AWSSDK.S3/4.0.7.11": {
         "dependencies": {
-          "AWSSDK.Core": "4.0.1"
+          "AWSSDK.Core": "4.0.1.1"
         },
         "runtime": {
           "lib/net8.0/AWSSDK.S3.dll": {
@@ -712,12 +724,19 @@
       "serviceable": false,
       "sha512": ""
     },
-    "AWSSDK.Core/4.0.1": {
+    "AWSSDK.BedrockRuntime/4.0.7.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-P1Pq1G/NeDFpkzTvA/qeSgxPxB0mbrcuXOCuDTAhKOp/i+05MP6by/OXQu38PmX687jeLDselTad8wY41xgDmQ==",
-      "path": "awssdk.core/4.0.1",
-      "hashPath": "awssdk.core.4.0.1.nupkg.sha512"
+      "sha512": "sha512-j60cpT7qHEkoj6hb6wjhY/34WITsNPa+s4jidTagJyeM/VWEQ3Er1OVjgh8sYQYy4RmIIHXPx8teKCT75OZxLg==",
+      "path": "awssdk.bedrockruntime/4.0.7.5",
+      "hashPath": "awssdk.bedrockruntime.4.0.7.5.nupkg.sha512"
+    },
+    "AWSSDK.Core/4.0.1.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RBaHkOZQ/cb84H6o2tNvyZv2Gv/lDOok5CgE6gJV2JC2s67mkBAAPWpPrqTDUH86ogmWFA8u8+37u1fvlj4nAA==",
+      "path": "awssdk.core/4.0.1.1",
+      "hashPath": "awssdk.core.4.0.1.1.nupkg.sha512"
     },
     "AWSSDK.DynamoDBv2/4.0.8": {
       "type": "package",

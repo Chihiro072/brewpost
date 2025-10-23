@@ -1,6 +1,10 @@
 import apiClient from './apiService';
 import type { NodeDTO } from './nodeService';
 import { NodeAPI } from './nodeService';
+import { generateClient } from 'aws-amplify/api';
+
+// Initialize the Amplify GraphQL client
+const client = generateClient();
 
 // Inline mutation for Lambda-backed batch scheduling
 const CREATE_SCHEDULE_WITH_EVENTBRIDGE = /* GraphQL */ `

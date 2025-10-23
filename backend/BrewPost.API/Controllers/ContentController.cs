@@ -6,21 +6,23 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.Json;
 using BrewPost.API.DTOs;
+using BrewPost.Core.Interfaces;
 
 namespace BrewPost.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class ContentController : ControllerBase
 {
     private readonly BrewPostDbContext _context;
     private readonly ILogger<ContentController> _logger;
+    private readonly IBedrockService _bedrockService;
 
-    public ContentController(BrewPostDbContext context, ILogger<ContentController> logger)
+    public ContentController(BrewPostDbContext context, ILogger<ContentController> logger, IBedrockService bedrockService)
     {
         _context = context;
         _logger = logger;
+        _bedrockService = bedrockService;
     }
 
     [HttpGet("plans")]
@@ -213,6 +215,36 @@ public class ContentController : ControllerBase
         {
             _logger.LogError(ex, "Error updating content plan");
             return StatusCode(500, new { message = "Internal server error" });
+        }
+    }
+
+    [HttpPost("generate")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GenerateContent([FromBody] GenerateContentRequest request)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrEmpty(request.Prompt))
+            {
+                return BadRequest(new { message = "Prompt is required" });
+            }
+
+            _logger.LogInformation("Generating content with prompt: {Prompt}", request.Prompt);
+
+            // Generate content using Bedrock
+            var generatedContent = await _bedrockService.GenerateContentAsync(request.Prompt);
+
+            if (string.IsNullOrEmpty(generatedContent))
+            {
+                return StatusCode(500, new { message = "Failed to generate content" });
+            }
+
+            return Ok(new { content = generatedContent });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating content");
+            return StatusCode(500, new { message = "Internal server error", detail = ex.Message });
         }
     }
 

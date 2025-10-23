@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -103,31 +103,48 @@ export interface Schedule {
 export const authAPI = {
   login: async (email: string, password: string) => {
     const response = await apiClient.post('/api/auth/login', { email, password });
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
     return response.data;
   },
 
-  register: async (username: string, email: string, password: string) => {
-    const response = await apiClient.post('/api/auth/register', { username, email, password });
+  register: async (userData: { email: string; password: string; firstName?: string; lastName?: string }) => {
+    const response = await apiClient.post('/api/auth/register', userData);
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
     return response.data;
   },
 
   logout: async () => {
+    localStorage.removeItem('authToken');
     const response = await apiClient.post('/api/auth/logout');
     return response.data;
   },
 
   refreshToken: async () => {
     const response = await apiClient.post('/api/auth/refresh');
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
+    return response.data;
+  },
+
+  checkStatus: async () => {
+    const response = await apiClient.get('/api/auth/status');
     return response.data;
   },
 
   oauthCallback: async (platform: string, code: string, state?: string) => {
-    const response = await apiClient.post('/api/auth/oauth/callback', {
-      platform,
+    const response = await apiClient.post(`/api/auth/oauth/${platform}/callback`, {
       code,
       state,
-      redirectUri: `${window.location.origin}/callback`
+      redirectUri: window.location.origin + '/callback'
     });
+    if (response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
     return response.data;
   },
 };

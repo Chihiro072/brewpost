@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   // Determine backend URL based on environment
   const isDevelopment = mode === 'development';
   const backendTarget = isDevelopment 
-    ? 'http://localhost:8081' 
+    ? 'http://localhost:5044' 
     : 'https://brewpost.duckdns.org';
 
   return {
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         '/generate': {
           target: backendTarget,
           changeOrigin: true,
-          rewrite: (path) => path, // keep path /generate
+          rewrite: (path) => path.replace(/^\/generate/, '/api/content/generate'),
         },
         '/api': {
           target: backendTarget,

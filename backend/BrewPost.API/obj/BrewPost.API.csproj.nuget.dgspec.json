@@ -57,6 +57,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "AWSSDK.BedrockRuntime": {
+              "target": "Package",
+              "version": "[4.0.7.5, )"
+            },
             "AWSSDK.Extensions.NETCore.Setup": {
               "target": "Package",
               "version": "[4.0.3.6, )"
@@ -68,6 +72,10 @@
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
+            },
+            "DotNetEnv": {
+              "target": "Package",
+              "version": "[3.1.1, )"
             },
             "FluentValidation.AspNetCore": {
               "target": "Package",
@@ -238,6 +246,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "AWSSDK.BedrockRuntime": {
+              "target": "Package",
+              "version": "[4.0.7.5, )"
+            },
             "AWSSDK.DynamoDBv2": {
               "target": "Package",
               "version": "[4.0.8, )"

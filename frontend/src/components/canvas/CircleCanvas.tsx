@@ -148,7 +148,7 @@ export function CircleCanvas({
     onGenerate("GENERATING");
 
     try {
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:8081';
+      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
 
       // Combine node-level image prompt with selected component names for richer guidance
       const compNames = (components || []).map(c => c.name).join(', ');
@@ -256,7 +256,7 @@ export function CircleCanvas({
       
       console.log('🎨 Starting Nova Canvas image generation with prompt:', prompt);
       
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:8081';
+      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
       
       const response = await fetch(`${BACKEND_URL}/api/generate-image-nova`, {
         method: 'POST',
