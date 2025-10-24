@@ -568,10 +568,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     });
                   }}
                   onRemoveFromCanvas={(id) => {
-                      setSelectedCanvasComponents(prev => prev.filter(c => c.id !== id));
-                    }}
+                    setSelectedCanvasComponents(prev => prev.filter(c => c.id !== id));
+                  }}
                   generatedComponents={finalGeneratedComponents as unknown as CampaignComponentLocal[]}
                   isLoadingAi={aiLoading}
+                  generationProgress={isGenerating}
                 />
               </div>
             </div>

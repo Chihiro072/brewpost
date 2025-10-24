@@ -99,14 +99,29 @@ else
 
 builder.Services.AddDefaultAWSOptions(awsOptions);
 builder.Services.AddAWSService<IAmazonS3>();
-builder.Services.AddAWSService<Amazon.BedrockRuntime.IAmazonBedrockRuntime>();
+
+// Configure Bedrock client with extended timeout for AI operations
+builder.Services.AddSingleton<Amazon.BedrockRuntime.IAmazonBedrockRuntime>(sp =>
+{
+    var cfg = new Amazon.BedrockRuntime.AmazonBedrockRuntimeConfig
+    {
+        RegionEndpoint = awsOptions.Region,
+        Timeout = TimeSpan.FromMinutes(2)
+    };
+    return awsOptions.Credentials != null
+        ? new Amazon.BedrockRuntime.AmazonBedrockRuntimeClient(awsOptions.Credentials, cfg)
+        : new Amazon.BedrockRuntime.AmazonBedrockRuntimeClient(cfg);
+});
 
 // Register application services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IOAuthService, OAuthService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IBedrockService, BedrockService>();
+builder.Services.AddScoped<ITrendingService, TrendingService>();
 builder.Services.AddHttpClient<IOAuthService, OAuthService>();
+builder.Services.AddHttpClient<ITrendingService, TrendingService>();
+builder.Services.AddMemoryCache();
 
 // Configure CORS
 builder.Services.AddCors(options =>

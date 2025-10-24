@@ -33,6 +33,7 @@ interface ComponentSidebarProps {
   generatedComponents?: CampaignComponent[]
   onRemoveFromCanvas?: (id: string) => void
   isLoadingAi?: boolean
+  generationProgress?: string | boolean
 }
 
 function colorByType(t: CampaignComponent["type"]) {
@@ -46,6 +47,7 @@ export function ComponentSidebar({
   generatedComponents = [],
   onRemoveFromCanvas,
   isLoadingAi = false,
+  generationProgress = false,
 }: ComponentSidebarProps) {
   // Only AI-generated components (no mocks)
   const [allComponents, setAllComponents] = useState<Component[]>([])
@@ -136,6 +138,30 @@ export function ComponentSidebar({
 
   if (!mounted) return null
 
+if (isLoadingAi) {
+    return (
+      <div className="w-full border-t border-border/50 bg-card/80 backdrop-blur-xl p-3 max-h-64 overflow-y-auto flex items-center justify-center">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes dot {
+            0% { transform: translateY(0) }
+            50% { transform: translateY(-4px) }
+            100% { transform: translateY(0) }
+          }
+          .dot { display:inline-block; width:6px; height:6px; border-radius:999px; background:currentColor; margin-left:6px; }
+          .dot:nth-child(1){ animation: dot 1s infinite 0s }
+          .dot:nth-child(2){ animation: dot 1s infinite 0.15s }
+          .dot:nth-child(3){ animation: dot 1s infinite 0.3s }
+        `}} />
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="text-sm font-medium">
+            {typeof generationProgress === 'string' ? generationProgress : 'Generating components'}
+          </div>
+          <div className="flex items-center"><span className="dot" /><span className="dot" /><span className="dot" /></div>
+        </div>
+      </div>
+    )
+  }
+
   if (isLoadingAi) {
     return (
       <div className="w-full border-t border-border/50 bg-card/80 backdrop-blur-xl p-3 max-h-64 overflow-y-auto flex items-center justify-center">
@@ -150,8 +176,10 @@ export function ComponentSidebar({
           .dot:nth-child(2){ animation: dot 1s infinite 0.15s }
           .dot:nth-child(3){ animation: dot 1s infinite 0.3s }
         `}} />
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <div className="text-sm font-medium">Generating components</div>
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="text-sm font-medium">
+            {typeof generationProgress === 'string' ? generationProgress : 'Generating components'}
+          </div>
           <div className="flex items-center"><span className="dot" /><span className="dot" /><span className="dot" /></div>
         </div>
       </div>

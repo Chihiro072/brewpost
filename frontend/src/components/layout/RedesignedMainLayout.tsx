@@ -258,9 +258,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
       },
       scheduledDate: nodeData.scheduledDate,
       imageUrl: nodeData.imageUrl,
+      imageUrls: nodeData.imageUrls || [],
+      imagePrompt: nodeData.imagePrompt,
       postType: 'engaging'
     };
 
+    // Add node to state first for immediate UI feedback
     setNodes(prev => [...prev, newNode]);
     
     try {
@@ -273,7 +276,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         imageUrlToStore = newNode.imageUrls[newNode.imageUrls.length - 1];
       }
       
-      await NodeAPI.create({
+      const createRequest = {
         projectId: 'demo-project-123',
         nodeId: newNode.id,
         title: newNode.title,
@@ -286,9 +289,24 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         imageUrls: newNode.imageUrls || null,
         imagePrompt: newNode.imagePrompt,
         ...(newNode.scheduledDate ? { scheduledDate: newNode.scheduledDate.toISOString() } : {}),
-      });
+      };
+
+      console.log('Creating node with data:', createRequest);
+      const createdNode = await NodeAPI.create(createRequest);
+      console.log('Node created successfully:', createdNode);
+      
+      // Update the node with any data returned from the server
+      if (createdNode) {
+        setNodes(prev => prev.map(node => 
+          node.id === newNode.id ? { ...node, ...createdNode } : node
+        ));
+      }
     } catch (error) {
       console.error('Failed to create node:', error);
+      // Show user-friendly error message
+      alert('Failed to create node. Please try again.');
+      // Remove the node from state if creation failed
+      setNodes(prev => prev.filter(node => node.id !== newNode.id));
     }
     
     setShowAddModal(false);
@@ -333,18 +351,50 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
       }
       
       setAiLoading(true);
+      setIsGenerating(`Generating AI components for "${selectedNode.title}"...`);
+      
       try {
         const svc = await import('@/services/aiService');
         if (prevNodeIdRef.current !== selectedNode.id) {
           svc.clearComponentCache(selectedNode.id);
         }
+        
+        // Show progress updates during the long AI operation
+        const progressMessages = [
+          `Analyzing content for "${selectedNode.title}"...`,
+          `Generating trend data components...`,
+          `Creating campaign strategies...`,
+          `Finalizing promotional offers...`
+        ];
+        
+        let messageIndex = 0;
+        const progressInterval = setInterval(() => {
+          if (messageIndex < progressMessages.length - 1) {
+            messageIndex++;
+            if (!canceled) {
+              setIsGenerating(progressMessages[messageIndex]);
+            }
+          }
+        }, 8000); // Update every 8 seconds
+        
         const comps = await svc.fetchComponentsForNode(selectedNode);
-        if (!canceled) setAiComponents(comps && comps.length ? comps : []);
+        
+        clearInterval(progressInterval);
+        
+        if (!canceled) {
+          setAiComponents(comps && comps.length ? comps : []);
+          setIsGenerating(false);
+        }
       } catch (err) {
         console.warn('Failed to load AI components', err);
-        if (!canceled) setAiComponents([]);
+        if (!canceled) {
+          setAiComponents([]);
+          setIsGenerating(false);
+        }
       } finally {
-        if (!canceled) setAiLoading(false);
+        if (!canceled) {
+          setAiLoading(false);
+        }
       }
     };
     load();
@@ -703,6 +753,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
                           }}
                           generatedComponents={finalGeneratedComponents as unknown as CampaignComponentLocal[]}
                           isLoadingAi={aiLoading}
+                          generationProgress={isGenerating}
                         />
                       </div>
                     </div>

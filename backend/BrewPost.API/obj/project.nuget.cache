@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "a94mECtXb1s=",
+  "dgSpecHash": "wI3sr+BWBes=",
   "success": true,
-  "projectFilePath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj",
+  "projectFilePath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\User\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
@@ -16,6 +16,7 @@
     "C:\\Users\\User\\.nuget\\packages\\fluentvalidation\\11.11.0\\fluentvalidation.11.11.0.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\fluentvalidation.aspnetcore\\11.3.1\\fluentvalidation.aspnetcore.11.3.1.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\11.11.0\\fluentvalidation.dependencyinjectionextensions.11.11.0.nupkg.sha512",
+    "C:\\Users\\User\\.nuget\\packages\\htmlagilitypack\\1.11.71\\htmlagilitypack.1.11.71.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.authentication\\2.3.0\\microsoft.aspnetcore.authentication.2.3.0.nupkg.sha512",
     "C:\\Users\\User\\.nuget\\packages\\microsoft.aspnetcore.authentication.abstractions\\2.3.0\\microsoft.aspnetcore.authentication.abstractions.2.3.0.nupkg.sha512",

@@ -55,12 +55,27 @@ export async function fetchComponentsForNode(node: ContentNode | null): Promise<
       console.log('[aiService] fetched components', { nodeId: node.id, count: components.length });
       return components;
     } catch (error: any) {
-      console.error('[aiService] error', { error, attempt });
+      console.error('[aiService] error details', { 
+        error, 
+        attempt, 
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          headers: error.config?.headers
+        }
+      });
       // Retry on network errors or server errors (5xx)
       if (attempt < maxAttempts && (error.response?.status >= 500 || !error.response)) {
+        console.log(`[aiService] retrying in ${300 * attempt}ms...`);
         await new Promise(r => setTimeout(r, 300 * attempt));
         continue;
       }
+      console.error('[aiService] giving up after', attempt, 'attempts');
       return [];
     }
   }

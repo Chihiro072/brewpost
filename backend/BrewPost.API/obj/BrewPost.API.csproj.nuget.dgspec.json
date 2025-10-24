@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj": {}
+    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj": {}
   },
   "projects": {
-    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj": {
+    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj",
+        "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj",
         "projectName": "BrewPost.API",
-        "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj",
+        "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\obj\\",
+        "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.API\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -80,6 +80,10 @@
             "FluentValidation.AspNetCore": {
               "target": "Package",
               "version": "[11.3.1, )"
+            },
+            "HtmlAgilityPack": {
+              "target": "Package",
+              "version": "[1.11.71, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
               "target": "Package",
@@ -258,9 +262,17 @@
               "target": "Package",
               "version": "[4.0.7.11, )"
             },
+            "HtmlAgilityPack": {
+              "target": "Package",
+              "version": "[1.11.71, )"
+            },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.10, )"
+            },
+            "Microsoft.Extensions.Caching.Memory": {
               "target": "Package",
               "version": "[9.0.10, )"
             },

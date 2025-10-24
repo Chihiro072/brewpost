@@ -107,7 +107,7 @@ public class ImagesController : ControllerBase
                 PostId = image.PostId,
                 PostTitle = image.Post.Title,
                 ImageUrl = image.ImageUrl,
-                GenerationPrompt = image.GenerationPrompt,
+                GenerationPrompt = image.GenerationPrompt ?? string.Empty,
                 GenerationParams = image.GenerationParams,
                 CreatedAt = image.CreatedAt
             });
@@ -162,7 +162,7 @@ public class ImagesController : ControllerBase
                 PostId = generatedImage.PostId,
                 PostTitle = post.Title,
                 ImageUrl = generatedImage.ImageUrl,
-                GenerationPrompt = generatedImage.GenerationPrompt,
+                GenerationPrompt = generatedImage.GenerationPrompt ?? string.Empty,
                 GenerationParams = generatedImage.GenerationParams,
                 CreatedAt = generatedImage.CreatedAt
             });
@@ -217,7 +217,7 @@ public class ImagesController : ControllerBase
                 PostId = newImage.PostId,
                 PostTitle = existingImage.Post.Title,
                 ImageUrl = newImage.ImageUrl,
-                GenerationPrompt = newImage.GenerationPrompt,
+                GenerationPrompt = newImage.GenerationPrompt ?? string.Empty,
                 GenerationParams = newImage.GenerationParams,
                 CreatedAt = newImage.CreatedAt
             });
@@ -313,7 +313,7 @@ public class ImagesController : ControllerBase
                 PostId = gi.PostId,
                 PostTitle = post.Title,
                 ImageUrl = gi.ImageUrl,
-                GenerationPrompt = gi.GenerationPrompt,
+                GenerationPrompt = gi.GenerationPrompt ?? string.Empty,
                 GenerationParams = gi.GenerationParams,
                 CreatedAt = gi.CreatedAt
             }).ToList();
