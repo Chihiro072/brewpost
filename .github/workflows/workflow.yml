@@ -54,17 +54,16 @@ jobs:
             --exclude "dist/*" \
             --exclude "node_modules/*" \
             --exclude ".git/*" \
-            --exclude "ecosystem.config.cjs" \
             --delete
-          # Upload ecosystem.config.cjs separately without delete flag
-          aws s3 cp server/ecosystem.config.cjs s3://my-react-deploy-bucket/server/ecosystem.config.cjs
+          # Upload ASP.NET Core backend
+          aws s3 sync backend/ s3://my-react-deploy-bucket/backend --delete
 
       - name: Trigger EC2 update via SSM
         run: |
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["pkill -f unified-server || true","mkdir -p /home/brewpost/brewpost/server","mkdir -p /home/brewpost/brewpost/dist","cd /home/brewpost/brewpost/server","aws s3 sync s3://my-react-deploy-bucket/server /home/brewpost/brewpost/server --exclude dist/* --exclude node_modules/* --delete","rm -rf node_modules package-lock.json","npm install --omit=dev","aws secretsmanager get-secret-value --secret-id env --query SecretString --output text | jq -r '\''to_entries[] | \"\\(.key)=\\(.value)\"'\'' > .env","sudo chown -R ssm-user:ssm-user /home/brewpost/brewpost/dist","rm -rf /home/brewpost/brewpost/dist/*","aws s3 sync s3://my-react-deploy-bucket/frontend /home/brewpost/brewpost/dist","sudo chown -R www-data:www-data /home/brewpost/brewpost/dist","sudo chmod -R 755 /home/brewpost/brewpost/dist","sudo chmod +x /home/brewpost/brewpost","sudo chmod +x /home/brewpost","PORT=8080 nohup node unified-server.js > server.log 2>&1 &","sudo systemctl reload nginx || true"]' \
+            --parameters 'commands=["pkill -f BrewPost.API || true","mkdir -p /home/brewpost/brewpost/backend","mkdir -p /home/brewpost/brewpost/dist","cd /home/brewpost/brewpost","aws s3 sync s3://my-react-deploy-bucket/backend /home/brewpost/brewpost/backend --delete","cd /home/brewpost/brewpost/backend/BrewPost.API","aws secretsmanager get-secret-value --secret-id env --query SecretString --output text | jq -r '\''to_entries[] | \"\\(.key)=\\(.value)\"'\'' > .env","dotnet restore","dotnet build -c Release","sudo chown -R ssm-user:ssm-user /home/brewpost/brewpost/dist","rm -rf /home/brewpost/brewpost/dist/*","aws s3 sync s3://my-react-deploy-bucket/frontend /home/brewpost/brewpost/dist","sudo chown -R www-data:www-data /home/brewpost/brewpost/dist","sudo chmod -R 755 /home/brewpost/brewpost/dist","sudo chmod +x /home/brewpost/brewpost","sudo chmod +x /home/brewpost","nohup dotnet run --urls=\"http://0.0.0.0:5044\" > server.log 2>&1 &","sudo systemctl reload nginx || true"]' \
             --region ${{ secrets.AWS_REGION }} \
             --query 'Command.CommandId' \
             --output text)

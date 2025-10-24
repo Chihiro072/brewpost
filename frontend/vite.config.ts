@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         '/generate': {
           target: backendTarget,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/generate/, '/api/content/generate'),
+          rewrite: (path) => path.replace(/^\/generate/, '/api/generate'),
         },
         '/api': {
           target: backendTarget,

@@ -20,6 +20,7 @@ public class BrewPostDbContext : DbContext
     public DbSet<Analytics> Analytics { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<PostAsset> PostAssets { get; set; }
+    public DbSet<Node> Nodes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,7 @@ public class BrewPostDbContext : DbContext
         modelBuilder.Entity<Analytics>().ToTable("analytics");
         modelBuilder.Entity<Schedule>().ToTable("schedules");
         modelBuilder.Entity<PostAsset>().ToTable("post_assets");
+        modelBuilder.Entity<Node>().ToTable("nodes");
 
         // Configure PostAsset composite key
         modelBuilder.Entity<PostAsset>()

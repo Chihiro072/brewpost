@@ -34,3 +34,21 @@ C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Infrast
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.pdb
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.genruntimeconfig.cache
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\ref\BrewPost.Infrastructure.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.deps.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.runtimeconfig.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Core.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.csproj.AssemblyReference.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.AssemblyInfoInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.AssemblyInfo.cs
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.csproj.CoreCompileInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.sourcelink.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.B6A10E06.Up2Date
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\refint\BrewPost.Infrastructure.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.genruntimeconfig.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\ref\BrewPost.Infrastructure.dll

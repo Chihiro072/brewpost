@@ -1,22 +1,36 @@
 // src/services/nodeService.ts
 import apiClient from './apiService';
 import type { ContentNode } from '@/components/planning/PlanningPanel';
-import { generateClient } from 'aws-amplify/api';
-import { listNodes, listEdges } from '@/graphql/queries';
-import { createNode, updateNode, deleteNode } from '@/graphql/mutations';
-
-// Initialize the Amplify GraphQL client
-const client = generateClient();
-
-// Direct AppSync endpoint (matches amplify-config.ts)
-const APPSYNC_ENDPOINT = 'https://hgaezqpz7jbztedzzsrn74hqki.appsync-api.us-east-1.amazonaws.com/graphql';
 
 export async function fetchNodes(): Promise<ContentNode[]> {
   try {
     console.log('[nodeService] fetchNodes called');
     const response = await apiClient.get('/api/nodes');
     console.log('[nodeService] fetchNodes result:', response.data);
-    return response.data || [];
+    
+    // Transform the API response to match ContentNode interface
+    const nodes = response.data?.map((node: any) => ({
+      id: node.id,
+      title: node.title,
+      type: node.type,
+      status: node.status,
+      scheduledDate: node.scheduledDate ? new Date(node.scheduledDate) : undefined,
+      content: node.description || node.content || '',
+      imageUrl: node.imageUrl,
+      imageUrls: node.imageUrls,
+      imagePrompt: node.imagePrompt,
+      day: node.day,
+      postType: node.postType,
+      focus: node.focus,
+      connections: node.connections || [],
+      position: { x: node.x || 0, y: node.y || 0 },
+      postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
+      postedTo: node.postedTo,
+      tweetId: node.tweetId,
+      selectedImageUrl: node.selectedImageUrl
+    })) || [];
+    
+    return nodes;
   } catch (error) {
     console.error('[nodeService] Error fetching nodes:', error);
     return [];
@@ -26,9 +40,48 @@ export async function fetchNodes(): Promise<ContentNode[]> {
 export async function createNodeService(nodeData: Partial<ContentNode>): Promise<ContentNode | null> {
   try {
     console.log('[nodeService] createNodeService called with:', nodeData);
-    const response = await apiClient.post('/api/nodes', nodeData);
+    
+    const requestData = {
+      title: nodeData.title,
+      description: nodeData.content,
+      type: nodeData.type,
+      status: nodeData.status,
+      x: nodeData.position?.x,
+      y: nodeData.position?.y,
+      imageUrl: nodeData.imageUrl,
+      imageUrls: nodeData.imageUrls,
+      imagePrompt: nodeData.imagePrompt,
+      day: nodeData.day,
+      postType: nodeData.postType,
+      focus: nodeData.focus,
+      scheduledDate: nodeData.scheduledDate
+    };
+    
+    const response = await apiClient.post('/api/nodes', requestData);
     console.log('[nodeService] createNodeService result:', response.data);
-    return response.data || null;
+    
+    // Transform response to ContentNode
+    const node = response.data;
+    return {
+      id: node.id,
+      title: node.title,
+      type: node.type,
+      status: node.status,
+      scheduledDate: node.scheduledDate ? new Date(node.scheduledDate) : undefined,
+      content: node.description || node.content || '',
+      imageUrl: node.imageUrl,
+      imageUrls: node.imageUrls,
+      imagePrompt: node.imagePrompt,
+      day: node.day,
+      postType: node.postType,
+      focus: node.focus,
+      connections: node.connections || [],
+      position: { x: node.x || 0, y: node.y || 0 },
+      postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
+      postedTo: node.postedTo,
+      tweetId: node.tweetId,
+      selectedImageUrl: node.selectedImageUrl
+    };
   } catch (error) {
     console.error('[nodeService] Error creating node:', error);
     return null;
@@ -38,9 +91,49 @@ export async function createNodeService(nodeData: Partial<ContentNode>): Promise
 export async function updateNodeService(id: string, nodeData: Partial<ContentNode>): Promise<ContentNode | null> {
   try {
     console.log('[nodeService] updateNodeService called with:', { id, nodeData });
-    const response = await apiClient.put(`/api/nodes/${id}`, nodeData);
+    
+    const requestData = {
+      title: nodeData.title,
+      description: nodeData.content,
+      type: nodeData.type,
+      status: nodeData.status,
+      x: nodeData.position?.x,
+      y: nodeData.position?.y,
+      imageUrl: nodeData.imageUrl,
+      imageUrls: nodeData.imageUrls,
+      imagePrompt: nodeData.imagePrompt,
+      day: nodeData.day,
+      postType: nodeData.postType,
+      focus: nodeData.focus,
+      scheduledDate: nodeData.scheduledDate,
+      selectedImageUrl: nodeData.selectedImageUrl
+    };
+    
+    const response = await apiClient.put(`/api/nodes/${id}`, requestData);
     console.log('[nodeService] updateNodeService result:', response.data);
-    return response.data || null;
+    
+    // Transform response to ContentNode
+    const node = response.data;
+    return {
+      id: node.id,
+      title: node.title,
+      type: node.type,
+      status: node.status,
+      scheduledDate: node.scheduledDate ? new Date(node.scheduledDate) : undefined,
+      content: node.description || node.content || '',
+      imageUrl: node.imageUrl,
+      imageUrls: node.imageUrls,
+      imagePrompt: node.imagePrompt,
+      day: node.day,
+      postType: node.postType,
+      focus: node.focus,
+      connections: node.connections || [],
+      position: { x: node.x || 0, y: node.y || 0 },
+      postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
+      postedTo: node.postedTo,
+      tweetId: node.tweetId,
+      selectedImageUrl: node.selectedImageUrl
+    };
   } catch (error) {
     console.error('[nodeService] Error updating node:', error);
     return null;
@@ -82,119 +175,55 @@ export type NodeDTO = {
 };
 
 
+// NodeAPI object for compatibility with existing code - now using REST API
 export const NodeAPI = {
-  async list(projectId: string) {
+  list: async () => {
     try {
-      console.log('Fetching nodes for project:', projectId);
-      const filter = { projectId: { eq: projectId } };
-      const response = await (client.graphql as any)({ query: listNodes, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      console.log('List nodes response:', response);
-      
-      // Check for GraphQL errors
-      if ((response as any).errors && (response as any).errors.length > 0) {
-        console.error('GraphQL errors:', (response as any).errors);
-        throw new Error(`GraphQL error: ${(response as any).errors[0].message}`);
-      }
-      
-      const items = (response as any).data?.listNodes?.items || [];
-      console.log('List nodes data:', items);
-      return items as NodeDTO[];
-    } catch (error) {
-      console.error('Error listing nodes:', error);
-      throw error;
-    }
-  },
-  async create(input: {
-    projectId: string; title: string; description?: string; x?: number; y?: number; status?: string; contentId?: string;
-    type?: string; day?: string; imageUrl?: string; imageUrls?: string[]; imagePrompt?: string; scheduledDate?: string;
-  }) { 
-    try {
-      console.log('Creating node:', input);
-      const nodeInput = {
-        projectId: input.projectId,
-        nodeId: `node-${Date.now()}`, // Generate unique nodeId
-        title: input.title,
-        description: input.description,
-        x: input.x,
-        y: input.y,
-        status: input.status,
-        contentId: input.contentId,
-        type: input.type,
-        day: input.day,
-        imageUrl: input.imageUrl,
-        imageUrls: input.imageUrls,
-        imagePrompt: input.imagePrompt,
-        scheduledDate: input.scheduledDate
+      console.log('[NodeAPI] list called');
+      const nodes = await fetchNodes();
+      // Return in GraphQL-like format for compatibility
+      return {
+        data: {
+          listNodes: {
+            items: nodes
+          }
+        }
       };
-      const response = await (client.graphql as any)({ query: createNode, variables: { input: nodeInput }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } }); 
-      console.log('Create node response:', response);
-      console.log('Create node data:', (response as any).data.createNode);
-      return (response as any).data.createNode as NodeDTO;
     } catch (error) {
-      console.error('Error creating node:', error);
+      console.error('[NodeAPI] Error in list:', error);
       throw error;
     }
   },
-  async update(input: {
-    id?: string; projectId: string; nodeId: string; title?: string; description?: string; x?: number; y?: number; status?: string; contentId?: string;
-    type?: string; day?: string; imageUrl?: string; imageUrls?: string[]; imagePrompt?: string; scheduledDate?: string;
-  }) { 
-    let updateInput: any = { ...input };
-    try {
-      console.log('Updating node:', input);
-      // If no id provided, try to find the node first
-      if (!input.id) {
-        const filter = { projectId: { eq: input.projectId }, nodeId: { eq: input.nodeId } };
-        const listResponse = await (client.graphql as any)({ query: listNodes, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-        const items = (listResponse as any).data.listNodes.items || [];
-        if (items.length > 0) {
-          updateInput.id = items[0].id;
-        } else {
-          throw new Error(`Node not found: ${input.nodeId}`);
-        }
-      }
 
-      // Keep imageUrls in the input since it exists in the schema
-      console.log('imageUrls in updateInput:', updateInput.imageUrls);
-      
-      console.log('Final updateInput being sent to GraphQL API:', JSON.stringify(updateInput, null, 2));
-      console.log('GraphQL mutation query:', updateNode);
-      const response = await (client.graphql as any)({ query: updateNode, variables: { input: updateInput }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } }); 
-      console.log('Update node response:', response);
-      return (response as any).data.updateNode as NodeDTO;
-    } catch (error) {
-      console.error('Error updating node via Amplify client:', error);
-      console.error('Input that caused error:', JSON.stringify(updateInput, null, 2));
-      if (error && typeof error === 'object' && 'errors' in error) {
-        console.error('GraphQL errors:', (error as any).errors);
-        (error as any).errors?.forEach((err: any, index: number) => {
-          console.error(`Error ${index + 1}:`, err.message);
-          if (err.locations) console.error('Locations:', err.locations);
-          if (err.path) console.error('Path:', err.path);
-        });
-      }
-      // Always attempt direct fetch fallback to AppSync with x-api-key for robustness
-      try {
-        console.warn('Attempting direct fetch fallback to AppSync with x-api-key (update)');
-        const res = await fetchGraphqlDirect(updateNode, { input: updateInput });
-        console.log('Direct fetch fallback result:', res);
-        if (res.ok && res.body && res.body.data && res.body.data.updateNode) {
-          console.log('Direct fetch fallback succeeded, returning updateNode');
-          return res.body.data.updateNode as NodeDTO;
+  create: async (input: any) => {
+    try {
+      console.log('[NodeAPI] create called with:', input);
+      const node = await createNodeService(input);
+      // Return in GraphQL-like format for compatibility
+      return {
+        data: {
+          createNode: node
         }
-        // If direct fetch failed, log body for diagnosis
-        console.error('Direct fetch fallback body:', res.body);
-      } catch (fbErr) {
-        console.error('Fallback fetch error:', fbErr);
-      }
-      if (error && typeof error === 'object' && 'errors' in error) {
-        console.error('GraphQL errors:', (error as any).errors);
-        (error as any).errors?.forEach((err: any, index: number) => {
-          console.error(`Error ${index + 1}:`, err.message);
-          if (err.locations) console.error('Locations:', err.locations);
-          if (err.path) console.error('Path:', err.path);
-        });
-      }
+      };
+    } catch (error) {
+      console.error('[NodeAPI] Error in create:', error);
+      throw error;
+    }
+  },
+
+  update: async (input: any) => {
+    try {
+      console.log('[NodeAPI] update called with:', input);
+      const nodeId = input.id || input.nodeId;
+      const node = await updateNodeService(nodeId, input);
+      // Return in GraphQL-like format for compatibility
+      return {
+        data: {
+          updateNode: node
+        }
+      };
+    } catch (error) {
+      console.error('[NodeAPI] Error in update:', error);
       throw error;
     }
   },

@@ -22,3 +22,15 @@ C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\ob
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
 C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.deps.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.GeneratedMSBuildEditorConfig.editorconfig
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfoInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfo.cs
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.csproj.CoreCompileInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.sourcelink.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\ASSIGNMENT\BREWPOST\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll

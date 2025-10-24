@@ -142,11 +142,20 @@ Want to run Brewpost locally or contribute to the project? Follow these steps:
    - Add any additional indexes as needed
 
 5. **Run the application**
+   
+   Start the frontend:
    ```bash
-   npm run dev:full
+   cd frontend
+   npm run dev
    ```
    
-   This starts both the frontend (port 8080) and backend server (port 8081).
+   Start the ASP.NET Core backend:
+   ```bash
+   cd backend/BrewPost.API
+   dotnet run
+   ```
+   
+   This starts the frontend on port 8080 and the ASP.NET Core backend on port 5044.
 
 ---
 

@@ -9855,23 +9855,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Bryan\\.nuget\\packages\\": {},
+    "C:\\Users\\User\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj",
+      "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj",
       "projectName": "BrewPost.API",
-      "projectPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.API\\BrewPost.API.csproj",
-      "packagesPath": "C:\\Users\\Bryan\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.API\\obj\\",
+      "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\BrewPost.API.csproj",
+      "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+      "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\brewpost.api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Bryan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -9886,11 +9886,11 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
-              "projectPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj"
+            "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
+              "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj"
             },
-            "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\Bryan\\Downloads\\Hackathon\\brewpost v2\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj"
+            "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {
+              "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj"
             }
           }
         }
@@ -9981,7 +9981,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
