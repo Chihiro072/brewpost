@@ -119,6 +119,7 @@ builder.Services.AddScoped<IOAuthService, OAuthService>();
 builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IBedrockService, BedrockService>();
 builder.Services.AddScoped<ITrendingService, TrendingService>();
+builder.Services.AddScoped<BrewPost.API.Models.IAnalysisService, BrewPost.API.Models.AnalysisService>();
 builder.Services.AddHttpClient<IOAuthService, OAuthService>();
 builder.Services.AddHttpClient<ITrendingService, TrendingService>();
 builder.Services.AddMemoryCache();
@@ -136,6 +137,25 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed test data in development
+if (app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<BrewPostDbContext>();
+        try
+        {
+            // Run async method synchronously in this context
+            BrewPost.API.TestData.SeedTestNodes.SeedAsync(context).Wait();
+            Console.WriteLine("✅ Test data seeded successfully");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Failed to seed test data: {ex.Message}");
+        }
+    }
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -96,72 +96,59 @@ public class AIController : ControllerBase
             _logger.LogInformation("Mock components breakdown - Campaign Type: {CampaignType}, Promotion Type: {PromotionType}", 
                 mockCampaignType.Count, mockPromotionType.Count);
             
-            // ENSURE MINIMUM 2 COMPONENTS PER CATEGORY - Add missing components
+            // ONLY ADD RELEVANT TRENDING COMPONENTS - No forced minimum
             var componentsAdded = 0;
             
-            // For online trends, use real trending data first, then fallback to mock if needed
-            if (onlineTrendCount < 2)
+            // For online trends, only add real trending data if it's semantically relevant
+            if (onlineTrendCount == 0 && trendingComponents.Any())
             {
-                var needed = 2 - onlineTrendCount;
-                var realTrendsToAdd = trendingComponents.Take(needed).Select(t => new BrewPost.API.DTOs.GeneratedComponentDto
-                {
-                    Id = t.Id,
-                    Type = t.Type,
-                    Title = t.Title,
-                    Name = t.Name,
-                    Description = t.Description,
-                    Data = t.Data,
-                    Category = t.Category,
-                    Keywords = t.Keywords,
-                    RelevanceScore = t.RelevanceScore,
-                    Impact = t.Impact,
-                    Color = t.Color
-                }).ToList();
-                components.AddRange(realTrendsToAdd);
-                componentsAdded += realTrendsToAdd.Count;
-                _logger.LogInformation("Added {Count} real trending components (needed {Needed})", realTrendsToAdd.Count, needed);
+                // Filter trending components for semantic relevance to the node content
+                var relevantTrends = FilterRelevantTrendingComponents(trendingComponents, node);
                 
-                // If still need more online trend components, use mock as fallback
-                if (realTrendsToAdd.Count < needed)
+                if (relevantTrends.Any())
                 {
-                    var stillNeeded = needed - realTrendsToAdd.Count;
-                    var mockOnlineTrend = mockComponents.Where(c => c.Type == "online_trend").Take(stillNeeded).ToList();
-                    components.AddRange(mockOnlineTrend);
-                    componentsAdded += mockOnlineTrend.Count;
-                    _logger.LogInformation("Added {Count} mock online trend components as fallback", mockOnlineTrend.Count);
+                    var trendsToAdd = relevantTrends.Select(t => new BrewPost.API.DTOs.GeneratedComponentDto
+                    {
+                        Id = t.Id,
+                        Type = t.Type,
+                        Title = t.Title,
+                        Name = t.Name,
+                        Description = t.Description,
+                        Data = t.Data,
+                        Category = t.Category,
+                        Keywords = t.Keywords,
+                        RelevanceScore = t.RelevanceScore,
+                        Impact = t.Impact,
+                        Color = t.Color
+                    }).ToList();
+                    components.AddRange(trendsToAdd);
+                    componentsAdded += trendsToAdd.Count;
+                    _logger.LogInformation("Added {Count} semantically relevant trending components", trendsToAdd.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("No semantically relevant trending components found for node content");
                 }
             }
             
-            if (campaignTypeCount < 2)
+            // Only add campaign and promotion components if AI didn't generate any
+            if (campaignTypeCount == 0)
             {
-                var needed = 2 - campaignTypeCount;
-                var toAdd = mockCampaignType.Take(needed).ToList();
+                var toAdd = mockCampaignType.Take(1).ToList(); // Add only 1, not forcing 2
                 components.AddRange(toAdd);
                 componentsAdded += toAdd.Count;
-                _logger.LogInformation("Added {Count} campaign type mock components (needed {Needed})", toAdd.Count, needed);
+                _logger.LogInformation("Added {Count} campaign type mock component as fallback", toAdd.Count);
             }
             
-            if (promotionTypeCount < 2)
+            if (promotionTypeCount == 0)
             {
-                var needed = 2 - promotionTypeCount;
-                var toAdd = mockPromotionType.Take(needed).ToList();
+                var toAdd = mockPromotionType.Take(1).ToList(); // Add only 1, not forcing 2
                 components.AddRange(toAdd);
                 componentsAdded += toAdd.Count;
-                _logger.LogInformation("Added {Count} promotion type mock components (needed {Needed})", toAdd.Count, needed);
+                _logger.LogInformation("Added {Count} promotion type mock component as fallback", toAdd.Count);
             }
             
-            // If still not enough total components (minimum 6), add more from any category
-            if (components.Count < 6)
-            {
-                var needed = 6 - components.Count;
-                var remainingMock = mockComponents
-                    .Where(mc => !components.Any(c => c.Title == mc.Title))
-                    .Take(needed)
-                    .ToList();
-                components.AddRange(remainingMock);
-                componentsAdded += remainingMock.Count;
-                _logger.LogInformation("Added {Count} additional mock components to reach minimum of 6 (needed {Needed})", remainingMock.Count, needed);
-            }
+            // Remove minimum component requirement - let AI determine the appropriate number
             
             // Final component count verification
             var finalOnlineTrend = components.Count(c => c.Type == "online_trend");
@@ -1115,6 +1102,54 @@ public class AIController : ControllerBase
         }
         
         return keywords.Distinct().Take(5).ToArray();
+    }
+
+    private List<BrewPost.Core.DTOs.GeneratedComponentDto> FilterRelevantTrendingComponents(
+        List<BrewPost.Core.DTOs.GeneratedComponentDto> trendingComponents, 
+        ContentNodeDto node)
+    {
+        var nodeContent = $"{node.Title} {node.Content} {node.ImagePrompt}".ToLower();
+        var nodeKeywords = ExtractKeywordsFromContent(node).Select(k => k.ToLower()).ToList();
+        
+        var relevantComponents = new List<BrewPost.Core.DTOs.GeneratedComponentDto>();
+        
+        foreach (var component in trendingComponents)
+        {
+            var isRelevant = false;
+            var componentKeywords = component.Keywords?.Select(k => k.ToLower()).ToList() ?? new List<string>();
+            var componentTitle = component.Title?.ToLower() ?? "";
+            
+            // Check for direct keyword matches
+            if (nodeKeywords.Any(nk => componentKeywords.Any(ck => ck.Contains(nk) || nk.Contains(ck))))
+            {
+                isRelevant = true;
+            }
+            
+            // Check for semantic relevance in content
+            if (!isRelevant && !string.IsNullOrEmpty(nodeContent))
+            {
+                // Check if trending hashtag relates to node content
+                var hashtagWithoutSymbol = componentTitle.Replace("#", "").ToLower();
+                if (nodeContent.Contains(hashtagWithoutSymbol) || 
+                    nodeKeywords.Any(k => k.Contains(hashtagWithoutSymbol) || hashtagWithoutSymbol.Contains(k)))
+                {
+                    isRelevant = true;
+                }
+            }
+            
+            // Only add if semantically relevant
+            if (isRelevant)
+            {
+                relevantComponents.Add(component);
+                _logger.LogInformation("Trending component '{Title}' is relevant to node content", component.Title);
+            }
+            else
+            {
+                _logger.LogInformation("Trending component '{Title}' is NOT relevant to node content", component.Title);
+            }
+        }
+        
+        return relevantComponents;
     }
 
     // Helper class for parsing AI response

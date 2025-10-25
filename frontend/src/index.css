@@ -318,18 +318,22 @@
     -moz-user-select: none !important;
     -ms-user-select: none !important;
     user-select: none !important;
+    /* pointer-events: none !important; */
+    }
+    
+    /* Limit pointer-events disabling to canvas area only */
+    .dragging .canvas-container * {
     pointer-events: none !important;
-    cursor: grabbing !important;
-  }
-
-  .dragging .node-card {
+    }
+    
+    .dragging .node-card {
     pointer-events: auto !important;
-  }
-
-  /* Ensure buttons are always clickable */
-  .node-card button {
+    }
+    
+    /* Ensure buttons are always clickable */
+    .node-card button {
     pointer-events: auto !important;
-  }
+    }
 
   /* Enhanced dragging visual feedback */
   .dragging .node-card.dragging-node {

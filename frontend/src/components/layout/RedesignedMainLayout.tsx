@@ -11,6 +11,7 @@ import { TemplatePopup } from '@/components/template/TemplatePopup';
 import { AddNodeModal } from '@/components/modals/AddNodeModal';
 import { ScheduleConfirmationModal } from '@/components/modals/ScheduleConfirmationModal';
 import { CalendarModal } from '@/components/modals/CalendarModal';
+import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import type { GeneratedComponent } from '@/services/aiService';
 import { 
   Sparkles, 
@@ -58,7 +59,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
   // Sidebar states
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(false);
-  const [activeRightTab, setActiveRightTab] = useState<'content' | 'image'>('content');
+  const [activeRightTab, setActiveRightTab] = useState<'content' | 'image' | 'analysis'>('content');
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -623,9 +624,9 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
           <div className="absolute right-4 top-4 bottom-4 w-96 backdrop-blur-xl rounded-2xl shadow-2xl z-40 transition-all duration-300 ease-in-out border border-[#03624C]/50" style={{backgroundColor: 'rgba(3, 34, 33, 0.95)'}}>
             <div className="h-full flex flex-col rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2 border-b border-[#03624C]/50" style={{borderBottomColor: 'rgba(3, 98, 76, 0.5)'}}>
-                <Tabs value={activeRightTab} onValueChange={(value) => setActiveRightTab(value as 'content' | 'image')} className="flex-1">
+                <Tabs value={activeRightTab} onValueChange={(value) => setActiveRightTab(value as 'content' | 'image' | 'analysis')} className="flex-1">
                   <div className="flex items-center justify-between">
-                    <TabsList className="grid w-full grid-cols-2 max-w-[200px] border border-[#03624C]/30" style={{backgroundColor: 'rgba(0, 15, 49, 0.5)'}}>
+                    <TabsList className="grid w-full grid-cols-3 max-w-[300px] border border-[#03624C]/30" style={{backgroundColor: 'rgba(0, 15, 49, 0.5)'}}>
                       <TabsTrigger 
                         value="content" 
                         className="text-sm text-[#00DF81]/70 data-[state=active]:text-white transition-colors"
@@ -661,6 +662,24 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
                         data-active-style={{backgroundColor: '#03624C'}}
                       >
                         Image
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="analysis" 
+                        className="text-sm text-[#00DF81]/70 data-[state=active]:text-white transition-colors"
+                        style={{'--tw-bg-opacity': '1'}}
+                        onMouseEnter={(e) => {
+                          if (!e.currentTarget.getAttribute('data-state')?.includes('active')) {
+                            e.currentTarget.style.backgroundColor = 'rgba(3, 98, 76, 0.3)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!e.currentTarget.getAttribute('data-state')?.includes('active')) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                        data-active-style={{backgroundColor: '#03624C'}}
+                      >
+                        Analysis
                       </TabsTrigger>
                     </TabsList>
                     <Button
@@ -756,6 +775,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
                           generationProgress={isGenerating}
                         />
                       </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="analysis" className="h-full m-0">
+                    <div className="h-full">
+                      <AnalysisPanel selectedNode={selectedNode} />
                     </div>
                   </TabsContent>
                 </Tabs>

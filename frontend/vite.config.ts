@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      host: '::',
-      port: 8080,
+      host: 'localhost',
+      port: 3000,
       proxy: {
         '/generate': {
           target: backendTarget,
