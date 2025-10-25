@@ -353,49 +353,12 @@ public class ImagesController : ControllerBase
                 finalPrompt += ". Professional, high-quality, social media ready, modern design, vibrant colors";
             }
 
-            // Add component-based enhancements
-            if (request.SelectedComponents != null && request.SelectedComponents.Any())
-            {
-                var promotions = request.SelectedComponents.Where(c => 
-                    (c.Category?.ToLower().Contains("promotion") ?? false) || 
-                    (c.Name != null && System.Text.RegularExpressions.Regex.IsMatch(c.Name, @"%|off|discount", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
-                ).ToList();
+            // Component-based enhancements removed - frontend handles all overlays
+            // AI should generate clean base images without any promotional badges, trends, or campaign styling
+            // All branding elements (logos, company names, promotional badges) are applied via frontend template overlay
 
-                if (promotions.Any())
-                {
-                    var p = promotions.First();
-                    finalPrompt += $" Add a circular promotional badge that shows: \"{p.Name ?? p.Id ?? "Offer"}\". Render the badge with a high-contrast ring and place it top-right.";
-                }
-
-                var trends = request.SelectedComponents.Where(c => c.Category?.ToLower().Contains("trend") ?? false).ToList();
-                if (trends.Any())
-                {
-                    finalPrompt += " Add visual-only trend cues (sparklines, subtle data waveforms, small chart motifs, or glows) to convey trending performance — do NOT include textual labels for trend names.";
-                }
-
-                var campaigns = request.SelectedComponents.Where(c => c.Category?.ToLower().Contains("campaign") ?? false).ToList();
-                if (campaigns.Any())
-                {
-                    finalPrompt += " Infuse campaign-specific visual styling (color accents, background motifs, badges, iconography, or composition changes) that reflect the campaign theme — DO NOT render the campaign name as visible text.";
-                }
-            }
-
-            // Add template-based styling
-            if (request.Template != null)
-            {
-                if (!string.IsNullOrEmpty(request.Template.CompanyName))
-                {
-                    finalPrompt += " Apply brand-consistent styling informed by the company (do NOT render the company name as text); prefer logo, color palette, and brand motifs.";
-                }
-                if (!string.IsNullOrEmpty(request.Template.ColorPalette))
-                {
-                    finalPrompt += " Use the brand color palette for accents and composition (use colors, gradients, and accents — no textual color labels).";
-                }
-                if (!string.IsNullOrEmpty(request.Template.LogoUrl))
-                {
-                    finalPrompt += " Reserve space for the logo (bottom-left corner preferred) and incorporate it visually; do not generate the logo as plain text.";
-                }
-            }
+            // Template processing is now handled in frontend - generate clean base images only
+            // No template-related prompt modifications to ensure clean AI-generated images
 
             _logger.LogInformation("Final prompt: {Prompt}", finalPrompt);
 

@@ -13,9 +13,44 @@ export interface TemplateSettings {
 
 export const getTemplateSettings = (): TemplateSettings | null => {
   try {
+    console.log('🔧 [getTemplateSettings] ===== STARTING TEMPLATE SETTINGS RETRIEVAL =====');
+    console.log('🔧 [getTemplateSettings] localStorage available:', typeof localStorage !== 'undefined');
+    
     const saved = localStorage.getItem('brewpost-template');
-    return saved ? JSON.parse(saved) : null;
-  } catch {
+    console.log('🔧 [getTemplateSettings] Raw localStorage value:', saved);
+    console.log('🔧 [getTemplateSettings] localStorage value type:', typeof saved);
+    console.log('🔧 [getTemplateSettings] localStorage value length:', saved?.length || 0);
+    
+    if (!saved) {
+      console.log('🔧 [getTemplateSettings] ❌ No template settings found in localStorage');
+      console.log('🔧 [getTemplateSettings] All localStorage keys:', Object.keys(localStorage));
+      return null;
+    }
+    
+    const parsed = JSON.parse(saved);
+    console.log('🔧 [getTemplateSettings] ✅ Parsed template settings:', parsed);
+    console.log('🔧 [getTemplateSettings] Parsed object keys:', Object.keys(parsed));
+    
+    // Check if template has meaningful content
+    const hasLogo = !!parsed.logoPreview;
+    const hasCompanyText = !!parsed.companyText;
+    const hasColor = parsed.selectedColor && parsed.selectedColor !== 'transparent';
+    
+    console.log('🔧 [getTemplateSettings] 📊 Template analysis:', {
+      hasLogo,
+      hasCompanyText,
+      hasColor,
+      logoPreview: hasLogo ? parsed.logoPreview.substring(0, 50) + '...' : 'none',
+      companyText: parsed.companyText || 'none',
+      selectedColor: parsed.selectedColor || 'none',
+      selectedPosition: parsed.selectedPosition || 'none'
+    });
+    
+    console.log('🔧 [getTemplateSettings] ===== TEMPLATE SETTINGS RETRIEVAL COMPLETE =====');
+    return parsed;
+  } catch (error) {
+    console.error('🔧 [getTemplateSettings] Error parsing template settings:', error);
+    console.error('🔧 [getTemplateSettings] Error details:', error.message);
     return null;
   }
 };
@@ -49,252 +84,375 @@ export const enhanceImagePromptWithTemplate = (originalPrompt: string): string =
 };
 
 export const applyTemplateToImage = async (imageUrl: string): Promise<string> => {
-  const template = getTemplateSettings();
-  // Return original URL if no meaningful template processing is needed
-  if (!template || (!template.logoPreview && !template.companyText && (!template.selectedColor || template.selectedColor === 'transparent'))) {
-    console.log('No template processing needed, returning original URL');
-    return imageUrl;
-  }
+  console.log('[templateUtils] Starting applyTemplateToImage with URL:', imageUrl.substring(0, 100) + '...');
   
-  // Also return original URL if only a color overlay with very low opacity would be applied
-  if (!template.logoPreview && !template.companyText && template.selectedColor && template.selectedColor !== 'transparent') {
-    console.log('Only color overlay would be applied, returning original URL to avoid base64 conversion');
+  const settings = getTemplateSettings();
+  console.log('[templateUtils] Template settings:', settings);
+  
+  if (!settings || (!settings.logoPreview && !settings.companyText && settings.selectedColor === 'transparent')) {
+    console.log('[templateUtils] No template settings configured, returning original image');
     return imageUrl;
   }
 
   try {
-    // Fetch image as blob to bypass CORS
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
+    console.log('[templateUtils] Creating canvas for template overlay');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      console.error('[templateUtils] Failed to get canvas context');
+      throw new Error('Failed to get canvas context');
+    }
 
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        URL.revokeObjectURL(blobUrl);
-        resolve(imageUrl);
-        return;
-      }
-
-      const img = new Image();
-      
+    console.log('[templateUtils] Loading base image...');
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    return new Promise((resolve, reject) => {
       img.onload = () => {
-        URL.revokeObjectURL(blobUrl);
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the original image
-      ctx.drawImage(img, 0, 0);
-      
-      // Apply color overlay if specified
-      if (template.selectedColor && template.selectedColor !== 'transparent') {
-        ctx.globalCompositeOperation = 'overlay';
-        ctx.fillStyle = template.selectedColor + '30';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = 'source-over';
-      }
-      
-      // Add logo and text if available
-      if (template.logoPreview && template.selectedPosition) {
-        const logo = new Image();
+        console.log('[templateUtils] Base image loaded successfully, dimensions:', img.width, 'x', img.height);
         
-        logo.onload = () => {
-          const logoSize = Math.min(canvas.width, canvas.height) * 0.12;
-          const logoWidth = logoSize;
-          const logoHeight = (logo.height / logo.width) * logoSize;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the base image
+        console.log('[templateUtils] Drawing base image to canvas');
+        ctx.drawImage(img, 0, 0);
+
+        // Apply color overlay if specified
+        if (settings.selectedColor && settings.selectedColor !== 'transparent') {
+          console.log('[templateUtils] Applying color overlay:', settings.selectedColor);
+          ctx.fillStyle = settings.selectedColor;
+          ctx.globalAlpha = 0.1; // Light overlay
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.globalAlpha = 1.0; // Reset alpha
+        }
+
+        // Apply logo if specified
+        if (settings.logoPreview) {
+          console.log('[templateUtils] Loading and applying logo:', settings.logoPreview.substring(0, 50) + '...');
+          const logoImg = new Image();
+          logoImg.crossOrigin = 'anonymous';
           
-          let logoX = 0, logoY = 0;
-          const padding = Math.max(20, canvas.width * 0.02);
-          
-          // Calculate logo position
-          switch (template.selectedPosition) {
-            case 'top-left':
-              logoX = padding;
-              logoY = padding;
-              break;
-            case 'top-center':
-              logoX = (canvas.width - logoWidth) / 2;
-              logoY = padding;
-              break;
-            case 'top-right':
-              logoX = canvas.width - logoWidth - padding;
-              logoY = padding;
-              break;
-            case 'bottom-left':
-              logoX = padding;
-              logoY = canvas.height - logoHeight - padding;
-              break;
-            case 'bottom-center':
-              logoX = (canvas.width - logoWidth) / 2;
-              logoY = canvas.height - logoHeight - padding;
-              break;
-            case 'bottom-right':
-              logoX = canvas.width - logoWidth - padding;
-              logoY = canvas.height - logoHeight - padding;
-              break;
-          }
-          
-          // Draw logo with shadow
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-          ctx.shadowBlur = 4;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
-          
-          ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
-          
-          // Reset shadow
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          
-          // Add company text if available
-          if (template.companyText) {
-            const fontSize = (template.textSize || 24) * (canvas.width / 1000);
-            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-            ctx.fillStyle = template.textColor || '#000000';
-            ctx.textAlign = template.textAlignment || 'center';
+          logoImg.onload = () => {
+            console.log('[templateUtils] Logo loaded, dimensions:', logoImg.width, 'x', logoImg.height);
             
-            const textMetrics = ctx.measureText(template.companyText);
-            const textWidth = textMetrics.width;
-            const textHeight = fontSize;
+            // Calculate logo size (10% of image width, maintain aspect ratio)
+            const logoSize = Math.min(canvas.width * 0.1, 80);
+            const logoAspectRatio = logoImg.width / logoImg.height;
+            const logoWidth = logoSize;
+            const logoHeight = logoSize / logoAspectRatio;
             
-            let textX = logoX + logoWidth / 2;
-            let textY = logoY + logoHeight / 2;
+            // Position logo based on selectedPosition
+            const padding = 20;
+            let logoX = canvas.width - logoWidth - padding; // default bottom-right
+            let logoY = canvas.height - logoHeight - padding;
             
-            // Position text relative to logo
-            switch (template.textPosition) {
-              case 'above':
-                textY = logoY - 10;
-                break;
-              case 'below':
-                textY = logoY + logoHeight + textHeight + 10;
-                break;
-              case 'left':
-                textX = logoX - 2;
-                ctx.textAlign = 'right';
-                textY = logoY + logoHeight / 2 + textHeight / 3;
-                break;
-              case 'right':
-                textX = logoX + logoWidth + 2;
-                ctx.textAlign = 'left';
-                textY = logoY + logoHeight / 2 + textHeight / 3;
-                break;
+            if (settings.selectedPosition) {
+              switch (settings.selectedPosition) {
+                case 'top-left':
+                  logoX = padding;
+                  logoY = padding;
+                  break;
+                case 'top-center':
+                  logoX = (canvas.width - logoWidth) / 2;
+                  logoY = padding;
+                  break;
+                case 'top-right':
+                  logoX = canvas.width - logoWidth - padding;
+                  logoY = padding;
+                  break;
+                case 'bottom-left':
+                  logoX = padding;
+                  logoY = canvas.height - logoHeight - padding;
+                  break;
+                case 'bottom-center':
+                  logoX = (canvas.width - logoWidth) / 2;
+                  logoY = canvas.height - logoHeight - padding;
+                  break;
+                case 'bottom-right':
+                  logoX = canvas.width - logoWidth - padding;
+                  logoY = canvas.height - logoHeight - padding;
+                  break;
+              }
             }
             
-            // Add text shadow
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            ctx.shadowBlur = 2;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
+            console.log('[templateUtils] Drawing logo at position:', logoX, logoY, 'size:', logoWidth, 'x', logoHeight);
+            ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
             
-            ctx.fillText(template.companyText, textX, textY);
+            // Apply company text after logo with logo position information
+            applyCompanyTextToCanvas(ctx, canvas, settings, logoX, logoY, logoWidth, logoHeight);
             
-            // Reset shadow
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-          }
+            try {
+              const finalDataUrl = canvas.toDataURL('image/png');
+              console.log('[templateUtils] Template overlay completed successfully, final image size:', finalDataUrl.length);
+              resolve(finalDataUrl);
+            } catch (e) {
+              console.error('[templateUtils] Canvas tainted, returning original image:', e);
+              resolve(imageUrl);
+            }
+          };
+          
+          logoImg.onerror = (e) => {
+            console.error('[templateUtils] Failed to load logo:', e);
+            // Continue without logo
+            applyCompanyTextToCanvas(ctx, canvas, settings);
+            
+            try {
+              const finalDataUrl = canvas.toDataURL('image/png');
+              console.log('[templateUtils] Template overlay completed (no logo), final image size:', finalDataUrl.length);
+              resolve(finalDataUrl);
+            } catch (e) {
+              console.error('[templateUtils] Canvas tainted, returning original image:', e);
+              resolve(imageUrl);
+            }
+          };
+          
+          logoImg.src = settings.logoPreview;
+        } else {
+          // No logo, just apply company text
+          console.log('[templateUtils] No logo specified, applying company text only');
+          applyCompanyTextToCanvas(ctx, canvas, settings);
           
           try {
-            resolve(canvas.toDataURL('image/png'));
+            const finalDataUrl = canvas.toDataURL('image/png');
+            console.log('[templateUtils] Template overlay completed (text only), final image size:', finalDataUrl.length);
+            resolve(finalDataUrl);
           } catch (e) {
-            console.warn('Canvas tainted, returning original image');
+            console.error('[templateUtils] Canvas tainted, returning original image:', e);
             resolve(imageUrl);
           }
-        };
-        
-        logo.onerror = () => {
-          console.warn('Logo failed to load');
-          try {
-            resolve(canvas.toDataURL('image/png'));
-          } catch (e) {
-            console.warn('Canvas tainted, returning original image');
-            resolve(imageUrl);
-          }
-        };
-        logo.src = template.logoPreview;
-      } else if (template.companyText) {
-        // Only text, no logo
-        const fontSize = (template.textSize || 24) * (canvas.width / 1000);
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-        ctx.fillStyle = template.textColor || '#000000';
-        ctx.textAlign = 'center';
-        
-        const padding = Math.max(20, canvas.width * 0.02);
-        let textX = canvas.width / 2;
-        let textY = padding + fontSize;
-        
-        // Position text based on selected position
-        switch (template.selectedPosition) {
-          case 'top-left':
-            ctx.textAlign = 'left';
-            textX = padding;
-            textY = padding + fontSize;
-            break;
-          case 'top-center':
-            textX = canvas.width / 2;
-            textY = padding + fontSize;
-            break;
-          case 'top-right':
-            ctx.textAlign = 'right';
-            textX = canvas.width - padding;
-            textY = padding + fontSize;
-            break;
-          case 'bottom-left':
-            ctx.textAlign = 'left';
-            textX = padding;
-            textY = canvas.height - padding;
-            break;
-          case 'bottom-center':
-            textX = canvas.width / 2;
-            textY = canvas.height - padding;
-            break;
-          case 'bottom-right':
-            ctx.textAlign = 'right';
-            textX = canvas.width - padding;
-            textY = canvas.height - padding;
-            break;
         }
-        
-        // Add text shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 2;
-        ctx.shadowOffsetX = 1;
-        ctx.shadowOffsetY = 1;
-        
-        ctx.fillText(template.companyText, textX, textY);
-        
-        try {
-          resolve(canvas.toDataURL('image/png'));
-        } catch (e) {
-          console.warn('Canvas tainted, returning original image');
-          resolve(imageUrl);
-        }
-      } else {
-        // No logo or text, but apply color overlay if specified
-        try {
-          resolve(canvas.toDataURL('image/png'));
-        } catch (e) {
-          console.warn('Canvas tainted, returning original image');
-          resolve(imageUrl);
-        }
-      }
-    };
-    
-      img.onerror = () => {
-        console.warn('Base image failed to load');
-        URL.revokeObjectURL(blobUrl);
-        resolve(imageUrl);
       };
-      img.src = blobUrl;
+      
+      img.onerror = (e) => {
+        console.error('[templateUtils] Failed to load base image:', e);
+        reject(new Error('Failed to load base image'));
+      };
+      
+      // Use proxy endpoint for S3 images to avoid CORS issues
+      const proxyUrl = convertToProxyUrl(imageUrl);
+      console.log('[templateUtils] Using proxy URL:', proxyUrl);
+      img.src = proxyUrl;
     });
   } catch (error) {
-    console.warn('Failed to fetch image:', error);
+    console.error('[templateUtils] Error in applyTemplateToImage:', error);
     return imageUrl;
   }
+};
+
+// Helper function to convert S3 URLs to proxy URLs
+const convertToProxyUrl = (imageUrl: string): string => {
+  // Check if it's an S3 URL that needs proxying
+  if (imageUrl.includes('s3-brewpost.s3.us-east-1.amazonaws.com') || imageUrl.includes('brewpost-assets')) {
+    try {
+      const url = new URL(imageUrl);
+      // Extract the S3 key from the URL
+      const s3Key = url.pathname.substring(1); // Remove leading slash
+      // Return proxy URL
+      const proxyUrl = `http://localhost:5044/api/assets/proxy/${s3Key}`;
+      console.log('[templateUtils] Converting S3 URL to proxy:', imageUrl, '->', proxyUrl);
+      return proxyUrl;
+    } catch (error) {
+      console.error('[templateUtils] Error parsing S3 URL:', error);
+      return imageUrl;
+    }
+  }
+  
+  // Return original URL if not an S3 URL
+  return imageUrl;
+};
+
+const applyCompanyTextToCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, settings: any, logoX?: number, logoY?: number, logoWidth?: number, logoHeight?: number) => {
+  if (!settings.companyText) {
+    console.log('[templateUtils] No company text specified, skipping text overlay');
+    return;
+  }
+
+  console.log('[templateUtils] Applying company text:', settings.companyText);
+  
+  // Set up text styling
+  const fontSize = settings.textSize ? Math.max(16, (settings.textSize * canvas.width) / 1000) : Math.max(16, canvas.width * 0.03);
+  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.fillStyle = settings.textColor || '#FFFFFF';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 2;
+  
+  const padding = 20;
+  let textX = padding;
+  let textY = canvas.height - padding;
+  
+  // If logo position is provided, calculate text position relative to logo
+  if (logoX !== undefined && logoY !== undefined && logoWidth !== undefined && logoHeight !== undefined && settings.textPosition) {
+    const textSpacing = 10; // Space between logo and text
+    
+    // Measure text dimensions for better positioning
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    const textMetrics = ctx.measureText(settings.companyText);
+    const textWidth = textMetrics.width;
+    const textHeight = fontSize;
+    
+    switch (settings.textPosition) {
+      case 'above':
+        textX = logoX;
+        textY = logoY - textHeight - textSpacing;
+        // Adjust alignment based on textAlignment setting
+        if (settings.textAlignment === 'center') {
+          textX = logoX + (logoWidth / 2) - (textWidth / 2);
+          ctx.textAlign = 'left';
+        } else if (settings.textAlignment === 'right') {
+          textX = logoX + logoWidth - textWidth;
+          ctx.textAlign = 'left';
+        } else {
+          ctx.textAlign = 'left';
+        }
+        ctx.textBaseline = 'top';
+        break;
+        
+      case 'below':
+        textX = logoX;
+        textY = logoY + logoHeight + textSpacing;
+        // Adjust alignment based on textAlignment setting
+        if (settings.textAlignment === 'center') {
+          textX = logoX + (logoWidth / 2) - (textWidth / 2);
+          ctx.textAlign = 'left';
+        } else if (settings.textAlignment === 'right') {
+          textX = logoX + logoWidth - textWidth;
+          ctx.textAlign = 'left';
+        } else {
+          ctx.textAlign = 'left';
+        }
+        ctx.textBaseline = 'top';
+        break;
+        
+      case 'left':
+        textX = logoX - textWidth - textSpacing;
+        textY = logoY + (logoHeight / 2) - (textHeight / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        break;
+        
+      case 'right':
+        textX = logoX + logoWidth + textSpacing;
+        textY = logoY + (logoHeight / 2) - (textHeight / 2);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        break;
+        
+      default:
+        // Fallback to bottom-left if no valid position specified
+        textX = padding;
+        textY = canvas.height - padding;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        break;
+    }
+    
+    // Ensure text stays within canvas bounds
+    textX = Math.max(padding, Math.min(textX, canvas.width - textWidth - padding));
+    textY = Math.max(padding, Math.min(textY, canvas.height - textHeight - padding));
+  } else {
+    // No logo position provided, use default bottom-left positioning
+    textX = padding;
+    textY = canvas.height - padding;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+  }
+  
+  console.log('[templateUtils] Drawing company text at position:', textX, textY, 'font size:', fontSize);
+  
+  // Draw text with stroke (outline) for better visibility
+  ctx.strokeText(settings.companyText, textX, textY);
+  ctx.fillText(settings.companyText, textX, textY);
+};
+
+// Expand short hex like #abc to #aabbcc
+const expandShortHex = (hex: string) => {
+  if (!hex) return '#000000';
+  const cleaned = hex.replace('#', '');
+  if (cleaned.length === 3) {
+    return '#' + cleaned.split('').map(c => c + c).join('');
+  }
+  return '#' + cleaned.padStart(6, '0');
+};
+
+// Deterministic color from string
+const stringToDeterministicHex = (s: string) => {
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) {
+    hash = s.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash;
+  }
+  const r = (hash >> 16) & 0xff;
+  const g = (hash >> 8) & 0xff;
+  const b = hash & 0xff;
+  const toHex = (v: number) => ('0' + (v & 0xff).toString(16)).slice(-2);
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+// Convert hex to rgba string
+const hexToRgba = (hex: string, alpha = 1) => {
+  try {
+    const clean = expandShortHex(hex).replace('#', '');
+    const num = parseInt(clean, 16);
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch (e) {
+    return `rgba(0,0,0,${alpha})`;
+  }
+};
+
+// Adjust luminance of hex by amount (-1..1)
+const adjustColorLuminance = (hex: string, amount: number) => {
+  try {
+    const hsl = hexToHsl(hex);
+    if (!hsl) return hex;
+    const l = Math.max(0, Math.min(1, hsl.l + amount));
+    return hslToHex({ h: hsl.h, s: hsl.s, l });
+  } catch (e) {
+    return hex;
+  }
+};
+
+// Simple centered wrap text helper
+const wrapTextCenter = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
+  const words = String(text).split(' ');
+  const lines: string[] = [];
+  let current = words[0] || '';
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(current + ' ' + word).width;
+    if (width < maxWidth) {
+      current += ' ' + word;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+  if (current) lines.push(current);
+  const totalHeight = lines.length * lineHeight;
+  let startY = y - totalHeight / 2 + lineHeight / 2;
+  for (const line of lines) {
+    ctx.fillText(line, x, startY);
+    startY += lineHeight;
+  }
+};
+
+// Rounded rectangle helper: draws path and optionally fills/strokes
+const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill = true, stroke = true) => {
+  const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
 };
 
 // Helper: shift hue of a hex color by degrees (returns hex)
@@ -635,92 +793,4 @@ export const applyComponentsToImage = async (
     console.warn('Failed to apply components to image:', err);
     return imageUrl;
   }
-};
-
-// Expand short hex like #abc to #aabbcc
-const expandShortHex = (hex: string) => {
-  if (!hex) return '#000000';
-  const cleaned = hex.replace('#', '');
-  if (cleaned.length === 3) {
-    return '#' + cleaned.split('').map(c => c + c).join('');
-  }
-  return '#' + cleaned.padStart(6, '0');
-};
-
-// Deterministic color from string
-const stringToDeterministicHex = (s: string) => {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = s.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash;
-  }
-  const r = (hash >> 16) & 0xff;
-  const g = (hash >> 8) & 0xff;
-  const b = hash & 0xff;
-  const toHex = (v: number) => ('0' + (v & 0xff).toString(16)).slice(-2);
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
-
-// Convert hex to rgba string
-const hexToRgba = (hex: string, alpha = 1) => {
-  try {
-    const clean = expandShortHex(hex).replace('#', '');
-    const num = parseInt(clean, 16);
-    const r = (num >> 16) & 255;
-    const g = (num >> 8) & 255;
-    const b = num & 255;
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  } catch (e) {
-    return `rgba(0,0,0,${alpha})`;
-  }
-};
-
-// Adjust luminance of hex by amount (-1..1)
-const adjustColorLuminance = (hex: string, amount: number) => {
-  try {
-    const hsl = hexToHsl(hex);
-    if (!hsl) return hex;
-    const l = Math.max(0, Math.min(1, hsl.l + amount));
-    return hslToHex({ h: hsl.h, s: hsl.s, l });
-  } catch (e) {
-    return hex;
-  }
-};
-
-// Simple centered wrap text helper
-const wrapTextCenter = (ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
-  const words = String(text).split(' ');
-  const lines: string[] = [];
-  let current = words[0] || '';
-  for (let i = 1; i < words.length; i++) {
-    const word = words[i];
-    const width = ctx.measureText(current + ' ' + word).width;
-    if (width < maxWidth) {
-      current += ' ' + word;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-  if (current) lines.push(current);
-  const totalHeight = lines.length * lineHeight;
-  let startY = y - totalHeight / 2 + lineHeight / 2;
-  for (const line of lines) {
-    ctx.fillText(line, x, startY);
-    startY += lineHeight;
-  }
-};
-
-// Rounded rectangle helper: draws path and optionally fills/strokes
-const roundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number, fill = true, stroke = true) => {
-  const radius = Math.max(0, Math.min(r, Math.min(w, h) / 2));
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.arcTo(x + w, y, x + w, y + h, radius);
-  ctx.arcTo(x + w, y + h, x, y + h, radius);
-  ctx.arcTo(x, y + h, x, y, radius);
-  ctx.arcTo(x, y, x + w, y, radius);
-  ctx.closePath();
-  if (fill) ctx.fill();
-  if (stroke) ctx.stroke();
 };

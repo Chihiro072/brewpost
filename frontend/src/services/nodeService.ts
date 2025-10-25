@@ -109,6 +109,9 @@ export async function updateNodeService(id: string, nodeData: Partial<ContentNod
       selectedImageUrl: nodeData.selectedImageUrl
     };
     
+    console.log('[nodeService] Sending PUT request to:', `/api/nodes/${id}`);
+    console.log('[nodeService] Request payload:', JSON.stringify(requestData, null, 2));
+    
     const response = await apiClient.put(`/api/nodes/${id}`, requestData);
     console.log('[nodeService] updateNodeService result:', response.data);
     

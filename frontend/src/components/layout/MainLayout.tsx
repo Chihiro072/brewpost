@@ -526,6 +526,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 onSaveNode={handleSaveNode}
                 onGenerate={(status) => {
                   console.log('Generate status:', status);
+                  // Handle preview mode
+                  if (status.startsWith('PREVIEW:')) {
+                    const imageUrl = status.replace('PREVIEW:', '');
+                    // Show image preview modal
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
+                    modal.innerHTML = `
+                      <div class="relative max-w-4xl max-h-[90vh] p-4">
+                        <img src="${imageUrl}" alt="Generated Image Preview" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
+                        <button class="absolute top-2 right-2 w-8 h-8 bg-black/70 hover:bg-black/90 text-white rounded-full flex items-center justify-center transition-colors" onclick="this.parentElement.parentElement.remove()">
+                          ×
+                        </button>
+                      </div>
+                    `;
+                    modal.onclick = (e) => {
+                      if (e.target === modal) modal.remove();
+                    };
+                    document.body.appendChild(modal);
+                    return;
+                  }
                   setIsGenerating(status);
                 }}
                 onAddComponent={(component) => {

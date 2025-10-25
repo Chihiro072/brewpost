@@ -7,6 +7,7 @@ namespace BrewPost.Core.Interfaces
         Task<bool> DeleteFileAsync(string s3Key);
         Task<string> GeneratePresignedUrlAsync(string s3Key, TimeSpan expiration);
         Task<bool> FileExistsAsync(string s3Key);
+        Task<Stream?> GetFileStreamAsync(string s3Key);
         string GenerateUniqueFileName(string originalFileName);
         bool IsValidFileType(string fileName, string[] allowedTypes);
         bool IsValidFileSize(long fileSize, long maxSizeInBytes);

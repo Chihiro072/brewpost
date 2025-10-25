@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 import { Calendar, Clock, Eye, Target, Zap, Send, Save, Sparkles, X, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import type { ContentNode } from '@/components/planning/PlanningPanel';
@@ -164,18 +164,43 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
       }
       
       if (data.ok && data.imageUrl) {
+        console.log('🎯 [NodeDetails] Image generation successful, starting template processing...');
+        console.log('🎯 [NodeDetails] Original image URL:', data.imageUrl);
+        
         // Check if template processing is actually needed
         const template = getTemplateSettings();
+        console.log('🎯 [NodeDetails] Template settings retrieved:', template);
+        
         const needsProcessing = template && (template.logoPreview || template.companyText);
+        console.log('🎯 [NodeDetails] Template processing needed?', needsProcessing, {
+          hasTemplate: !!template,
+          hasLogo: !!template?.logoPreview,
+          hasCompanyText: !!template?.companyText,
+          logoPreview: template?.logoPreview ? template.logoPreview.substring(0, 50) + '...' : 'none',
+          companyText: template?.companyText || 'none'
+        });
         
         // Only apply template processing if there's a logo or text to add
-        const processedImageUrl = needsProcessing ? await applyTemplateToImage(data.imageUrl) : data.imageUrl;
+        let processedImageUrl = data.imageUrl;
+        if (needsProcessing) {
+          console.log('🎯 [NodeDetails] Calling applyTemplateToImage...');
+          try {
+            processedImageUrl = await applyTemplateToImage(data.imageUrl);
+            console.log('🎯 [NodeDetails] Template processing completed successfully');
+          } catch (templateError) {
+            console.error('🎯 [NodeDetails] Template processing failed:', templateError);
+            processedImageUrl = data.imageUrl; // Fallback to original
+          }
+        } else {
+          console.log('🎯 [NodeDetails] Skipping template processing - no logo or company text configured');
+        }
         
-        console.log('Image processing result:', { 
+        console.log('🎯 [NodeDetails] Image processing result:', { 
           original: data.imageUrl, 
           processed: processedImageUrl.substring(0, 100) + '...', 
           needsProcessing,
-          isDataUrl: processedImageUrl.startsWith('data:')
+          isDataUrl: processedImageUrl.startsWith('data:'),
+          templateApplied: needsProcessing && processedImageUrl !== data.imageUrl
         });
         
         // Add new image to imageUrls array
@@ -186,6 +211,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           imageUrl: processedImageUrl // Keep for backward compatibility
         };
         
+        console.log('🎯 [NodeDetails] Saving updated node with new image...');
         if (onSaveNode) {
           onSaveNode(updatedNode);
         }
@@ -193,8 +219,8 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
         // Update local state immediately for UI feedback
         setEditedNode(updatedNode);
         
-        console.log('Image generated successfully:', processedImageUrl);
-        console.log('Total images:', updatedNode.imageUrls.length);
+        console.log('🎯 [NodeDetails] Image generated successfully:', processedImageUrl.substring(0, 100) + '...');
+        console.log('🎯 [NodeDetails] Total images:', updatedNode.imageUrls.length);
       }
     } catch (error) {
       console.error('Error generating image:', error);
@@ -533,6 +559,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                               </DialogTrigger>
                             </div>
                             <DialogContent className="max-w-4xl w-full p-0 bg-black/90">
+                              <DialogTitle className="sr-only">Full Size Image View</DialogTitle>
                               <div className="relative">
                                 <img 
                                   src={imageUrl} 

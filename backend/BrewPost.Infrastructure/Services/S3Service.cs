@@ -18,7 +18,7 @@ public class S3Service : IS3Service
         _s3Client = s3Client;
         _configuration = configuration;
         _logger = logger;
-        _bucketName = _configuration["AWS:S3BucketName"] ?? "brewpost-assets";
+        _bucketName = _configuration["S3_BUCKET"] ?? _configuration["AWS:S3BucketName"] ?? "brewpost-assets";
     }
 
     public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string contentType, string folder = "assets")
@@ -134,6 +134,31 @@ public class S3Service : IS3Service
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking if file exists: {S3Key}", s3Key);
+            throw;
+        }
+    }
+
+    public async Task<Stream?> GetFileStreamAsync(string s3Key)
+    {
+        try
+        {
+            var request = new GetObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = s3Key
+            };
+
+            var response = await _s3Client.GetObjectAsync(request);
+            return response.ResponseStream;
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogWarning("File not found in S3: {S3Key}", s3Key);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting file stream from S3: {S3Key}", s3Key);
             throw;
         }
     }

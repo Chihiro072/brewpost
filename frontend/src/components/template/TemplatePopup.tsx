@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Check, Palette } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface TemplatePopupProps {
   isOpen: boolean;
@@ -89,8 +90,29 @@ export const TemplatePopup: React.FC<TemplatePopupProps> = ({ isOpen, onClose })
   ];
 
   const handleSave = () => {
-    // Handle template save logic here
-    console.log('Template saved:', { logoFile, selectedPosition, selectedColor });
+    // Template data is already being saved to localStorage via useEffect
+    // Just show success message and close
+    console.log('Template saved:', { 
+      logoPreview, 
+      selectedPosition, 
+      selectedColor: useColorTemplate ? selectedColor : 'transparent',
+      companyText,
+      textColor,
+      textSize,
+      textPosition,
+      textAlignment
+    });
+    
+    // Show success message with toast
+    toast.success('Template saved successfully! Your template will be applied to all future generated images.', {
+      duration: 4000,
+      style: {
+        background: 'rgba(3, 98, 76, 0.95)',
+        color: '#00DF81',
+        border: '1px solid rgba(44, 194, 149, 0.3)',
+      },
+    });
+    
     onClose();
   };
 

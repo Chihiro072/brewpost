@@ -768,6 +768,20 @@ Return only the refined prompt, nothing else.`
                               const failed = nodeResults.filter(r => r.status === 'rejected').length;
                               console.log(`🎯 Node creation complete: ${successful} created, ${failed} failed`);
                               
+                              // Update UI nodes with the new backend IDs
+                              if (idMapping.size > 0 && typeof setPlanningNodes === 'function') {
+                                const updatedNodes = contentNodes.map(node => {
+                                  const newId = idMapping.get(node.id);
+                                  if (newId) {
+                                    console.log('🔄 Updating UI node ID:', node.id, '->', newId);
+                                    return { ...node, id: newId };
+                                  }
+                                  return node;
+                                });
+                                setPlanningNodes(updatedNodes);
+                                console.log('✅ UI updated with backend IDs');
+                              }
+                              
                               // Create edges using the new IDs
                               console.log('🔗 Creating connections with mapped IDs...');
                               const edgePromises = [];

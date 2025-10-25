@@ -3246,11 +3246,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
+      "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\brewpost\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
       "projectName": "BrewPost.Infrastructure",
-      "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
+      "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\brewpost\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\obj\\",
+      "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\brewpost\\brewpost\\backend\\BrewPost.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

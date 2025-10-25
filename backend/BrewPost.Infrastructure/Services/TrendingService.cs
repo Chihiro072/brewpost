@@ -75,16 +75,21 @@ namespace BrewPost.Infrastructure.Services
 
         public async Task<List<BrewPost.Core.DTOs.GeneratedComponentDto>> GetTrendingComponentsAsync(string? country = null)
         {
+            _logger.LogInformation("GetTrendingComponentsAsync called with country: {Country}", country ?? "worldwide");
+            
             var hashtags = await GetTrendingHashtagsAsync(country);
+            _logger.LogInformation("Retrieved {Count} hashtags from GetTrendingHashtagsAsync", hashtags.Count);
+            
             var components = new List<BrewPost.Core.DTOs.GeneratedComponentDto>();
 
             // Convert top hashtags to components
             var topHashtags = hashtags.Take(6).ToList();
+            _logger.LogInformation("Processing top {Count} hashtags for component conversion", topHashtags.Count);
             
             for (int i = 0; i < topHashtags.Count; i++)
             {
                 var hashtag = topHashtags[i];
-                components.Add(new BrewPost.Core.DTOs.GeneratedComponentDto
+                var component = new BrewPost.Core.DTOs.GeneratedComponentDto
                 {
                     Id = Guid.NewGuid().ToString(),
                     Type = "online_trend",
@@ -96,13 +101,17 @@ namespace BrewPost.Infrastructure.Services
                     RelevanceScore = hashtag.RelevanceScore,
                     Impact = hashtag.Position <= 3 ? "high" : hashtag.Position <= 6 ? "medium" : "low",
                     Color = GetTrendingColor(i)
-                });
+                };
+                
+                components.Add(component);
+                _logger.LogInformation("Created trending component - ID: {Id}, Title: {Title}, RelevanceScore: {Score}", 
+                    component.Id, component.Title, component.RelevanceScore);
             }
 
             // Add general trending insights
             if (hashtags.Any())
             {
-                components.Add(new BrewPost.Core.DTOs.GeneratedComponentDto
+                var insightsComponent = new BrewPost.Core.DTOs.GeneratedComponentDto
                 {
                     Id = Guid.NewGuid().ToString(),
                     Type = "online_trend",
@@ -114,9 +123,17 @@ namespace BrewPost.Infrastructure.Services
                     RelevanceScore = 0.75,
                     Impact = "medium",
                     Color = "#8B5CF6"
-                });
+                };
+                
+                components.Add(insightsComponent);
+                _logger.LogInformation("Added trending insights component - ID: {Id}", insightsComponent.Id);
+            }
+            else
+            {
+                _logger.LogWarning("No hashtags available, cannot create trending insights component");
             }
 
+            _logger.LogInformation("GetTrendingComponentsAsync returning {Count} total components", components.Count);
             return components;
         }
 

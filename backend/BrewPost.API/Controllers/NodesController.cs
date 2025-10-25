@@ -159,6 +159,8 @@ public class NodesController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("GetNode called with ID: {Id}", id);
+            
             var userId = GetCurrentUserId();
             if (userId == null)
             {
@@ -213,18 +215,27 @@ public class NodesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateNode(Guid id, [FromBody] UpdateNodeRequest request)
+    public async Task<IActionResult> UpdateNode(string id, [FromBody] UpdateNodeRequest request)
     {
         try
         {
+            _logger.LogInformation("UpdateNode called with ID: {Id}, Request: {@Request}", id, request);
+            
             var userId = GetCurrentUserId();
             if (userId == null)
             {
                 return Unauthorized(new { error = "User not authenticated" });
             }
 
+            // Try to parse the ID as Guid
+            if (!Guid.TryParse(id, out Guid nodeId))
+            {
+                _logger.LogWarning("Invalid node ID format: {Id}", id);
+                return BadRequest(new { error = "Invalid node ID format" });
+            }
+
             var node = await _context.Nodes
-                .Where(n => n.Id == id && n.UserId == userId)
+                .Where(n => n.Id == nodeId && n.UserId == userId)
                 .FirstOrDefaultAsync();
 
             if (node == null)

@@ -88,6 +88,13 @@ public class AIController : ControllerBase
             var trendingComponents = await _trendingService.GetTrendingComponentsAsync();
             _logger.LogInformation("Retrieved {Count} trending components from TrendingService", trendingComponents.Count);
             
+            // Log each trending component for debugging
+            foreach (var trendingComp in trendingComponents)
+            {
+                _logger.LogInformation("Trending Component - ID: {Id}, Type: {Type}, Title: {Title}, Keywords: {Keywords}", 
+                    trendingComp.Id, trendingComp.Type, trendingComp.Title, string.Join(", ", trendingComp.Keywords ?? new string[0]));
+            }
+
             // Generate contextual mock components once for efficiency (excluding online trends)
             var mockComponents = GenerateContextualMockComponents(node);
             var mockCampaignType = mockComponents.Where(c => c.Type == "campaign_type").ToList();
@@ -102,8 +109,12 @@ public class AIController : ControllerBase
             // For online trends, only add real trending data if it's semantically relevant
             if (onlineTrendCount == 0 && trendingComponents.Any())
             {
+                _logger.LogInformation("No AI-generated online trend components found. Checking {Count} trending components for relevance", trendingComponents.Count);
+                
                 // Filter trending components for semantic relevance to the node content
                 var relevantTrends = FilterRelevantTrendingComponents(trendingComponents, node);
+                
+                _logger.LogInformation("Found {Count} relevant trending components after filtering", relevantTrends.Count);
                 
                 if (relevantTrends.Any())
                 {
@@ -124,11 +135,27 @@ public class AIController : ControllerBase
                     components.AddRange(trendsToAdd);
                     componentsAdded += trendsToAdd.Count;
                     _logger.LogInformation("Added {Count} semantically relevant trending components", trendsToAdd.Count);
+                    
+                    // Log each added trending component
+                    foreach (var addedTrend in trendsToAdd)
+                    {
+                        _logger.LogInformation("Added Trending Component - ID: {Id}, Title: {Title}, RelevanceScore: {Score}", 
+                            addedTrend.Id, addedTrend.Title, addedTrend.RelevanceScore);
+                    }
                 }
                 else
                 {
-                    _logger.LogInformation("No semantically relevant trending components found for node content");
+                    _logger.LogWarning("No semantically relevant trending components found for node content. Node: Title='{Title}', Content='{Content}', ImagePrompt='{ImagePrompt}'", 
+                        node.Title, node.Content?.Substring(0, Math.Min(100, node.Content?.Length ?? 0)), node.ImagePrompt?.Substring(0, Math.Min(50, node.ImagePrompt?.Length ?? 0)));
                 }
+            }
+            else if (onlineTrendCount > 0)
+            {
+                _logger.LogInformation("AI already generated {Count} online trend components, skipping trending service components", onlineTrendCount);
+            }
+            else
+            {
+                _logger.LogWarning("No trending components available from TrendingService");
             }
             
             // Only add campaign and promotion components if AI didn't generate any
@@ -171,7 +198,16 @@ public class AIController : ControllerBase
     {
         var nodeJson = System.Text.Json.JsonSerializer.Serialize(node);
         
-        return $@"You are BrewPost assistant. Given the following node (title, content, postType, type, connections), generate an array of 8-18 components relevant for planning and creative execution. Return ONLY valid JSON (a single JSON array). Each component must be an object with at least these fields: id (unique short string), type (one of: local_data, online_trend, campaign_type, creative_asset), title (short title), name (short identifier), description (1-2 sentence description), category (human-readable category), keywords (array of short keywords), relevanceScore (0-100 number), impact (low|medium|high), color (hex or color name). Base suggestions on the node context. Node: {nodeJson}.";
+        return $@"You are BrewPost assistant. Given the following node (title, content, postType, type, connections), generate an array of 8-18 components relevant for planning and creative execution. Return ONLY valid JSON (a single JSON array). Each component must be an object with at least these fields: id (unique short string), type (one of: online_trend, campaign_type, promotion_type), title (short title), name (short identifier), description (1-2 sentence description), category (human-readable category), keywords (array of short keywords), relevanceScore (0-100 number), impact (low|medium|high), color (hex or color name). 
+
+IMPORTANT: You MUST include components of ALL THREE types:
+- online_trend: MUST be specifically related to the node's topic/content. Generate trending hashtags, viral patterns, and social media trends that are directly relevant to what the node is about. For example, if the node is about chocolate cake, generate trends like chocolate dessert trends, baking viral content, cake decoration patterns, etc. DO NOT generate generic viral content patterns.
+- campaign_type: Marketing campaign strategies, brand awareness approaches, content themes that relate to the node's subject matter
+- promotion_type: Discount offers, special deals, promotional strategies, sales incentives that make sense for the node's topic
+
+CRITICAL: All online_trend components MUST be contextually relevant to the node's specific topic, title, and content. Analyze what the node is actually about and generate trending data that relates to that specific subject matter.
+
+Base suggestions on the node context. Node: {nodeJson}.";
     }
     
     private (string KeyThemes, string VisualElements, string AudienceIndicators) AnalyzeNodeContent(ContentNodeDto node)

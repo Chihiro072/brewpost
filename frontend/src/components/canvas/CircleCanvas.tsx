@@ -7,6 +7,8 @@ import { Minus, Sparkles } from "lucide-react"
 import { ComponentSidebar } from "./ComponentSidebar"
 import { enhanceImagePromptWithTemplate, applyTemplateToImage, applyComponentsToImage, getTemplateSettings } from '@/utils/templateUtils'
 import { useState, useRef, useEffect } from 'react'
+import { nodeService } from '@/services/nodeService'
+import { toast } from 'sonner'
 
 interface SelectedComponent {
   id: string
@@ -71,6 +73,14 @@ export function CircleCanvas({
 }: CircleCanvasProps) {
   // Use props instead of local state for selectedComponents
   const selectedComponents = propSelectedComponents;
+
+  // State for promo positioning
+  const [promoPos, setPromoPos] = useState<{ x: number; y: number } | null>(null);
+  const [isPlacingPromo, setIsPlacingPromo] = useState(false);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  
+  // State for image generation
+  const [isGeneratingLocal, setIsGenerating] = useState(false);
 
   const handleAddComponent = (component: Component) => {
     onAddComponent(component);
@@ -217,7 +227,23 @@ export function CircleCanvas({
           imageUrls: [...existingImages, processedImageUrl],
           imageUrl: processedImageUrl // Keep for backward compatibility
         };
-        onSaveNode(updatedNode);
+        
+        // Check if this is a temporary planner ID (starts with 'planner-')
+        const isTemporaryId = selectedNode.id.startsWith('planner-');
+        console.log('[CircleCanvas] Is temporary ID in handleGenerateFromNode:', isTemporaryId);
+        
+        if (isTemporaryId) {
+          console.warn('[CircleCanvas] ⚠️ Cannot update node with temporary ID:', selectedNode.id);
+          console.warn('[CircleCanvas] This node needs to be created in the backend first');
+          // Still update the local state for UI purposes - this is important for the left panel to show the image
+          console.log('[CircleCanvas] Updating local state for temporary ID');
+          onSaveNode(updatedNode);
+          console.log('[CircleCanvas] Local state updated for temporary ID');
+        } else {
+          // This is a proper GUID, safe to update
+          console.log('[CircleCanvas] About to call onSaveNode with proper GUID:', selectedNode.id);
+          onSaveNode(updatedNode);
+        }
 
         console.log('Total images after canvas generation:', updatedNode.imageUrls.length);
       } else {
@@ -231,71 +257,85 @@ export function CircleCanvas({
   };
 
   const handleGenerateImage = async () => {
-    // If we have a selected node, generate from node and include selected components
-    if (selectedNode && (selectedNode.imagePrompt || selectedNode.title || selectedNode.content || selectedComponents.length > 0)) {
-      return handleGenerateFromNode(selectedComponents);
-    }
+    console.log('[CircleCanvas] Starting image generation process');
     
-    console.log('🔥 Generate button clicked!');
-    console.log('📊 Selected components:', selectedComponents);
-    console.log('🎯 Components length:', selectedComponents.length);
-    
-    if (selectedComponents.length === 0) {
-      console.log('❌ No components selected, stopping generation');
+    if (!selectedComponents.length) {
+      console.warn('[CircleCanvas] No components selected for image generation');
+      toast.error('Please select at least one component to generate an image');
       return;
     }
 
-    console.log('✅ Starting generation process...');
-    // Start generating state
-    onGenerate("GENERATING")
-    
+    setIsGenerating(true);
     try {
-      // Create prompt from selected components
-      const componentNames = selectedComponents.map(c => c.name).join(', ');
-      const prompt = `Create a professional social media promotional image incorporating these elements: ${componentNames}. Modern design, vibrant colors, social media ready, high quality`;
+      console.log('[CircleCanvas] Selected components:', selectedComponents);
       
-      console.log('🎨 Starting Nova Canvas image generation with prompt:', prompt);
+      // Generate image from selected components
+      const imageUrl = await handleGenerateFromNode();
+      console.log('[CircleCanvas] Generated image URL:', imageUrl);
       
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
-      
-      const response = await fetch(`${BACKEND_URL}/api/generate-image-nova`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: prompt
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate image');
+      if (imageUrl) {
+        console.log('[CircleCanvas] Applying template overlay to generated image');
+        
+        // Apply template overlay
+        const templateImageUrl = await applyTemplateToImage(imageUrl);
+        console.log('[CircleCanvas] Template overlay result:', templateImageUrl);
+        
+        console.log('[CircleCanvas] Applying component overlays to image');
+        
+        // Apply component overlays (promotion badges, etc.)
+        const finalImageUrl = await applyComponentsToImage(templateImageUrl, selectedComponents);
+        console.log('[CircleCanvas] Final processed image URL:', finalImageUrl);
+        
+        // Update the node with the final processed image
+        if (selectedNode) {
+          console.log('[CircleCanvas] Updating node with final image URL');
+          console.log('[CircleCanvas] Selected node ID:', selectedNode.id);
+          console.log('[CircleCanvas] Final image URL length:', finalImageUrl.length);
+          console.log('[CircleCanvas] Final image URL preview:', finalImageUrl.substring(0, 100) + '...');
+          
+          // Check if this is a temporary planner ID (starts with 'planner-')
+          const isTemporaryId = selectedNode.id.startsWith('planner-');
+          console.log('[CircleCanvas] Is temporary ID:', isTemporaryId);
+          
+          if (isTemporaryId) {
+            console.warn('[CircleCanvas] ⚠️ Cannot update node with temporary ID:', selectedNode.id);
+            console.warn('[CircleCanvas] This node needs to be created in the backend first');
+            toast.warning('Node needs to be saved to backend before updating with generated image');
+            
+            // Still update the local state for UI purposes
+            const updatedNode = {
+              ...selectedNode,
+              imageUrls: [...(selectedNode.imageUrls || []), finalImageUrl],
+              imageUrl: finalImageUrl
+            };
+            
+            // Call onSaveNode but it won't persist to backend due to temporary ID
+            onSaveNode(updatedNode);
+            toast.success('Image generated successfully! (Local update only)');
+          } else {
+            // This is a proper GUID, safe to update
+            const updatedNode = {
+              ...selectedNode,
+              imageUrls: [...(selectedNode.imageUrls || []), finalImageUrl],
+              imageUrl: finalImageUrl
+            };
+            
+            console.log('[CircleCanvas] About to call onSaveNode with proper GUID:', updatedNode.id);
+            onSaveNode(updatedNode);
+            console.log('[CircleCanvas] Node updated successfully with final image');
+            
+            toast.success('Image generated and saved successfully!');
+          }
+        }
       }
-
-      if (data.ok && data.imageUrl) {
-        console.log('✅ Nova Canvas image generation completed successfully:', data.imageUrl);
-        onGenerate(data.imageUrl); // Pass the image URL to show in canvas
-      } else {
-        throw new Error('No image URL returned from Nova Canvas');
-      }
-      
     } catch (error) {
-      console.error('Error generating image:', error)
-      // Reset generating state on error
-      onGenerate("ERROR")
-      // Reset to normal state after 3 seconds
-      setTimeout(() => onGenerate("RESET"), 3000)
+      console.error('[CircleCanvas] Error in image generation process:', error);
+      toast.error('Failed to generate image. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-  }
+  };
 
-  // Drag-after-generation state for promo placement
-  const [isPlacingPromo, setIsPlacingPromo] = useState(false);
-  const [promoPos, setPromoPos] = useState<{ x: number; y: number } | null>(null); // normalized 0..1
-  const canvasRef = useRef<HTMLDivElement | null>(null);
-
-  // Start placement: initialize from existing selectedNode component if present
   const startPromoPlacement = () => {
     if (!selectedNode) return;
     const promoComp = (selectedComponents || []).find(c => /%|off|discount|promo/i.test(String(c.name)) || (c.category && c.category.toLowerCase().includes('promotion')));

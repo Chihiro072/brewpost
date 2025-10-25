@@ -443,4 +443,50 @@ public class AssetsController : ControllerBase
         }
         return userId;
     }
+
+    [HttpGet("proxy/{*s3Key}")]
+    [AllowAnonymous] // Allow anonymous access for image proxy
+    public async Task<IActionResult> ProxyS3Image(string s3Key)
+    {
+        try
+        {
+            _logger.LogInformation("Proxying S3 image: {S3Key}", s3Key);
+
+            // Get the image from S3
+            var imageStream = await _s3Service.GetFileStreamAsync(s3Key);
+            if (imageStream == null)
+            {
+                return NotFound(new { message = "Image not found" });
+            }
+
+            // Determine content type based on file extension
+            var contentType = GetContentTypeFromExtension(s3Key);
+
+            // Set CORS headers
+            Response.Headers["Access-Control-Allow-Origin"] = "*";
+            Response.Headers["Access-Control-Allow-Methods"] = "GET";
+            Response.Headers["Access-Control-Allow-Headers"] = "Content-Type";
+
+            return File(imageStream, contentType);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error proxying S3 image: {S3Key}", s3Key);
+            return StatusCode(500, new { message = "Error loading image" });
+        }
+    }
+
+    private string GetContentTypeFromExtension(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+            _ => "application/octet-stream"
+        };
+    }
 }
