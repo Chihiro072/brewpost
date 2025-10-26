@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BrewPost.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9591825dc03673bc3035e85a3088503a6262f2b8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+62cb8717942e0763c831e7358376d27e56883b21")]
 [assembly: System.Reflection.AssemblyProductAttribute("BrewPost.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BrewPost.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

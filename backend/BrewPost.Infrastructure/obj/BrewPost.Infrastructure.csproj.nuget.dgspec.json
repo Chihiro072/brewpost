@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {}
+    "C:\\DDAC3\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {}
   },
   "projects": {
-    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
+    "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
+        "projectUniqueName": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
         "projectName": "BrewPost.Core",
-        "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\obj\\",
+        "projectPath": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj",
+        "packagesPath": "C:\\Users\\cklim\\.nuget\\packages\\",
+        "outputPath": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\cklim\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -69,20 +69,20 @@
         }
       }
     },
-    "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {
+    "C:\\DDAC3\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
+        "projectUniqueName": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
         "projectName": "BrewPost.Infrastructure",
-        "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Infrastructure\\obj\\",
+        "projectPath": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Infrastructure\\BrewPost.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\cklim\\.nuget\\packages\\",
+        "outputPath": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\cklim\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -97,8 +97,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
-                "projectPath": "G:\\APU\\DEGREEE\\Y3 SEM3 LasstSEM\\DDAC\\ASSIGNMENT\\BREWPOST\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj"
+              "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj": {
+                "projectPath": "C:\\DDAC3\\brewpost\\backend\\BrewPost.Core\\BrewPost.Core.csproj"
               }
             }
           }

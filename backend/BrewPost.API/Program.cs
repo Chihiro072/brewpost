@@ -9,8 +9,8 @@ using Amazon.S3;
 using Amazon.Extensions.NETCore.Setup;
 using DotNetEnv;
 
-// Load .env file from root (go up 2 levels from BrewPost.API)
-var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env");
+// Load .env file from backend directory (go up 1 level from BrewPost.API)
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
 if (File.Exists(envPath))
 {
     Env.Load(envPath);
