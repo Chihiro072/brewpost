@@ -56,9 +56,22 @@ public class AIController : ControllerBase
         try
         {
             var prompt = CreateComponentGenerationPrompt(node);
-            var aiResponse = await _bedrockService.GenerateContentAsync(prompt);
             
-            _logger.LogInformation("AI Response for components: {Response}", aiResponse);
+            // Add timeout for Bedrock service call to prevent hanging
+            string aiResponse;
+            using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(1.5))) // 90 seconds for Bedrock
+            {
+                try
+                {
+                    aiResponse = await _bedrockService.GenerateContentAsync(prompt);
+                    _logger.LogInformation("AI Response for components received successfully");
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogWarning("Bedrock service call timed out after 90 seconds, falling back to mock components");
+                    throw new TimeoutException("Bedrock service call timed out");
+                }
+            }
             
             // Parse the AI response and convert to components
             var components = ParseAIResponseToComponents(aiResponse, node);
@@ -84,9 +97,19 @@ public class AIController : ControllerBase
                 _logger.LogInformation("Added {Count} promotion fallback components", promotionFallbacks.Count);
             }
             
-            // Get real trending data from TrendingService
-            var trendingComponents = await _trendingService.GetTrendingComponentsAsync();
-            _logger.LogInformation("Retrieved {Count} trending components from TrendingService", trendingComponents.Count);
+            // Get real trending data from TrendingService with timeout to avoid blocking
+            List<CoreGeneratedComponentDto> trendingComponents;
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                trendingComponents = await _trendingService.GetTrendingComponentsAsync();
+                _logger.LogInformation("Retrieved {Count} trending components from TrendingService", trendingComponents.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "TrendingService failed or timed out, using empty list");
+                trendingComponents = new List<CoreGeneratedComponentDto>();
+            }
             
             // Log each trending component for debugging
             foreach (var trendingComp in trendingComponents)

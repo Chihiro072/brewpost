@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // Increased to 60 seconds for AI operations
+  timeout: 180000, // Increased to 3 minutes for AI operations (Bedrock can be slow)
   headers: {
     'Content-Type': 'application/json',
   },

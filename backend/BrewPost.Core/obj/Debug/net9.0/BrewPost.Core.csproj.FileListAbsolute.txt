@@ -46,3 +46,15 @@ C:\DDAC3\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
 C:\DDAC3\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
 C:\DDAC3\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
 C:\DDAC3\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.deps.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\bin\Debug\net9.0\BrewPost.Core.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.GeneratedMSBuildEditorConfig.editorconfig
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfoInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.AssemblyInfo.cs
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.csproj.CoreCompileInputs.cache
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.sourcelink.json
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\refint\BrewPost.Core.dll
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\BrewPost.Core.pdb
+G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Core\obj\Debug\net9.0\ref\BrewPost.Core.dll
