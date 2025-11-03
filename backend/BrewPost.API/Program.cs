@@ -129,7 +129,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:8080", "http://localhost:8081") // React dev servers
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:8080", "http://localhost:8081") // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -138,24 +138,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed test data in development
-if (app.Environment.IsDevelopment())
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var context = scope.ServiceProvider.GetRequiredService<BrewPostDbContext>();
-        try
-        {
-            // Run async method synchronously in this context
-            BrewPost.API.TestData.SeedTestNodes.SeedAsync(context).Wait();
-            Console.WriteLine("✅ Test data seeded successfully");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠️ Failed to seed test data: {ex.Message}");
-        }
-    }
-}
+// Test data seeding removed
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

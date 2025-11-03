@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Forward the request to the backend API
-    const BACKEND_URL = process.env.VITE_API_BASE_URL || 'http://localhost:5044';
+    const BACKEND_URL = process.env.VITE_API_BASE_URL || 'http://localhost:5045';
     
     const response = await fetch(`${BACKEND_URL}/api/generate`, {
       method: 'POST',

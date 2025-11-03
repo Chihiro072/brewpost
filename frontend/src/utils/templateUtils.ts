@@ -250,7 +250,7 @@ const convertToProxyUrl = (imageUrl: string): string => {
       // Extract the S3 key from the URL
       const s3Key = url.pathname.substring(1); // Remove leading slash
       // Return proxy URL
-      const proxyUrl = `http://localhost:5044/api/assets/proxy/${s3Key}`;
+      const proxyUrl = `http://localhost:5045/api/assets/proxy/${s3Key}`;
       console.log('[templateUtils] Converting S3 URL to proxy:', imageUrl, '->', proxyUrl);
       return proxyUrl;
     } catch (error) {

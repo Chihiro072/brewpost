@@ -158,7 +158,7 @@ export function CircleCanvas({
     onGenerate("GENERATING");
 
     try {
-      const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL as string) ?? 'http://localhost:5044';
+      const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:5045';
 
       // Combine node-level image prompt with selected component names for richer guidance
       const compNames = (components || []).map(c => c.name).join(', ');

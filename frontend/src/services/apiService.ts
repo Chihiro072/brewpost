@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5045';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -110,11 +110,27 @@ export const authAPI = {
   },
 
   register: async (userData: { email: string; password: string; firstName?: string; lastName?: string }) => {
-    const response = await apiClient.post('/api/auth/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
+    console.log('🔗 Making registration API call to:', '/api/auth/register');
+    console.log('📤 Sending data:', userData);
+    
+    try {
+      const response = await apiClient.post('/api/auth/register', userData);
+      console.log('📥 Registration response:', response);
+      console.log('📥 Response data:', response.data);
+      console.log('📥 Response status:', response.status);
+      
+      if (response.data.token) {
+        console.log('🔑 Storing token in localStorage');
+        localStorage.setItem('authToken', response.data.token);
+      } else {
+        console.warn('⚠️ No token in response');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('💥 Registration API error:', error);
+      throw error;
     }
-    return response.data;
   },
 
   logout: async () => {

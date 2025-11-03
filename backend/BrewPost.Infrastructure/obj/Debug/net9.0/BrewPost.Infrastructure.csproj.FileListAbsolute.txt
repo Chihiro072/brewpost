@@ -88,3 +88,21 @@ G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Infrastr
 G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.pdb
 G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.genruntimeconfig.cache
 G:\APU\DEGREEE\Y3 SEM3 LasstSEM\DDAC\bruwpost\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\ref\BrewPost.Infrastructure.dll
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.deps.json
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.runtimeconfig.json
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.dll
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Infrastructure.pdb
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Core.dll
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\bin\Debug\net9.0\BrewPost.Core.pdb
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.csproj.AssemblyReference.cache
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.AssemblyInfoInputs.cache
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.AssemblyInfo.cs
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.csproj.CoreCompileInputs.cache
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.sourcelink.json
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.B6A10E06.Up2Date
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.dll
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\refint\BrewPost.Infrastructure.dll
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.pdb
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\BrewPost.Infrastructure.genruntimeconfig.cache
+C:\DDAC4\brewpost\backend\BrewPost.Infrastructure\obj\Debug\net9.0\ref\BrewPost.Infrastructure.dll

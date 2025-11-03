@@ -41,20 +41,59 @@ export const Register: React.FC = () => {
     }
 
     try {
-      await authAPI.register({
+      console.log('🚀 Starting registration process...');
+      const registrationData = {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName
-      });
+      };
+      console.log('📝 Registration data:', registrationData);
+      
+      const result = await authAPI.register(registrationData);
+      console.log('✅ Registration successful:', result);
+      
+      console.log('🔍 Checking auth status...');
       await checkAuth(); // Update auth context
+      console.log('✅ Auth check completed');
+      
+      console.log('🔄 Navigating to /app...');
       navigate('/app'); // Redirect to main app
     } catch (err: any) {
+      console.error('❌ Registration error:', err);
+      console.error('❌ Error response:', err.response);
+      console.error('❌ Error data:', err.response?.data);
+      console.error('❌ Error message:', err.response?.data?.message);
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Add a test function to window for debugging
+  React.useEffect(() => {
+    (window as any).testRegistration = async () => {
+      console.log('🧪 Testing registration directly...');
+      try {
+        const testData = {
+          email: 'test-debug@gmail.com',
+          password: 'password123',
+          firstName: 'Debug',
+          lastName: 'Test'
+        };
+        
+        console.log('📤 Calling authAPI.register with:', testData);
+        const result = await authAPI.register(testData);
+        console.log('✅ Registration test successful:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Registration test failed:', error);
+        throw error;
+      }
+    };
+    
+    console.log('🔧 Debug function added to window.testRegistration()');
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">

@@ -127,7 +127,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ selectedNode }) =>
       console.log('Loading analysis for node:', selectedNode.id);
       
       // Send node data directly to the new analyze-node endpoint
-      const nodeAnalysisResponse = await fetch(`http://localhost:5044/api/analysis/analyze-node`, {
+      const nodeAnalysisResponse = await fetch(`http://localhost:5045/api/analysis/analyze-node`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

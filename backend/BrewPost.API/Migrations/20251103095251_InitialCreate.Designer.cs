@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BrewPost.API.Migrations
 {
     [DbContext(typeof(BrewPostDbContext))]
-    [Migration("20251025100532_AddNodesTable")]
-    partial class AddNodesTable
+    [Migration("20251103095251_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
