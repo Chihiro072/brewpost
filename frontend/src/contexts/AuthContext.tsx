@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5045';
+  const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
 
   const checkAuth = async () => {
     try {
