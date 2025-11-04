@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   // Determine backend URL based on environment
   const isDevelopment = mode === 'development';
   const backendTarget = isDevelopment 
-    ? 'http://localhost:5045' 
+    ? 'http://localhost:5044' 
     : 'https://brewpost.duckdns.org';
 
   return {
