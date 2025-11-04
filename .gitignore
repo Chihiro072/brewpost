@@ -47,3 +47,13 @@ amplifytools.xcconfig
 
 # Amazon Q Memory Bank
 .amazonq/rules/memory-bank/
+
+# Ignore build artifacts
+**/bin/
+**/obj/
+
+# Binaries / pdb / logs
+*.dll
+*.pdb
+*.exe
+*.log
