@@ -1,5 +1,5 @@
 export const QUOTA_CONSTANTS = {
-  FREE_MESSAGES_PER_DAY: 5,
+  FREE_MESSAGES_PER_DAY: 540,
   RESET_HOUR: 0, // Reset at midnight
 };
 

@@ -961,3 +961,4 @@ C:\DDAC4\brewpost\backend\BrewPost.API\obj\Debug\net9.0\refint\BrewPost.API.dll
 C:\DDAC4\brewpost\backend\BrewPost.API\obj\Debug\net9.0\BrewPost.API.pdb
 C:\DDAC4\brewpost\backend\BrewPost.API\obj\Debug\net9.0\BrewPost.API.genruntimeconfig.cache
 C:\DDAC4\brewpost\backend\BrewPost.API\obj\Debug\net9.0\ref\BrewPost.API.dll
+C:\Users\Bryan\Downloads\Hackathon\brewpost v2\brewpost\backend\BrewPost.API\bin\Debug\net9.0\HtmlAgilityPack.dll

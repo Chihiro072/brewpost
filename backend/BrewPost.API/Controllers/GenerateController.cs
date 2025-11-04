@@ -81,12 +81,17 @@ public class GenerateController : ControllerBase
                 try
                 {
                     _logger.LogInformation("Processing text generation request");
-                    
-                    // Build the enhanced prompt with BrewPost assistant instructions
+
+                    _logger.LogInformation("Processing text generation request (forwarding to Bedrock)");
+
+                    // Build the enhanced prompt for logging/debugging only. The Bedrock service
+                    // will build its own final payload; we pass the raw user text to the service.
                     string enhancedPrompt = BuildBrewPostPrompt(userText);
-                    
-                    var generatedText = await _bedrockService.GenerateContentAsync(enhancedPrompt);
-                    
+                    _logger.LogDebug("Enhanced prompt preview: {Preview}",
+                        enhancedPrompt?.Substring(0, Math.Min(800, enhancedPrompt.Length)));
+
+                    var generatedText = await _bedrockService.GenerateContentAsync(userText);
+
                     return Ok(new
                     {
                         ok = true,

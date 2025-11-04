@@ -480,6 +480,45 @@ Just tell me what you want to create content about!`;
   // NEW: helper to append a message safely
   const appendMessage = (m: Message) => setMessages((prev) => [...prev, m]);
 
+  // NEW: Prompt Refiner Function (updated implementation)
+  const refinePrompt2 = async () => {
+    if (!input.trim() || isRefining) return;
+
+    // NOTE: Refinement is treated as a lightweight client-side helper and does NOT
+    // consume the user's free message quota. We intentionally avoid incrementing
+    // quota here so users can polish prompts without losing messages.
+    setIsRefining(true);
+
+    try {
+      const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.\n\nUser prompt: "${input.trim()}"\n\nGuidelines:\n- Make it clear, specific and actionable for content creation.\n- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).\n- Keep the original intent and tone.`;
+
+      const apiUrl = '/generate';
+      const resp = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Prompt: prompt }),
+      });
+
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => '');
+        throw new Error(txt || 'Refine request failed');
+      }
+
+      const data: GenerateResponse = await resp.json();
+      const refined = (data.text || data.content || '').trim();
+      if (refined) {
+        setInput(refined);
+      } else {
+        setInput(`Enhanced: ${input.trim()} - with clearer objectives and a focus on engagement.`);
+      }
+    } catch (err: unknown) {
+      console.error('Prompt refinement failed:', err);
+      setInput(`Enhanced: ${input.trim()} - with strategic approach and clearer objectives.`);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
   // NEW: Prompt Refiner Function
   const refinePrompt = async () => {
     if (!input.trim() || isRefining) return;
@@ -525,7 +564,7 @@ Return only the refined prompt, nothing else.`,
         const refined = `Create engaging ${input.trim()} content with clear messaging, strong visual appeal, and strategic call-to-action that drives audience engagement and aligns with brand objectives.`;
         setInput(refined);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Prompt refinement failed:', err);
       // Fallback local refinement
       const refined = `Enhanced: ${input.trim()} - with strategic approach, clear objectives, and engaging presentation.`;
@@ -1211,7 +1250,7 @@ Return only the refined prompt, nothing else.`,
                 size="sm"
                 variant="ghost"
                 className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-primary/10 group"
-                onClick={refinePrompt}
+                onClick={refinePrompt2}
                 disabled={isRefining}
                 title="Refine your prompt with AI"
               >
