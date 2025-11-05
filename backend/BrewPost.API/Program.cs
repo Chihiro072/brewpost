@@ -40,10 +40,21 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Configure Entity Framework with PostgreSQL
-builder.Services.AddDbContext<BrewPostDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("BrewPost.API")));
+// Configure Entity Framework with conditional provider
+var useInMemory = (builder.Configuration["USE_INMEMORY_DB"] ?? "").Equals("true", StringComparison.OrdinalIgnoreCase);
+if (useInMemory)
+{
+    Console.WriteLine("🧪 Using InMemory database provider for development");
+    builder.Services.AddDbContext<BrewPostDbContext>(options =>
+        options.UseInMemoryDatabase("BrewPostDev"));
+}
+else
+{
+    Console.WriteLine("🐘 Using PostgreSQL provider");
+    builder.Services.AddDbContext<BrewPostDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+            b => b.MigrationsAssembly("BrewPost.API")));
+}
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -129,7 +140,14 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:8080", "http://localhost:8081") // React dev servers
+        policy.WithOrigins(
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002",
+            "http://localhost:5173",
+            "http://localhost:8080",
+            "http://localhost:8081"
+        ) // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -137,8 +155,6 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-
-// Test data seeding removed
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

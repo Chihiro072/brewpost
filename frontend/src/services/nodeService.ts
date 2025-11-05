@@ -22,7 +22,7 @@ export async function fetchNodes(): Promise<ContentNode[]> {
       day: node.day,
       postType: node.postType,
       focus: node.focus,
-      connections: node.connections || [],
+      connections: Array.isArray(node.connections) ? node.connections : [],
       position: { x: node.x || 0, y: node.y || 0 },
       postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
       postedTo: node.postedTo,
@@ -54,7 +54,8 @@ export async function createNodeService(nodeData: Partial<ContentNode>): Promise
       day: nodeData.day,
       postType: nodeData.postType,
       focus: nodeData.focus,
-      scheduledDate: nodeData.scheduledDate
+      scheduledDate: nodeData.scheduledDate,
+      connections: Array.isArray(nodeData.connections) ? nodeData.connections : [],
     };
     
     const response = await apiClient.post('/api/nodes', requestData);
@@ -75,7 +76,7 @@ export async function createNodeService(nodeData: Partial<ContentNode>): Promise
       day: node.day,
       postType: node.postType,
       focus: node.focus,
-      connections: node.connections || [],
+      connections: Array.isArray(node.connections) ? node.connections : [],
       position: { x: node.x || 0, y: node.y || 0 },
       postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
       postedTo: node.postedTo,
@@ -106,7 +107,8 @@ export async function updateNodeService(id: string, nodeData: Partial<ContentNod
       postType: nodeData.postType,
       focus: nodeData.focus,
       scheduledDate: nodeData.scheduledDate,
-      selectedImageUrl: nodeData.selectedImageUrl
+      selectedImageUrl: nodeData.selectedImageUrl,
+      connections: Array.isArray(nodeData.connections) ? nodeData.connections : undefined,
     };
     
     console.log('[nodeService] Sending PUT request to:', `/api/nodes/${id}`);
@@ -130,7 +132,7 @@ export async function updateNodeService(id: string, nodeData: Partial<ContentNod
       day: node.day,
       postType: node.postType,
       focus: node.focus,
-      connections: node.connections || [],
+      connections: Array.isArray(node.connections) ? node.connections : [],
       position: { x: node.x || 0, y: node.y || 0 },
       postedAt: node.postedAt ? new Date(node.postedAt) : undefined,
       postedTo: node.postedTo,
@@ -177,21 +179,47 @@ export type NodeDTO = {
   updatedAt: string;
 };
 
+// Helper to normalize backend response into NodeDTO
+const toNodeDTO = (node: any): NodeDTO => ({
+  id: node.id,
+  projectId: node.projectId ?? 'default',
+  nodeId: node.nodeId ?? node.id,
+  title: node.title,
+  description: node.description ?? node.content ?? null,
+  x: node.x ?? null,
+  y: node.y ?? null,
+  status: node.status ?? null,
+  contentId: node.contentId ?? node.id ?? null,
+  type: node.type ?? null,
+  day: node.day ?? null,
+  imageUrl: node.imageUrl ?? null,
+  imageUrls: node.imageUrls ?? null,
+  imagePrompt: node.imagePrompt ?? null,
+  scheduledDate: node.scheduledDate ?? null,
+  createdAt: node.createdAt ?? new Date().toISOString(),
+  updatedAt: node.updatedAt ?? new Date().toISOString(),
+});
+
+// Check if AppSync client is available
+function hasAppSync(): boolean {
+  try {
+    const apiKey = (import.meta.env.VITE_APPSYNC_API_KEY as string);
+    const clientAny = (typeof window !== 'undefined') ? (window as any).client : undefined;
+    return !!apiKey && !!clientAny && typeof clientAny.graphql === 'function';
+  } catch {
+    return false;
+  }
+}
 
 // NodeAPI object for compatibility with existing code - now using REST API
 export const NodeAPI = {
-  list: async () => {
+  list: async (projectId?: string) => {
     try {
       console.log('[NodeAPI] list called');
-      const nodes = await fetchNodes();
-      // Return in GraphQL-like format for compatibility
-      return {
-        data: {
-          listNodes: {
-            items: nodes
-          }
-        }
-      };
+      const resp = await apiClient.get('/api/nodes', { params: projectId ? { projectId } : {} });
+      const raw = Array.isArray(resp.data) ? resp.data : [];
+      const nodes: NodeDTO[] = raw.map(toNodeDTO);
+      return nodes;
     } catch (error) {
       console.error('[NodeAPI] Error in list:', error);
       throw error;
@@ -201,13 +229,25 @@ export const NodeAPI = {
   create: async (input: any) => {
     try {
       console.log('[NodeAPI] create called with:', input);
-      const node = await createNodeService(input);
-      // Return in GraphQL-like format for compatibility
-      return {
-        data: {
-          createNode: node
-        }
+      const requestData = {
+        title: input.title,
+        description: input.description ?? input.content,
+        type: input.type,
+        status: input.status,
+        x: input.x,
+        y: input.y,
+        imageUrl: input.imageUrl,
+        imageUrls: input.imageUrls,
+        imagePrompt: input.imagePrompt,
+        day: input.day,
+        postType: input.postType,
+        focus: input.focus,
+        scheduledDate: input.scheduledDate,
+        connections: Array.isArray(input.connections) ? input.connections : [],
       };
+      const resp = await apiClient.post('/api/nodes', requestData);
+      const node = toNodeDTO(resp.data);
+      return node;
     } catch (error) {
       console.error('[NodeAPI] Error in create:', error);
       throw error;
@@ -218,132 +258,93 @@ export const NodeAPI = {
     try {
       console.log('[NodeAPI] update called with:', input);
       const nodeId = input.id || input.nodeId;
-      const node = await updateNodeService(nodeId, input);
-      // Return in GraphQL-like format for compatibility
-      return {
-        data: {
-          updateNode: node
-        }
+      const requestData = {
+        title: input.title,
+        description: input.description ?? input.content,
+        type: input.type,
+        status: input.status,
+        x: input.x,
+        y: input.y,
+        imageUrl: input.imageUrl,
+        imageUrls: input.imageUrls,
+        imagePrompt: input.imagePrompt,
+        day: input.day,
+        postType: input.postType,
+        focus: input.focus,
+        scheduledDate: input.scheduledDate,
+        selectedImageUrl: input.selectedImageUrl,
+        connections: Array.isArray(input.connections) ? input.connections : undefined,
       };
+      const resp = await apiClient.put(`/api/nodes/${nodeId}`, requestData);
+      const node = toNodeDTO(resp.data);
+      return node;
     } catch (error) {
       console.error('[NodeAPI] Error in update:', error);
       throw error;
     }
   },
+
   async remove(projectId: string, nodeId: string) {
     try {
-      console.log('Deleting node:', { projectId, nodeId });
-      // Find the node first to get the database id
-      const filter = { projectId: { eq: projectId }, nodeId: { eq: nodeId } };
-  const listResponse = await (client.graphql as any)({ query: listNodes, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      const items = (listResponse as any).data.listNodes.items || [];
-      
-      if (items.length === 0) {
-        throw new Error(`Node not found: ${nodeId}`);
-      }
-      
-      const nodeToDelete = items[0];
-      const deleteInput = { id: nodeToDelete.id };
-      
-      const response = await (client.graphql as any)({ query: deleteNode, variables: { input: deleteInput }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      console.log('Delete node response:', response);
-      return response;
+      console.log('[NodeAPI] remove called for:', { projectId, nodeId });
+      await apiClient.delete(`/api/nodes/${nodeId}`);
+      return { ok: true };
     } catch (error) {
       console.error('Error deleting node:', error);
-      if (error && typeof error === 'object' && 'errors' in error) {
-        console.error('GraphQL errors:', (error as any).errors);
-        const errors = (error as any).errors;
-        let hasNullFieldErrors = false;
-        errors?.forEach((err: any, index: number) => {
-            console.error(`Error ${index + 1}:`, err.message);
-          if (err.locations) console.error('Locations:', err.locations);
-          if (err.path) console.error('Path:', err.path);
-          if (err.message && err.message.includes('Cannot return null for non-nullable type')) {
-            hasNullFieldErrors = true;
-          }
-        });
-        if (hasNullFieldErrors && errors.length <= 3) {
-          console.log('Deletion likely succeeded despite GraphQL schema issues');
-          return { data: { deleteNode: { projectId, nodeId } } };
-        }
-      }
       throw error;
     }
   },
 
-  // Edges
+  // Edge operations via REST: persist connections array on source node
   async listEdges(projectId: string) {
     try {
-      console.log('Fetching edges for project:', projectId);
-      const filter = { projectId: { eq: projectId } };
-      const response = await (client.graphql as any)({ query: listEdges, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      console.log('List edges response:', response);
-      const items = (response as any).data.listEdges.items || [];
-      console.log('List edges data:', items);
-      return items as { edgeId:string; from:string; to:string }[];
-    } catch (error) {
-      console.error('Error listing edges:', error);
-      throw error;
-    }
-  },
-  async createEdge(projectId: string, from: string, to: string, label?: string) {
-    try {
-      console.log('Creating edge:', { projectId, from, to, label });
-      
-      // Check if edge already exists in either direction
-      const filter = { 
-        projectId: { eq: projectId },
-        or: [
-          { and: [{ from: { eq: from } }, { to: { eq: to } }] },
-          { and: [{ from: { eq: to } }, { to: { eq: from } }] }
-        ]
-      };
-      
-  const existingResponse = await (client.graphql as any)({ query: listEdges, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      const existingEdges = (existingResponse as any).data.listEdges.items || [];
-      
-      if (existingEdges.length > 0) {
-        console.log('Edge already exists:', existingEdges[0]);
-        return existingEdges[0]; // Return existing edge
+      // Fetch nodes and convert connections to edges
+      const resp = await apiClient.get('/api/nodes', { params: projectId ? { projectId } : {} });
+      const nodes = Array.isArray(resp.data) ? resp.data : [];
+      const edges: { edgeId:string; from:string; to:string }[] = [];
+      for (const n of nodes) {
+        const from = n.id || n.nodeId;
+        const conns = Array.isArray(n.connections) ? n.connections : [];
+        for (const to of conns) {
+          edges.push({ edgeId: `${from}->${to}`, from, to });
+        }
       }
-      
-      const edgeInput = {
-        projectId,
-        edgeId: `edge-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        from,
-        to
-      };
-  const response = await (client.graphql as any)({ query: createEdge, variables: { input: edgeInput }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      console.log('Create edge response:', response);
-      return (response as any).data.createEdge;
+      return edges;
     } catch (error) {
-      console.error('Error creating edge:', error);
-      throw error;
+      console.error('[NodeAPI] Error listing edges via REST:', error);
+      return [] as { edgeId:string; from:string; to:string }[];
     }
   },
+
+  async createEdge(projectId: string, from: string, to: string) {
+    try {
+      // Get the source node, append connection, update
+      const sourceResp = await apiClient.get(`/api/nodes/${from}`);
+      const source = sourceResp.data;
+      const current = Array.isArray(source.connections) ? source.connections : [];
+      if (current.includes(to)) {
+        return { edgeId: `${from}->${to}`, from, to };
+      }
+      const updated = [...current, to];
+      await apiClient.put(`/api/nodes/${from}`, { connections: updated });
+      return { edgeId: `${from}->${to}`, from, to };
+    } catch (error) {
+      console.error('[NodeAPI] Error creating edge via REST:', error);
+      return { edgeId: `temp-${from}-${to}`, from, to };
+    }
+  },
+
   async deleteEdge(projectId: string, edgeId: string) {
     try {
-      console.log('Deleting edge:', { projectId, edgeId });
-      
-      // First find the edge to get the database ID
-      const filter = { projectId: { eq: projectId }, edgeId: { eq: edgeId } };
-  const listResponse = await (client.graphql as any)({ query: listEdges, variables: { filter }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      const items = (listResponse as any).data.listEdges.items || [];
-      
-      if (items.length === 0) {
-        console.warn(`Edge not found: ${edgeId}`);
-        return; // Edge doesn't exist, consider it deleted
-      }
-      
-      const edgeToDelete = items[0];
-      const deleteInput = { id: edgeToDelete.id };
-      
-  const response = await (client.graphql as any)({ query: deleteEdge, variables: { input: deleteInput }, authMode: 'apiKey', headers: { 'x-api-key': (import.meta.env.VITE_APPSYNC_API_KEY as string) } });
-      console.log('Delete edge response:', response);
-      return response;
+      const [from, to] = edgeId.includes('->') ? edgeId.split('->') : [undefined, undefined];
+      if (!from || !to) return;
+      const sourceResp = await apiClient.get(`/api/nodes/${from}`);
+      const source = sourceResp.data;
+      const current = Array.isArray(source.connections) ? source.connections : [];
+      const updated = current.filter((c: string) => c !== to);
+      await apiClient.put(`/api/nodes/${from}`, { connections: updated });
     } catch (error) {
-      console.error('Error deleting edge:', error);
-      throw error;
+      console.error('[NodeAPI] Error deleting edge via REST:', error);
     }
   },
 

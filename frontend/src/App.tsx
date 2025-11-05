@@ -30,8 +30,23 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/app" element={<Index />} />
-            <Route path="/calendar" element={<CalendarPage />} />
+            {/* Protect app routes that require authentication */}
+            <Route
+              path="/app"
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <ProtectedRoute>
+                  <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/Callback" element={<Callback />} />
             <Route path="/test-twitter" element={<TestTwitterPage />} />
             <Route path="/x-callback" element={<XCallbackPage />} />

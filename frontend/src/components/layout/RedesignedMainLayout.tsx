@@ -91,9 +91,37 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
     { id: 'promo-demo-3', type: 'promotion_type', title: '50% Off Second Item', description: 'Buy one, get 50% off the second item', relevanceScore: 86, category: 'Promotion Type', keywords: ['50% off','second item','discount'], impact: 'high', color: '#10B981' },
   ];
 
-  // Load nodes from AppSync
+  // Resolve per-user storage key for planner nodes
+  const getPlannerStorageKey = (): string => {
+    try {
+      const userId = window.localStorage.getItem('userId');
+      return `bp_planner_${userId || 'guest'}`;
+    } catch {
+      return 'bp_planner_guest';
+    }
+  };
+
+  // Load nodes with localStorage fallback, then merge fresh AppSync data
   useEffect(() => {
     const loadNodes = async () => {
+      // First: localStorage for fast refresh persistence
+      try {
+        const key = getPlannerStorageKey();
+        const raw = window.localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw) as any[];
+          const revived = parsed.map(n => ({
+            ...n,
+            scheduledDate: n.scheduledDate ? new Date(n.scheduledDate) : undefined,
+            postedAt: n.postedAt ? new Date(n.postedAt) : undefined,
+          }));
+          setNodes(revived);
+        }
+      } catch (e) {
+        console.warn('Planner: failed to load local nodes, continuing:', e);
+      }
+
+      // Then: fetch latest from AppSync and merge over local
       try {
         const { NodeAPI } = await import('@/services/nodeService');
         const apiNodes = await NodeAPI.list('demo-project-123');
@@ -126,9 +154,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         };
 
         const transformedNodes = apiNodes.map(x => {
-          // Use imageUrls directly from the API response, or fall back to imageUrl
           let imageUrls: string[] | undefined = undefined;
-          
           if (x.imageUrls && Array.isArray(x.imageUrls) && x.imageUrls.length > 0) {
             imageUrls = x.imageUrls;
           } else if (x.imageUrl) {
@@ -163,18 +189,48 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
             connections: edges.filter(edge => edge.from === node.id).map(edge => edge.to)
           }));
           
-          setNodes(nodesWithConnections);
+          // Merge server data over any local nodes to preserve recent local changes
+          setNodes(prev => {
+            const byId = new Map(prev.map(p => [p.id, p]));
+            const merged = nodesWithConnections.map(s => {
+              const local = byId.get(s.id);
+              if (!local) return s;
+              return {
+                ...s,
+                position: local.position || s.position,
+                status: local.status || s.status,
+                scheduledDate: local.scheduledDate ?? s.scheduledDate,
+                content: local.content ?? s.content,
+              };
+            });
+            return merged;
+          });
         } catch (edgeError) {
           console.warn('Failed to load edges:', edgeError);
           setNodes(transformedNodes);
         }
       } catch (error) {
-        console.warn('Failed to load from AppSync, starting with empty nodes:', error);
-        setNodes([]);
+        console.warn('Failed to load from AppSync, starting with local only:', error);
+        setNodes(prev => Array.isArray(prev) ? prev : []);
       }
     };
     loadNodes();
   }, []);
+
+  // Persist nodes to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const key = getPlannerStorageKey();
+      const toSave = nodes.map(n => ({
+        ...n,
+        scheduledDate: n.scheduledDate ? n.scheduledDate.toISOString() : undefined,
+        postedAt: n.postedAt ? n.postedAt.toISOString() : undefined,
+      }));
+      window.localStorage.setItem(key, JSON.stringify(toSave));
+    } catch (e) {
+      console.warn('Planner: failed to persist nodes:', e);
+    }
+  }, [nodes]);
 
   // Handle node saving
   const handleSaveNode = async (updatedNode: ContentNode) => {
@@ -304,10 +360,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
       }
     } catch (error) {
       console.error('Failed to create node:', error);
-      // Show user-friendly error message
-      alert('Failed to create node. Please try again.');
-      // Remove the node from state if creation failed
-      setNodes(prev => prev.filter(node => node.id !== newNode.id));
+      // Keep optimistic node so you can still see it and edit/move it
+      // Mark it as draft and unsynced; user can retry later from UI
+      setNodes(prev => prev.map(node => node.id === newNode.id ? { ...node, status: 'draft' } : node));
+      alert('Network error creating node. The node is kept locally; you can continue editing and retry later.');
     }
     
     setShowAddModal(false);
@@ -446,6 +502,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
   const canvasComponents = aiLoading ? [] : finalGeneratedComponents;
 
   const handleLogout = () => {
+    try {
+      const userId = window.localStorage.getItem('userId') || 'guest';
+      window.localStorage.removeItem(`bp_chat_${userId}`);
+      window.localStorage.removeItem(`bp_planner_${userId}`);
+      window.localStorage.removeItem('auth_tokens');
+    } catch {}
     navigate('/');
   };
 

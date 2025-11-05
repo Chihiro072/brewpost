@@ -43,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (response.ok) {
         const data = await response.json();
-        setIsAuthenticated(data.authenticated || true);
+        setIsAuthenticated(!!data.authenticated);
       } else {
         // Token might be invalid, remove it
         localStorage.removeItem('authToken');
@@ -58,13 +58,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = () => {
-    window.location.href = `${BACKEND_URL}/api/auth/login`;
+    // Navigate to local login page instead of backend route
+    window.location.href = '/login';
   };
 
   const logout = () => {
     localStorage.removeItem('authToken');
     setIsAuthenticated(false);
-    window.location.href = `${BACKEND_URL}/api/auth/logout`;
+    // Hit backend logout route and then return to login
+    fetch(`${BACKEND_URL}/api/auth/logout`, { method: 'POST' }).catch(() => {});
+    window.location.href = '/login';
   };
 
   useEffect(() => {

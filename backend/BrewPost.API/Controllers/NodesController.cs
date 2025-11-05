@@ -116,7 +116,7 @@ public class NodesController : ControllerBase
                 PostType = request.PostType,
                 Focus = request.Focus,
                 ScheduledDate = request.ScheduledDate,
-                Connections = JsonDocument.Parse("[]"),
+                Connections = request.Connections != null ? JsonDocument.Parse(JsonSerializer.Serialize(request.Connections)) : JsonDocument.Parse("[]"),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -142,7 +142,8 @@ public class NodesController : ControllerBase
                 imagePrompt = node.ImagePrompt,
                 scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0]
             };
 
             return CreatedAtAction(nameof(GetNode), new { id = node.Id }, response);
@@ -252,17 +253,16 @@ public class NodesController : ControllerBase
             if (request.X.HasValue) node.X = request.X.Value;
             if (request.Y.HasValue) node.Y = request.Y.Value;
             if (request.ImageUrl != null) node.ImageUrl = request.ImageUrl;
-            if (request.ImageUrls != null) 
-                node.ImageUrls = JsonDocument.Parse(JsonSerializer.Serialize(request.ImageUrls));
+            if (request.ImageUrls != null) node.ImageUrls = JsonDocument.Parse(JsonSerializer.Serialize(request.ImageUrls));
             if (request.ImagePrompt != null) node.ImagePrompt = request.ImagePrompt;
             if (request.Day != null) node.Day = request.Day;
             if (request.PostType != null) node.PostType = request.PostType;
             if (request.Focus != null) node.Focus = request.Focus;
-            if (request.ScheduledDate.HasValue) node.ScheduledDate = request.ScheduledDate;
+            if (request.ScheduledDate.HasValue) node.ScheduledDate = request.ScheduledDate.Value;
             if (request.SelectedImageUrl != null) node.SelectedImageUrl = request.SelectedImageUrl;
-            
-            node.UpdatedAt = DateTime.UtcNow;
+            if (request.Connections != null) node.Connections = JsonDocument.Parse(JsonSerializer.Serialize(request.Connections));
 
+            node.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             var response = new
@@ -353,6 +353,7 @@ public class CreateNodeRequest
     public string? PostType { get; set; }
     public string? Focus { get; set; }
     public DateTime? ScheduledDate { get; set; }
+    public string[]? Connections { get; set; }
 }
 
 public class UpdateNodeRequest
@@ -373,4 +374,5 @@ public class UpdateNodeRequest
     public string? Focus { get; set; }
     public DateTime? ScheduledDate { get; set; }
     public string? SelectedImageUrl { get; set; }
+    public string[]? Connections { get; set; }
 }

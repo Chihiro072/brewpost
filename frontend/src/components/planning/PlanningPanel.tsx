@@ -382,7 +382,7 @@ export const PlanningPanel = React.forwardRef<PlanningPanelRef, PlanningPanelPro
     
     if (existing || connectionExists) {
       // Remove existing connection
-      const edgeIdToDelete = existing || existingReverse;
+      const edgeIdToDelete = existing || existingReverse || `${from}->${to}`;
       
       // Optimistic removal
       setEdgesByKey(m => {
@@ -398,52 +398,39 @@ export const PlanningPanel = React.forwardRef<PlanningPanelRef, PlanningPanelPro
       ));
       
       try {
-        if (edgeIdToDelete && !edgeIdToDelete.startsWith('temp-')) {
-          await NodeAPI.deleteEdge(projectId, edgeIdToDelete);
-        }
+        await NodeAPI.deleteEdge(projectId, edgeIdToDelete);
         console.log('Edge deleted successfully');
       } catch (error) {
         console.error('Failed to delete edge:', error);
         // Revert optimistic update
-        if (existing) setEdgesByKey(m => ({ ...m, [key]: existing }));
-        if (existingReverse) setEdgesByKey(m => ({ ...m, [reverseKey]: existingReverse }));
+        setEdgesByKey(m => ({ ...m, [key]: existing || `${from}->${to}` }));
         setNodes(prevNodes => prevNodes.map(node => 
           node.id === from 
-            ? { ...node, connections: Array.from(new Set([...node.connections, to])) }
-            : node.id === to
-            ? { ...node, connections: Array.from(new Set([...node.connections, from])) }
+            ? { ...node, connections: [...node.connections, to] }
             : node
         ));
       }
     } else {
-      // Create new bidirectional connection
-      const tempEdgeId = `temp-edge-${Date.now()}`;
-      setEdgesByKey(m => ({ ...m, [key]: tempEdgeId }));
+      // Create new connection
+      setEdgesByKey(m => ({ ...m, [key]: `${from}->${to}` }));
       setNodes(prevNodes => prevNodes.map(node => 
         node.id === from 
-          ? { ...node, connections: Array.from(new Set([...node.connections, to])) }
-          : node.id === to
-          ? { ...node, connections: Array.from(new Set([...node.connections, from])) }
+          ? { ...node, connections: [...(node.connections || []), to] }
           : node
       ));
       
       try {
-        const e = await NodeAPI.createEdge(projectId, from, to);
-        setEdgesByKey(m => ({ ...m, [key]: e.edgeId }));
+        await NodeAPI.createEdge(projectId, from, to);
         console.log('Edge created successfully');
       } catch (error) {
         console.error('Failed to create edge:', error);
-        // Revert optimistic update
+        // Revert optimistic update on failure
         setEdgesByKey(m => { const { [key]: _, ...rest } = m; return rest; });
-        setNodes(prevNodes => 
-          prevNodes.map(node => 
-            node.id === from 
-              ? { ...node, connections: node.connections.filter(c => c !== to) }
-              : node.id === to
-              ? { ...node, connections: node.connections.filter(c => c !== from) }
-              : node
-          )
-        );
+        setNodes(prevNodes => prevNodes.map(node => 
+          node.id === from 
+            ? { ...node, connections: (node.connections || []).filter(c => c !== to) }
+            : node
+        ));
       }
     }
   };

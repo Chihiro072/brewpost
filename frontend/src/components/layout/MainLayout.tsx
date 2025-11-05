@@ -32,6 +32,141 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const planningPanelRef = useRef<PlanningPanelRef>(null);
   const prevNodeIdRef = useRef<string | null>(null);
 
+  // Resolve per-user storage key for planner nodes
+  const getPlannerStorageKey = (): string => {
+    try {
+      const userId = window.localStorage.getItem('userId');
+      return `bp_planner_${userId || 'guest'}`;
+    } catch {
+      return 'bp_planner_guest';
+    }
+  };
+
+  // Load nodes from AppSync with localStorage fallback for persistence across refreshes
+  useEffect(() => {
+    const loadNodes = async () => {
+      // First try to load from localStorage to make refresh fast/persistent
+      try {
+        const key = getPlannerStorageKey();
+        const raw = window.localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw) as any[];
+          const revived: ContentNode[] = parsed.map((n) => ({
+            ...n,
+            scheduledDate: n.scheduledDate ? new Date(n.scheduledDate) : undefined,
+            postedAt: n.postedAt ? new Date(n.postedAt) : undefined,
+          }));
+          setNodes(revived);
+        }
+      } catch (e) {
+        console.warn('Planner: failed to load local nodes, continuing:', e);
+      }
+
+      // Then attempt to load fresh data from AppSync and merge/override
+      try {
+        const { NodeAPI } = await import('@/services/nodeService');
+        const apiNodes = await NodeAPI.list('demo-project-123');
+        const detectPostType = (title: string, content: string): 'engaging' | 'promotional' | 'branding' => {
+          const text = `${title} ${content}`.toLowerCase();
+          if (text.match(/\b(shop|order|buy|get yours|discount|available now|limited|offer|sale|use code|sign up|join|link in bio|free shipping|diy|recipe|create|make|try|get|start)\b/)) {
+            return 'promotional';
+          }
+          if (text.match(/\b(crafted|behind the scenes|heritage|tradition|quality|meet|farmer|team|values|trust|story of|our process|secret|day in the life|art of|history|unveiling|science|grading|special)\b/)) {
+            return 'branding';
+          }
+          return 'engaging';
+        };
+        
+        const normalizeType = (t: unknown): 'post' | 'image' | 'story' => {
+          if (!t) return 'post';
+          const s = String(t).toLowerCase();
+          if (s === 'image') return 'image';
+          if (s === 'story') return 'story';
+          return 'post';
+        };
+        const normalizeStatus = (s: unknown): 'draft' | 'scheduled' | 'published' => {
+          if (!s) return 'draft';
+          const v = String(s).toLowerCase();
+          if (v === 'published') return 'published';
+          if (v === 'scheduled') return 'scheduled';
+          return 'draft';
+        };
+
+        const transformedNodes = apiNodes.map(x => ({
+          id: x.nodeId,
+          title: x.title,
+          type: normalizeType(x.type),
+          status: normalizeStatus(x.status),
+          scheduledDate: x.scheduledDate ? new Date(x.scheduledDate) : undefined,
+          content: x.description ?? '',
+          imageUrl: x.imageUrl ?? undefined,
+          imageUrls: x.imageUrls ?? undefined,
+          imagePrompt: x.imagePrompt ?? undefined,
+          day: x.day ?? undefined,
+          postType: detectPostType(x.title, x.description ?? ''),
+          connections: Array.isArray((x as any).connections) ? (x as any).connections : [],
+          position: { x: x.x ?? 0, y: x.y ?? 0 },
+          postedAt: x.createdAt ? new Date(x.createdAt) : undefined
+        }));
+        
+        // Load edges and populate connections
+        try {
+          const { NodeAPI: EdgeAPI } = await import('@/services/nodeService');
+          const edges = await EdgeAPI.listEdges('demo-project-123');
+          console.log('Loaded edges:', edges.length);
+          
+          // Add connections to nodes based on edges
+          const nodesWithConnections = transformedNodes.map(node => ({
+            ...node,
+            connections: Array.from(new Set([
+              ...node.connections,
+              ...edges.filter(edge => edge.from === node.id).map(edge => edge.to)
+            ]))
+          }));
+          
+          // Merge server data over local fallback to keep latest positions/status
+          setNodes(prev => {
+            // Map by id for quick merge
+            const byId = new Map(prev.map(p => [p.id, p]));
+            const merged = nodesWithConnections.map(s => {
+              const local = byId.get(s.id);
+              if (!local) return s;
+              return {
+                ...s,
+                // Preserve local position if user moved nodes recently before server data loaded
+                position: local.position || s.position,
+              };
+            });
+            return merged;
+          });
+        } catch (edgeError) {
+          console.warn('Failed to load edges:', edgeError);
+          setNodes(transformedNodes);
+        }
+      } catch (error) {
+        console.warn('Failed to load from AppSync, falling back to local only:', error);
+        // If localStorage already set nodes, keep them; otherwise ensure array
+        setNodes(prev => Array.isArray(prev) ? prev : []);
+      }
+    };
+    loadNodes();
+  }, []);
+
+  // Persist nodes to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const key = getPlannerStorageKey();
+      const toSave = nodes.map(n => ({
+        ...n,
+        scheduledDate: n.scheduledDate ? n.scheduledDate.toISOString() : undefined,
+        postedAt: n.postedAt ? n.postedAt.toISOString() : undefined,
+      }));
+      window.localStorage.setItem(key, JSON.stringify(toSave));
+    } catch (e) {
+      console.warn('Planner: failed to persist nodes:', e);
+    }
+  }, [nodes]);
+
   // Shared save function that works in both modes
   const handleSaveNode = (updatedNode: ContentNode) => {
     console.log('=== MAIN LAYOUT HANDLE SAVE NODE DEBUG ===');
@@ -135,147 +270,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           setSelectedNode({ ...selectedNode, ...node });
         }
       }
-    }
-  };
-  // Load nodes from AppSync only - no localStorage fallback
-  useEffect(() => {
-    const loadNodes = async () => {
-      try {
-        const { NodeAPI } = await import('@/services/nodeService');
-        const apiNodes = await NodeAPI.list('demo-project-123');
-        const detectPostType = (title: string, content: string): 'engaging' | 'promotional' | 'branding' => {
-          const text = `${title} ${content}`.toLowerCase();
-          if (text.match(/\b(shop|order|buy|get yours|discount|available now|limited|offer|sale|use code|sign up|join|link in bio|free shipping|diy|recipe|create|make|try|get|start)\b/)) {
-            return 'promotional';
-          }
-          if (text.match(/\b(crafted|behind the scenes|heritage|tradition|quality|meet|farmer|team|values|trust|story of|our process|secret|day in the life|art of|history|unveiling|science|grading|special)\b/)) {
-            return 'branding';
-          }
-          return 'engaging';
-        };
-        
-        const normalizeType = (t: unknown): 'post' | 'image' | 'story' => {
-          if (!t) return 'post';
-          const s = String(t).toLowerCase();
-          if (s === 'image') return 'image';
-          if (s === 'story') return 'story';
-          return 'post';
-        };
-        const normalizeStatus = (s: unknown): 'draft' | 'scheduled' | 'published' => {
-          if (!s) return 'draft';
-          const v = String(s).toLowerCase();
-          if (v === 'published') return 'published';
-          if (v === 'scheduled') return 'scheduled';
-          return 'draft';
-        };
-
-        const transformedNodes = apiNodes.map(x => ({
-          id: x.nodeId,
-          title: x.title,
-          type: normalizeType(x.type),
-          status: normalizeStatus(x.status),
-          scheduledDate: x.scheduledDate ? new Date(x.scheduledDate) : undefined,
-          content: x.description ?? '',
-          imageUrl: x.imageUrl ?? undefined,
-          imageUrls: x.imageUrls ?? undefined,
-          imagePrompt: x.imagePrompt ?? undefined,
-          day: x.day ?? undefined,
-          postType: detectPostType(x.title, x.description ?? ''),
-          connections: [],
-          position: { x: x.x ?? 0, y: x.y ?? 0 },
-          postedAt: x.createdAt ? new Date(x.createdAt) : undefined
-        }));
-        
-        // Load edges and populate connections
-        try {
-          const { NodeAPI: EdgeAPI } = await import('@/services/nodeService');
-          const edges = await EdgeAPI.listEdges('demo-project-123');
-          console.log('Loaded edges:', edges.length);
-          
-          // Add connections to nodes based on edges
-          const nodesWithConnections = transformedNodes.map(node => ({
-            ...node,
-            connections: edges.filter(edge => edge.from === node.id).map(edge => edge.to)
-          }));
-          
-          setNodes(nodesWithConnections);
-        } catch (edgeError) {
-          console.warn('Failed to load edges:', edgeError);
-          setNodes(transformedNodes);
-        }
-      } catch (error) {
-        console.warn('Failed to load from AppSync, starting with empty nodes:', error);
-        setNodes([]);
-      }
-    };
-    loadNodes();
-  }, []);
-
-
-
-
-
-  // Wrap setNodes to add debug logging when nodes change
-  const debugSetNodes = (next: ContentNode[] | ((prev: ContentNode[]) => ContentNode[])) => {
-    if (typeof next === 'function') {
-      setNodes(prev => {
-        const updated = (next as (p: ContentNode[]) => ContentNode[])(prev);
-        console.info('MainLayout: nodes updated (from function) ->', updated.length);
-        // Update selected node if it exists, or clear if it no longer exists
-        if (selectedNode) {
-          const updatedSelectedNode = updated.find(n => n.id === selectedNode.id);
-          if (updatedSelectedNode) {
-            console.log('Updating selectedNode with new data:', updatedSelectedNode);
-            setSelectedNode(updatedSelectedNode);
-          } else {
-            setSelectedNode(null);
-            setActiveTab('ai');
-          }
-        }
-        return updated;
-      });
-    } else {
-      console.info('MainLayout: nodes replaced ->', next.length);
-      // Update selected node if it exists, or clear if it no longer exists
-      if (selectedNode) {
-        const updatedSelectedNode = next.find(n => n.id === selectedNode.id);
-        if (updatedSelectedNode) {
-          console.log('MainLayout: Updating selectedNode with new data:', updatedSelectedNode);
-          setSelectedNode(updatedSelectedNode);
-        } else {
-          setSelectedNode(null);
-          setActiveTab('ai');
-        }
-      }
-      setNodes(next);
-    }
-  };
-
-  const handleNodeSelect = (node: ContentNode) => {
-    setSelectedNode(node);
-    setActiveTab('details');
-    setViewMode('nodes'); // Switch to nodes view when a node is selected
-    setCanvasNodeId(null); // Clear canvas node ID when switching to nodes view
-    // Clear any previously generated image/url state so images from other nodes don't persist
-    setIsGenerating(false);
-  };
-
-  const handleNodeDoubleClick = (node: ContentNode) => {
-    setSelectedNode(node);
-    setActiveTab('details');
-    setViewMode('canvas'); // Switch to canvas view on double-click
-    setCanvasNodeId(node.id); // Store node ID for future reference if needed
-    // Clear any stale generated image state when switching nodes
-    setIsGenerating(false);
-    
-    // If node has image prompt, automatically start generation
-    if (node.imagePrompt || node.title || node.content) {
-      console.log('Node double-clicked with prompt data, preparing for image generation');
-      // Clear any existing canvas components and set up for node-based generation
-      setSelectedCanvasComponents([]);
-      // Preserve previously fetched aiComponents so we don't force a regeneration
-      setAiLoading(false);
-      setIsGenerating(false);
     }
   };
 
@@ -385,6 +379,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   };
 
   const handleLogout = () => {
+    try {
+      // Clear persisted chat and planner nodes for this user on logout
+      const userId = window.localStorage.getItem('userId') || 'guest';
+      window.localStorage.removeItem(`bp_chat_${userId}`);
+      window.localStorage.removeItem(`bp_planner_${userId}`);
+      window.localStorage.removeItem('auth_tokens');
+    } catch {}
     navigate('/');
   };
 
@@ -553,58 +554,35 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     id: component.id,
                     name: (component.name ?? component.id) as string,
                     category: component.category ?? 'Suggested',
-                    color: component.color ?? '#60A5FA',
-                    position: { x: 0, y: 0 }
+                    color: component.color ?? '#0EA5E9',
+                    position: { x: Math.random() * 300 + 50, y: Math.random() * 200 + 50 },
                   };
-                  setSelectedCanvasComponents(prev => {
-                    if (prev.find(c => c.id === component.id)) {
-                      return prev; // Don't add duplicates
-                    }
-                    return [...prev, newComponent];
-                  });
+                  setSelectedCanvasComponents(prev => [...prev, newComponent]);
                 }}
-                onRemoveComponent={(id) => {
-                  setSelectedCanvasComponents(prev => prev.filter(c => c.id !== id));
-                }}
-                  generatedComponents={canvasComponents as unknown as CampaignComponentLocal[]}
               />
-              
-              {/* ComponentSidebar positioned at bottom */}
-              <div className="absolute bottom-0 left-0 right-0">
-                <ComponentSidebar 
-                  onAddComponent={(component) => {
-                    const newComponent = {
-                      id: component.id,
-                      name: component.name,
-                      category: component.category,
-                      color: component.color,
-                      position: { x: 0, y: 0 }
-                    };
-                    setSelectedCanvasComponents(prev => {
-                      if (prev.find(c => c.id === component.id)) {
-                        return prev; // Don't add duplicates
-                      }
-                      return [...prev, newComponent];
-                    });
-                  }}
-                  onRemoveFromCanvas={(id) => {
-                    setSelectedCanvasComponents(prev => prev.filter(c => c.id !== id));
-                  }}
-                  generatedComponents={finalGeneratedComponents as unknown as CampaignComponentLocal[]}
-                  isLoadingAi={aiLoading}
-                  generationProgress={isGenerating}
-                />
-              </div>
+              <ComponentSidebar 
+                components={canvasComponents as unknown as CampaignComponentLocal[]}
+                onAddComponent={(component) => {
+                  const newComponent: SelectedCanvasComponent = {
+                    id: component.id,
+                    name: component.title,
+                    category: component.category,
+                    color: component.color ?? '#0EA5E9',
+                    position: { x: Math.random() * 300 + 50, y: Math.random() * 200 + 50 },
+                  };
+                  setSelectedCanvasComponents(prev => [...prev, newComponent]);
+                }}
+                onClear={() => setSelectedCanvasComponents([])}
+              />
             </div>
           )}
         </div>
       </div>
 
       {/* Template Popup */}
-      <TemplatePopup 
-        isOpen={isTemplatePopupOpen}
-        onClose={() => setIsTemplatePopupOpen(false)}
-      />
+      {isTemplatePopupOpen && (
+        <TemplatePopup onClose={() => setIsTemplatePopupOpen(false)} />
+      )}
     </div>
   );
 };
