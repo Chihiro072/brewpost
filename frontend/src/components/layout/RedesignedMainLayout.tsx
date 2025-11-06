@@ -173,7 +173,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
             imagePrompt: x.imagePrompt ?? undefined,
             day: x.day ?? undefined,
             postType: detectPostType(x.title, x.description ?? ''),
-            connections: [],
+            connections: Array.isArray((x as any).connections) ? (x as any).connections : [],
             position: { x: x.x ?? 0, y: x.y ?? 0 },
             postedAt: x.createdAt ? new Date(x.createdAt) : undefined,
             selectedImageUrl: (x as any).selectedImageUrl ?? undefined,
@@ -187,7 +187,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
           
           const nodesWithConnections = transformedNodes.map(node => ({
             ...node,
-            connections: edges.filter(edge => edge.from === node.id).map(edge => edge.to)
+            connections: Array.from(new Set([
+              ...(Array.isArray(node.connections) ? node.connections : []),
+              ...edges.filter(edge => edge.from === node.id).map(edge => edge.to)
+            ]))
           }));
           
           // Merge server data over any local nodes to preserve recent local changes
@@ -333,6 +336,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         imagePrompt: updatedNode.imagePrompt,
         postType: updatedNode.postType,
         selectedImageUrl: updatedNode.selectedImageUrl || imageUrlToStore,
+        connections: updatedNode.connections || [],
         ...(updatedNode.scheduledDate ? { scheduledDate: updatedNode.scheduledDate.toISOString() } : {}),
       };
 
@@ -357,6 +361,53 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
       if (selectedNode && selectedNode.id === node.id) {
         setSelectedNode({ ...selectedNode, ...node });
       }
+    }
+  };
+
+  // Persist connections immediately when user connects/disconnects nodes on canvas
+  const createOrDeleteEdge = async (from: string, to: string) => {
+    try {
+      const isGuid = (id: string) => /^[0-9a-fA-F-]{36}$/.test(id);
+      if (!isGuid(from) || !isGuid(to)) {
+        console.warn('[createOrDeleteEdge] Skipping persistence for temporary IDs:', { from, to });
+        // Optimistically update UI only
+        setNodes(prev => prev.map(node => {
+          if (node.id === from) {
+            const exists = node.connections.includes(to);
+            const connections = exists
+              ? node.connections.filter(id => id !== to)
+              : [...node.connections, to];
+            return { ...node, connections };
+          }
+          return node;
+        }));
+        return;
+      }
+
+      const fromNode = nodes.find(n => n.id === from);
+      const exists = fromNode?.connections.includes(to);
+
+      // Optimistic UI update
+      setNodes(prev => prev.map(node => {
+        if (node.id === from) {
+          const connections = exists
+            ? node.connections.filter(id => id !== to)
+            : [...(node.connections || []), to];
+          return { ...node, connections };
+        }
+        return node;
+      }));
+
+      const { NodeAPI } = await import('@/services/nodeService');
+      if (exists) {
+        await NodeAPI.deleteEdge('demo-project-123', `${from}->${to}`);
+        console.log('[createOrDeleteEdge] Edge deleted:', `${from}->${to}`);
+      } else {
+        await NodeAPI.createEdge('demo-project-123', from, to);
+        console.log('[createOrDeleteEdge] Edge created:', `${from}->${to}`);
+      }
+    } catch (error) {
+      console.error('[createOrDeleteEdge] Failed to toggle edge:', error);
     }
   };
 
@@ -662,6 +713,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
             onNodeDoubleClick={handleNodeDoubleClick}
             selectedNodeIds={selectedNodeIds}
             onSelectionChange={setSelectedNodeIds}
+            createOrDeleteEdge={createOrDeleteEdge}
             onAddNode={() => {
               const newNode = {
                 id: Date.now().toString(),
@@ -675,8 +727,16 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
               setNodes([...nodes, newNode]);
             }}
             onDeleteNode={async (nodeId: string) => {
-              // Remove from UI immediately
-              setNodes(nodes.filter(node => node.id !== nodeId));
+              // Optimistically remove the node and clean up connections in UI
+              setNodes(prev => prev
+                .filter(node => node.id !== nodeId)
+                .map(node => ({
+                  ...node,
+                  connections: Array.isArray(node.connections)
+                    ? node.connections.filter(id => id !== nodeId)
+                    : []
+                }))
+              );
               
               // If this was the selected node, clear the selection
               if (selectedNode && selectedNode.id === nodeId) {
@@ -684,17 +744,28 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
                 setShowLeftSidebar(false);
               }
               
-              // Remove from database
               try {
                 const { NodeAPI } = await import('@/services/nodeService');
+                
+                // Persist: remove edges pointing to the deleted node
+                const nodesWithConn = nodes.filter(n => Array.isArray(n.connections) && n.connections.includes(nodeId));
+                await Promise.all(nodesWithConn.map(async (n) => {
+                  const isGuid = /^[0-9a-fA-F-]{36}$/.test(n.id) && /^[0-9a-fA-F-]{36}$/.test(nodeId);
+                  if (isGuid) {
+                    const edgeId = `${n.id}->${nodeId}`;
+                    await NodeAPI.deleteEdge('demo-project-123', edgeId);
+                  }
+                }));
+                
+                // Finally, remove the node itself from database
                 await NodeAPI.remove('demo-project-123', nodeId);
-                console.log('Node deleted successfully from database');
+                console.log('Node deleted and connections cleaned up');
               } catch (error) {
-                console.error('Failed to delete node from database:', error);
-                // Optionally, you could show a toast notification or revert the UI change
+                console.error('Failed to delete node or clean up connections:', error);
               }
             }}
-            onCanvasClick={() => {}}
+            onEditNode={undefined}
+            onCanvasClick={undefined}
           />
 
           {/* Bottom Action Bar */}

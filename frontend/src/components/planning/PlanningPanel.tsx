@@ -239,6 +239,7 @@ export const PlanningPanel = React.forwardRef<PlanningPanelRef, PlanningPanelPro
         imagePrompt: updatedNode.imagePrompt,
         selectedImageUrl: updatedNode.selectedImageUrl || updatedNode.imageUrl,
         postType: updatedNode.postType,
+        connections: updatedNode.connections,
         scheduledDate: updatedNode.scheduledDate?.toISOString(),
       };
       console.log('Sending update to NodeAPI:', updateData);
