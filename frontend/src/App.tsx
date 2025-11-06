@@ -10,12 +10,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Callback from "./pages/Callback";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 import { CalendarPage } from "./pages/CalendarPage";
 import { AuthProvider } from "./contexts/AuthContext";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import TestTwitterPage from "./pages/TestTwitterPage";
 import XCallbackPage from "./pages/XCallbackPage";
 import TestLinkedInPage from "./pages/TestLinkedInPage";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import { SubscriptionProvider } from "./contexts/SubscriptionContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 const queryClient = new QueryClient();
 
@@ -26,34 +30,47 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            {/* Protect app routes that require authentication */}
-            <Route
-              path="/app"
-              element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <ProtectedRoute>
-                  <CalendarPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/Callback" element={<Callback />} />
-            <Route path="/test-twitter" element={<TestTwitterPage />} />
-            <Route path="/x-callback" element={<XCallbackPage />} />
-            <Route path="/test-linkedin" element={<TestLinkedInPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <SubscriptionProvider>
+            <LanguageProvider>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                {/* Protect app routes that require authentication */}
+                <Route
+                  path="/app"
+                  element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/calendar"
+                  element={
+                    <ProtectedRoute>
+                      <CalendarPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/Callback" element={<Callback />} />
+                <Route path="/test-twitter" element={<TestTwitterPage />} />
+                <Route path="/x-callback" element={<XCallbackPage />} />
+                <Route path="/test-linkedin" element={<TestLinkedInPage />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </LanguageProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

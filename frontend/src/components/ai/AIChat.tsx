@@ -38,8 +38,12 @@ import {
   addPaidMessages,
   getQuotaBreakdown,
   QUOTA_CONSTANTS,
+  getPlanMonthlyLimit,
+  getMonthlyQuotaBreakdown,
+  incrementMonthlyUsage,
 } from '@/utils/quotaUtils';
 import { PaymentModal } from './PaymentModal';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
 
 const cleanField = (s?: string) =>
@@ -378,6 +382,11 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
 
   // FIX: initialize toast hook
   const { toast } = useToast();
+  // Add plan and monthly quota state
+  const { plan } = useSubscription();
+  const [monthlyBreakdown, setMonthlyBreakdown] = useState(
+    getMonthlyQuotaBreakdown(getPlanMonthlyLimit(plan))
+  );
 
   // Quota state
   const [remainingMessages, setRemainingMessages] = useState(
@@ -433,16 +442,13 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
       setQuotaExceeded(isQuotaExceeded());
       setTimeUntilReset(formatTimeUntilReset());
       setQuotaBreakdown(getQuotaBreakdown());
+      const limit = getPlanMonthlyLimit(plan);
+      setMonthlyBreakdown(getMonthlyQuotaBreakdown(limit));
     };
-
-    // Update immediately
     updateQuotaState();
-
-    // Update every second for real-time countdown
     const interval = setInterval(updateQuotaState, 1000);
-
     return () => clearInterval(interval);
-  }, []);
+  }, [plan]);
 
   // Keyboard shortcuts for zoom modal
   React.useEffect(() => {
@@ -719,7 +725,12 @@ Return only the refined prompt, nothing else.`,
 
       // Increment quota after successful API call
       incrementQuota();
-
+      // Also increment monthly usage for current plan
+      {
+        const planLimit = getPlanMonthlyLimit(plan);
+        incrementMonthlyUsage(planLimit);
+        setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
+      }
       // Update quota state
       setRemainingMessages(getRemainingMessages());
       setQuotaExceeded(isQuotaExceeded());
@@ -867,7 +878,7 @@ Return only the refined prompt, nothing else.`,
           </div>
 
           {/* Quota Display */}
-          <div className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium w-48 min-w-fit">
+          <div className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium w-56 min-w-fit">
             <div className="flex items-center">
               <span>Free messages left:</span>
               <span className="ml-1 font-bold">{quotaBreakdown.freeRemaining}</span>
@@ -875,6 +886,10 @@ Return only the refined prompt, nothing else.`,
             <div className="flex items-center">
               <span>Resets In:</span>
               <span className="ml-1 font-bold">{timeUntilReset}</span>
+            </div>
+            <div className="flex items-center">
+              <span>Plan messages left:</span>
+              <span className="ml-1 font-bold">{monthlyBreakdown.limit === Infinity ? '∞' : monthlyBreakdown.remaining}</span>
             </div>
             {quotaBreakdown.paidRemaining > 0 && (
               <div className="flex items-center">
@@ -1337,7 +1352,7 @@ Return only the refined prompt, nothing else.`,
             </div>
 
             {/* Zoom level indicator */}
-            <div className="absolute bottom-4 right-4 bg-black/70 text-white text-sm px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10">
+            <div className="absolute bottom-4 right-4 bg-black/70 text-white text-sm p-3 py-2 rounded-lg backdrop-blur-sm border border-white/10">
               {Math.round(zoomLevel * 100)}%
             </div>
           </div>
@@ -1353,5 +1368,3 @@ Return only the refined prompt, nothing else.`,
     </div>
   );
 };
-
-// ... existing code ...

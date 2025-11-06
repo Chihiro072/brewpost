@@ -8,10 +8,11 @@ using BrewPost.Infrastructure.Services;
 using Amazon.S3;
 using Amazon.Extensions.NETCore.Setup;
 using DotNetEnv;
+using Stripe;
 
 // Load .env file from backend directory (go up 1 level from BrewPost.API)
 var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
-if (File.Exists(envPath))
+if (System.IO.File.Exists(envPath))
 {
     Env.Load(envPath);
     Console.WriteLine($"✅ Loaded .env file from: {envPath}");
@@ -96,8 +97,8 @@ var awsOptions = new AWSOptions
 
 // Add AWS credentials if provided (for local development)
 // Try environment variables first (from .env), then fall back to appsettings
-var accessKey = builder.Configuration["ACCESS_KEY_ID"] ?? builder.Configuration["AWS:AccessKey"];
-var awsSecretKey = builder.Configuration["SECRET_ACCESS_KEY"] ?? builder.Configuration["AWS:SecretKey"];
+var accessKey = builder.Configuration["ACCESS_KEY_ID"] ?? builder.Configuration["AWS:AccessKey"]; 
+var awsSecretKey = builder.Configuration["SECRET_ACCESS_KEY"] ?? builder.Configuration["AWS:SecretKey"]; 
 if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(awsSecretKey))
 {
     Console.WriteLine($"✅ AWS credentials loaded - Access Key: {accessKey.Substring(0, 4)}****");
@@ -134,6 +135,50 @@ builder.Services.AddScoped<BrewPost.API.Models.IAnalysisService, BrewPost.API.Mo
 builder.Services.AddHttpClient<IOAuthService, OAuthService>();
 builder.Services.AddHttpClient<ITrendingService, TrendingService>();
 builder.Services.AddMemoryCache();
+
+// Configure Stripe from env
+var stripeSecret = builder.Configuration["STRIPE_SECRET_KEY"] ?? builder.Configuration["Stripe:SecretKey"];
+if (!string.IsNullOrWhiteSpace(stripeSecret))
+{
+    var isTest = stripeSecret.StartsWith("sk_test_", StringComparison.OrdinalIgnoreCase);
+    var isLive = stripeSecret.StartsWith("sk_live_", StringComparison.OrdinalIgnoreCase);
+    var looksPlaceholder = stripeSecret.Contains("EXAMPLE", StringComparison.OrdinalIgnoreCase)
+                           || stripeSecret.Contains("your_actual_secret_key_here", StringComparison.OrdinalIgnoreCase)
+                           || stripeSecret.EndsWith("here", StringComparison.OrdinalIgnoreCase);
+
+    var masked = stripeSecret.Length > 12
+        ? stripeSecret.Substring(0, 12) + new string('*', Math.Max(0, stripeSecret.Length - 12))
+        : stripeSecret;
+
+    Console.WriteLine($"ℹ️ Stripe key detected: {(isTest ? "test" : isLive ? "live" : "unknown")} mode, value: {masked}");
+
+    if (looksPlaceholder || (!isTest && !isLive))
+    {
+        Console.WriteLine("❌ Stripe secret key looks invalid or placeholder. Update STRIPE_SECRET_KEY in backend/.env.");
+    }
+
+    StripeConfiguration.ApiKey = stripeSecret;
+
+    try
+    {
+        var client = new StripeClient(stripeSecret);
+        var balanceService = new BalanceService(client);
+        balanceService.Get(); // lightweight validation call
+        Console.WriteLine("✅ Stripe secret key validated via API call.");
+    }
+    catch (StripeException ex)
+    {
+        Console.WriteLine($"❌ Stripe API validation failed: {ex.Message}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Stripe validation error: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("⚠️ Stripe secret key not configured");
+}
 
 // Configure CORS
 builder.Services.AddCors(options =>

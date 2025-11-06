@@ -6,7 +6,9 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
+
+  console.log('[ProtectedRoute] loading=', loading, 'isAuthenticated=', isAuthenticated);
 
   if (loading) {
     return (
@@ -36,5 +38,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  return <>{children}</>;
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
+  const displayName = fullName || user?.name || '';
+
+  return (
+    <>
+      {isAuthenticated && displayName && (
+        <p className="text-white text-lg px-4 py-2">{displayName}</p>
+      )}
+      {children}
+    </>
+  );
 };

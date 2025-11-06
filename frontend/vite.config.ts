@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: 'localhost',
       port: 3000,
+      strictPort: true, // Do not auto-switch; fail if 3000 is taken
       proxy: {
         '/generate': {
           target: backendTarget,

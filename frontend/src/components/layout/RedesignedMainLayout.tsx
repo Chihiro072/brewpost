@@ -18,13 +18,18 @@ import {
   Calendar, 
   Plus, 
   LogOut, 
+  User,
+  Settings,
   X,
   Clock,
   Image as ImageIcon,
   FileText,
   Layers
-} from 'lucide-react';
+} from "lucide-react";
 import type { ContentNode } from '@/components/planning/PlanningPanel';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { usersAPI } from '@/services/apiService';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 interface RedesignedMainLayoutProps {
   children?: React.ReactNode;
@@ -53,6 +58,7 @@ type CampaignComponentLocal = {
 
 export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const { plan } = useSubscription();
   const [nodes, setNodes] = useState<ContentNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<ContentNode | null>(null);
   
@@ -77,6 +83,53 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   
   const prevNodeIdRef = useRef<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('Guest');
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const profile = await usersAPI.getProfile();
+        const name = (
+          (profile.firstName || '').trim() + ' ' + (profile.lastName || '').trim()
+        ).trim() || profile.displayName || profile.username || profile.email || 'Guest';
+        if (isMounted) setDisplayName(name);
+      } catch (err) {
+        // Fallback to previous localStorage/JWT logic on error
+        try {
+          const storedName = typeof window !== 'undefined' ? window.localStorage.getItem('userName') : null;
+          if (storedName) {
+            if (isMounted) setDisplayName(storedName);
+            return;
+          }
+          let name = (typeof window !== 'undefined' ? window.localStorage.getItem('userId') : null) || 'Guest';
+          const authTokens = typeof window !== 'undefined' ? window.localStorage.getItem('auth_tokens') : null;
+          if (authTokens) {
+            try {
+              const toks = JSON.parse(authTokens);
+              const idToken = toks?.id_token;
+              if (idToken && typeof idToken === 'string') {
+                const parts = idToken.split('.');
+                if (parts.length >= 2) {
+                  const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                  const json = decodeURIComponent(
+                    atob(b64)
+                      .split('')
+                      .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                      .join('')
+                  );
+                  const payload = JSON.parse(json);
+                  name = payload?.name || payload?.email || payload?.preferred_username || name;
+                }
+              }
+            } catch {}
+          }
+          if (isMounted) setDisplayName(name);
+        } catch {}
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
 
   // Demo fallback components
   const DEMO_COMPONENTS = [
@@ -650,15 +703,50 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="border-destructive/20 hover:border-destructive/40 hover:bg-destructive/10 text-destructive"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+            {/* Account hover popup replacing direct logout button */}
+            <HoverCard openDelay={50} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="border-destructive/20 hover:border-destructive/40 hover:bg-destructive/10 text-destructive"
+                  aria-label="Profile"
+                >
+                  <User className="w-4 h-4" />
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-64">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                     <User className="w-4 h-4" />
+                     <div className="flex-1 min-w-0">
+                       <span className="truncate block">{displayName}</span>
+                       {plan && (
+                         <span className="text-[10px] text-emerald-400 mt-0.5 block">{plan.toUpperCase()}</span>
+                       )}
+                     </div>
+                   </div>
+                  <div className="border-t border-border/40" />
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => navigate('/settings')}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="justify-start"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           </div>
         </div>
       </header>

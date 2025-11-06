@@ -1,5 +1,5 @@
 export const QUOTA_CONSTANTS = {
-  FREE_MESSAGES_PER_DAY: 540,
+  FREE_MESSAGES_PER_DAY: 5,
   RESET_HOUR: 0, // Reset at midnight
 };
 
@@ -134,4 +134,99 @@ export const getQuotaBreakdown = () => {
     usedMessages: data.usedMessages,
     paidMessages: data.paidMessages,
   };
+};
+
+// Monthly quota tracking (per subscription plan)
+// Resets on the first day of each month. Tracks overall usage regardless of daily free/paid.
+
+type PlanKey = 'basic' | 'pro' | 'unlimited';
+
+const MONTHLY_STORAGE_KEY = 'ai_monthly_quota';
+
+interface MonthlyQuotaData {
+  usedMessages: number;
+  lastResetMonth: string; // format: YYYY-MM
+}
+
+const getMonthKey = (d: Date = new Date()): string => {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1; // 1-12
+  return `${y}-${m}`;
+};
+
+const getMonthlyQuotaData = (): MonthlyQuotaData => {
+  try {
+    const raw = localStorage.getItem(MONTHLY_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      return {
+        usedMessages: data.usedMessages || 0,
+        lastResetMonth: data.lastResetMonth || getMonthKey(),
+      };
+    }
+  } catch (err) {
+    console.error('Error reading monthly quota data:', err);
+  }
+  return { usedMessages: 0, lastResetMonth: getMonthKey() };
+};
+
+const saveMonthlyQuotaData = (data: MonthlyQuotaData): void => {
+  try {
+    localStorage.setItem(MONTHLY_STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving monthly quota data:', err);
+  }
+};
+
+const shouldResetMonthlyQuota = (lastResetMonth: string): boolean => {
+  return lastResetMonth !== getMonthKey();
+};
+
+const resetMonthlyQuotaIfNeeded = (): MonthlyQuotaData => {
+  const data = getMonthlyQuotaData();
+  if (shouldResetMonthlyQuota(data.lastResetMonth)) {
+    const resetData: MonthlyQuotaData = {
+      usedMessages: 0,
+      lastResetMonth: getMonthKey(),
+    };
+    saveMonthlyQuotaData(resetData);
+    return resetData;
+  }
+  return data;
+};
+
+export const getPlanMonthlyLimit = (plan: PlanKey | null): number | typeof Infinity => {
+  switch (plan) {
+    case 'basic':
+      return 100;
+    case 'pro':
+      return 200;
+    case 'unlimited':
+      return Infinity;
+    default:
+      return 0; // no plan
+  }
+};
+
+export const getMonthlyQuotaBreakdown = (limit: number | typeof Infinity) => {
+  const data = resetMonthlyQuotaIfNeeded();
+  const used = data.usedMessages;
+  const remaining = limit === Infinity ? Infinity : Math.max(0, limit - used);
+  return { used, remaining, limit };
+};
+
+export const isMonthlyExceeded = (limit: number | typeof Infinity): boolean => {
+  if (limit === Infinity) return false;
+  const data = resetMonthlyQuotaIfNeeded();
+  return data.usedMessages >= limit;
+};
+
+export const incrementMonthlyUsage = (limit: number | typeof Infinity): boolean => {
+  if (limit !== Infinity && isMonthlyExceeded(limit)) {
+    return false;
+  }
+  const data = resetMonthlyQuotaIfNeeded();
+  data.usedMessages += 1;
+  saveMonthlyQuotaData(data);
+  return true;
 };

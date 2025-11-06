@@ -6,10 +6,12 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
+  const { setPlan } = useSubscription();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -56,6 +58,14 @@ export const Register: React.FC = () => {
       console.log('🔍 Checking auth status...');
       await checkAuth(); // Update auth context
       console.log('✅ Auth check completed');
+
+      // Explicitly clear any plan for this brand-new account and guest scope
+      try {
+        console.log('[Register] Clearing plan for new account and guest scope');
+        setPlan(null);
+      } catch (clearErr) {
+        console.warn('[Register] Failed to clear plan after registration', clearErr);
+      }
       
       console.log('🔄 Navigating to /app...');
       navigate('/app'); // Redirect to main app
