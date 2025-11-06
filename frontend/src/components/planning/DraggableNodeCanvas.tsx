@@ -789,7 +789,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
         {/* Connection Lines */}
         <svg
           className='absolute inset-0 pointer-events-none z-0'
-          style={{ width: '100%', height: '100%', overflow: 'visible' }}
+          style={{ width: '100%', height: '100%', overflow: 'visible', opacity: 1, visibility: 'visible' }}
         >
           <defs>
             <linearGradient
@@ -845,6 +845,15 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
                   ? draggedPosition.y
                   : connectedNode.position.y) + 100
 
+              console.log('[Canvas] Rendering connection', {
+                from: node.id,
+                to: connectedId,
+                startX,
+                startY,
+                endX,
+                endY
+              })
+
               return (
                 <g key={`${node.id}-${connectedId}`}>
                   <line
@@ -854,7 +863,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
                     y2={endY}
                     stroke='hsl(var(--primary))'
                     strokeWidth='4'
-                    strokeOpacity='0.2'
+                    strokeOpacity='0.5'
                     filter='url(#connectionGlow)'
                   />
                   <line
@@ -875,14 +884,14 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
                     cy={startY}
                     r='3'
                     fill='hsl(var(--primary))'
-                    opacity='0.8'
+                    opacity='0.9'
                   />
                   <circle
                     cx={endX}
                     cy={endY}
                     r='3'
                     fill='hsl(var(--primary))'
-                    opacity='0.8'
+                    opacity='0.9'
                   />
                 </g>
               )

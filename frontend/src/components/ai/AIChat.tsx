@@ -1024,6 +1024,7 @@ Return only the refined prompt, nothing else.`,
                               // Create all new nodes and track ID mapping
                               const idMapping = new Map();
                               const nodeResults = [];
+                              let successCount = 0;
                     
                               for (let i = 0; i < contentNodes.length; i++) {
                                 const node = contentNodes[i];
@@ -1050,22 +1051,43 @@ Return only the refined prompt, nothing else.`,
                     
                               if (idMapping.size > 0 && typeof setPlanningNodes === 'function') {
                                 const updatedNodes = contentNodes.map((node) => {
-                                  const newId = idMapping.get(node.id);
-                                  return newId ? { ...node, id: newId } : node;
+                                  const newId = idMapping.get(node.id) || node.id;
+                                  const remappedConnections = Array.isArray(node.connections)
+                                    ? node.connections
+                                        .map((oldConn) => idMapping.get(oldConn) || oldConn)
+                                        .filter(Boolean)
+                                    : [];
+                                  return { ...node, id: newId, connections: remappedConnections };
                                 });
                                 setPlanningNodes(updatedNodes);
                               }
                     
                               const edgePromises: Promise<any>[] = [];
-                              for (const node of contentNodes) {
-                                const newFromId = idMapping.get(node.id);
-                                if (!newFromId) continue;
-                                for (const oldConn of node.connections) {
-                                  const newToId = idMapping.get(oldConn);
-                                  if (!newToId) continue;
-                                  edgePromises.push(
-                                    NodeAPI.createEdge('demo-project-123', newFromId, newToId)
-                                  );
+                              // Create sequential edges if none present, or use remapped ones
+                              const nodesWithNewIds = contentNodes.map(n => ({
+                                ...n,
+                                id: idMapping.get(n.id) || n.id,
+                                connections: Array.isArray(n.connections)
+                                  ? n.connections.map(c => idMapping.get(c) || c).filter(Boolean)
+                                  : []
+                              }));
+                              const hasAnyConnections = nodesWithNewIds.some(n => (n.connections?.length ?? 0) > 0);
+                              if (hasAnyConnections) {
+                                for (const node of nodesWithNewIds) {
+                                  const fromId = node.id;
+                                  for (const toId of node.connections || []) {
+                                    if (!fromId || !toId) continue;
+                                    edgePromises.push(NodeAPI.createEdge('demo-project-123', fromId, toId));
+                                  }
+                                }
+                              } else {
+                                // Sequentially connect nodes to reflect planner flow
+                                for (let i = 0; i < nodesWithNewIds.length - 1; i++) {
+                                  const fromId = nodesWithNewIds[i].id;
+                                  const toId = nodesWithNewIds[i + 1].id;
+                                  if (fromId && toId) {
+                                    edgePromises.push(NodeAPI.createEdge('demo-project-123', fromId, toId));
+                                  }
                                 }
                               }
                               await Promise.allSettled(edgePromises);
