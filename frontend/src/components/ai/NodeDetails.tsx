@@ -517,8 +517,8 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                     <div className="text-xs text-muted-foreground">
                       Generated Images ({allImages.length}) - Click to select:
                     </div>
-                    <div className="overflow-x-auto">
-                      <div className="flex gap-2 pb-2" style={{ minWidth: 'fit-content' }}>
+                    <div className={`${allImages.length > 3 ? 'max-h-96 overflow-y-auto' : ''}`}>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
                         {allImages.map((imageUrl, index) => (
                           <Dialog key={`${imageUrl}-${index}`}>
                             <div 
@@ -536,7 +536,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                               <img 
                                 src={convertToProxyUrl(imageUrl)} 
                                 alt={`Generated content ${index + 1}`} 
-                                className="w-[140px] h-[140px] object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
+                                className="w-32 h-32 object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                 }}
