@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
+import { convertToProxyUrl } from '@/utils/templateUtils'
 
 interface ContentNode {
   id: string
@@ -1093,7 +1094,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
 
         {/* Image Folder Cards */}
         {nodes
-          .filter(node => node.imageUrl)
+          .filter(node => !!(node.selectedImageUrl || node.imageUrl))
           .map(node => (
             <Card
               key={`folder-${node.id}`}
@@ -1119,67 +1120,41 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
                 <span className='text-xs font-medium'>Image</span>
               </div>
 
-              {expandedImageFolders.has(node.id) && node.imageUrl && (
-                <div className='mt-2'>
-                  <div
-                    className='relative group cursor-grab active:cursor-grabbing'
-                    draggable
-                    onDragStart={e =>
-                      handleImageDragStart(e, node.imageUrl!, node.id)
-                    }
-                    onDragEnd={handleImageDragEnd}
-                  >
-                    <img
-                      src={node.imageUrl}
-                      alt='Selected image'
-                      className='w-full h-30 object-cover rounded border border-border/20 hover:opacity-80 transition-opacity'
-                    />
-                  </div>
+              {expandedImageFolders.has(node.id) && (
+                <div className='mt-2 space-y-2'>
+                  {/* Only show selected or primary image */}
+                  {(node.selectedImageUrl || node.imageUrl) && (
+                    <div className='rounded border border-primary/30 p-1'>
+                      <img
+                        src={convertToProxyUrl(node.selectedImageUrl || node.imageUrl!)}
+                        alt='Selected image'
+                        className='w-full h-30 object-cover rounded'
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
           ))}
 
         {/* Selected Image Cards */}
-        {nodes
+        {false && nodes
           .filter(node => node.selectedImageUrl)
           .map(node => (
-            <Card
-              key={`image-${node.id}`}
-              className='absolute w-60 p-2 bg-card/90 backdrop-blur-sm border border-primary/30 z-5'
-              style={{
-                left: node.position.x,
-                top:
-                  node.position.y +
-                  (expandedImageFolders.has(node.id) ? 340 : 280)
-              }}
-            >
+            <Card key={`image-${node.id}`} className='absolute w-60 p-2 bg-card/90 backdrop-blur-sm border border-primary/30 z-5' style={{ left: node.position.x, top: node.position.y + (expandedImageFolders.has(node.id) ? 340 : 280) }}>
               <div className='flex items-center justify-between mb-1'>
                 <span className='text-xs font-medium flex items-center gap-1'>
                   <Image className='w-3 h-3' />
                   Selected
                 </span>
-                <Button
-                  size='sm'
-                  variant='ghost'
-                  className='h-4 w-4 p-0'
-                  onClick={() => {
-                    const updatedNodes = nodes.map(n =>
-                      n.id === node.id
-                        ? { ...n, selectedImageUrl: undefined }
-                        : n
-                    )
-                    onNodeUpdate(updatedNodes)
-                  }}
-                >
+                <Button size='sm' variant='ghost' className='h-4 w-4 p-0' onClick={() => {
+                  const updatedNodes = nodes.map(n => (n.id === node.id ? { ...n, selectedImageUrl: undefined } : n))
+                  onNodeUpdate(updatedNodes)
+                }}>
                   <X className='w-2 h-2' />
                 </Button>
               </div>
-              <img
-                src={node.selectedImageUrl}
-                alt='Selected'
-                className='w-full h-20 object-cover rounded'
-              />
+              <img src={convertToProxyUrl(node.selectedImageUrl!)} alt='Selected' className='w-full h-20 object-cover rounded' />
             </Card>
           ))}
 

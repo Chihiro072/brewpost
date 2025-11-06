@@ -56,7 +56,7 @@ interface CircleCanvasProps {
     imageUrls?: string[]
     scheduledDate?: Date | string
   }
-  onSaveNode?: (node: { id: string; imageUrl?: string; imageUrls?: string[]; scheduledDate?: Date | string; title?: string; content?: string }) => void // Add support for saving node updates
+  onSaveNode?: (node: { id: string; imageUrl?: string; imageUrls?: string[]; scheduledDate?: Date | string; title?: string; content?: string; selectedImageUrl?: string }) => void // Add support for saving node updates
 }
 
 export function CircleCanvas({
@@ -225,7 +225,8 @@ export function CircleCanvas({
         const updatedNode = {
           ...selectedNode,
           imageUrls: [...existingImages, processedImageUrl],
-          imageUrl: processedImageUrl // Keep for backward compatibility
+          imageUrl: processedImageUrl, // Keep for backward compatibility
+          selectedImageUrl: processedImageUrl
         };
         
         // Check if this is a temporary planner ID (starts with 'planner-')
@@ -306,7 +307,8 @@ export function CircleCanvas({
             const updatedNode = {
               ...selectedNode,
               imageUrls: [...(selectedNode.imageUrls || []), finalImageUrl],
-              imageUrl: finalImageUrl
+              imageUrl: finalImageUrl,
+              selectedImageUrl: finalImageUrl
             };
             
             // Call onSaveNode but it won't persist to backend due to temporary ID
@@ -317,7 +319,8 @@ export function CircleCanvas({
             const updatedNode = {
               ...selectedNode,
               imageUrls: [...(selectedNode.imageUrls || []), finalImageUrl],
-              imageUrl: finalImageUrl
+              imageUrl: finalImageUrl,
+              selectedImageUrl: finalImageUrl
             };
             
             console.log('[CircleCanvas] About to call onSaveNode with proper GUID:', updatedNode.id);

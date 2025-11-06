@@ -175,7 +175,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
             postType: detectPostType(x.title, x.description ?? ''),
             connections: [],
             position: { x: x.x ?? 0, y: x.y ?? 0 },
-            postedAt: x.createdAt ? new Date(x.createdAt) : undefined
+            postedAt: x.createdAt ? new Date(x.createdAt) : undefined,
+            selectedImageUrl: (x as any).selectedImageUrl ?? undefined,
           };
         });
         
@@ -246,12 +247,75 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
     
     try {
       const { NodeAPI } = await import('@/services/nodeService');
-      // Handle multiple images - store the latest as imageUrl and all in imageUrls array
-      let imageUrlToStore = updatedNode.imageUrl;
-      if (updatedNode.imageUrls && updatedNode.imageUrls.length > 0) {
-        // Store the most recent image as imageUrl for backward compatibility
+      const { assetsAPI } = await import('@/services/apiService');
+
+      // Handle multiple images - prefer selectedImageUrl, then imageUrl, then latest from imageUrls
+      let imageUrlToStore = updatedNode.selectedImageUrl || updatedNode.imageUrl;
+      if (!imageUrlToStore && updatedNode.imageUrls && updatedNode.imageUrls.length > 0) {
         imageUrlToStore = updatedNode.imageUrls[updatedNode.imageUrls.length - 1];
-        console.log('handleSaveNode: storing multiple images:', updatedNode.imageUrls.length);
+        console.log('handleSaveNode: storing latest image from imageUrls:', updatedNode.imageUrls.length);
+      }
+
+      // If the image is a data URL, upload it to assets and use the returned URL
+      const needsUpload = imageUrlToStore && imageUrlToStore.startsWith('data:');
+      if (needsUpload) {
+        try {
+          console.log('[handleSaveNode] Uploading data URL to assets');
+          const dataUrl = imageUrlToStore as string;
+          const [header, base64] = dataUrl.split(',');
+          const mimeMatch = header.match(/data:(.*?);base64/);
+          const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+          const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          const blob = new Blob([bytes], { type: mimeType });
+          const filename = `node-${updatedNode.id}-${Date.now()}.png`;
+          const file = new File([blob], filename, { type: mimeType });
+          const asset = await assetsAPI.uploadAsset(file);
+          if (asset?.filePath || asset?.fileUrl) {
+            const storedUrl = (asset.fileUrl || asset.filePath) as string;
+            imageUrlToStore = storedUrl;
+            // Replace the last image in imageUrls with the stored URL, or append
+            const imgs = Array.isArray(updatedNode.imageUrls) ? [...updatedNode.imageUrls] : [];
+            if (imgs.length) {
+              imgs[imgs.length - 1] = storedUrl;
+            } else {
+              imgs.push(storedUrl);
+            }
+            updatedNode = { ...updatedNode, imageUrl: storedUrl, selectedImageUrl: storedUrl, imageUrls: imgs };
+          }
+        } catch (e) {
+          console.warn('[handleSaveNode] Failed to upload data URL, proceeding with original', e);
+        }
+      }
+
+      // Determine if the node ID is a proper GUID; if not, create it first
+      const isGuid = /^[0-9a-fA-F-]{36}$/.test(updatedNode.id);
+      if (!isGuid) {
+        console.warn('[handleSaveNode] Detected temporary ID, creating node before update:', updatedNode.id);
+        const createData = {
+          projectId: 'demo-project-123',
+          title: updatedNode.title,
+          description: updatedNode.content,
+          status: updatedNode.status,
+          type: updatedNode.type,
+          x: updatedNode.position?.x || 0,
+          y: updatedNode.position?.y || 0,
+          imageUrl: imageUrlToStore,
+          imageUrls: updatedNode.imageUrls || null,
+          imagePrompt: updatedNode.imagePrompt,
+          postType: updatedNode.postType,
+          selectedImageUrl: updatedNode.selectedImageUrl || imageUrlToStore,
+          ...(updatedNode.scheduledDate ? { scheduledDate: updatedNode.scheduledDate.toISOString() } : {}),
+        };
+        console.log('[handleSaveNode] Creating node with payload:', createData);
+        const created = await NodeAPI.create(createData as any);
+        if (created) {
+          console.log('[handleSaveNode] Node created. Replacing temporary ID with GUID:', created.id);
+          setNodes(prev => prev.map(n => n.id === updatedNode.id ? { ...updatedNode, ...created } : n));
+          if (selectedNode && selectedNode.id === updatedNode.id) {
+            setSelectedNode({ ...updatedNode, ...created });
+          }
+        }
+        return; // Creation already persisted the current data
       }
 
       const updateData = {
@@ -267,6 +331,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         imageUrl: imageUrlToStore,
         imageUrls: updatedNode.imageUrls || null,
         imagePrompt: updatedNode.imagePrompt,
+        postType: updatedNode.postType,
+        selectedImageUrl: updatedNode.selectedImageUrl || imageUrlToStore,
         ...(updatedNode.scheduledDate ? { scheduledDate: updatedNode.scheduledDate.toISOString() } : {}),
       };
 
@@ -317,7 +383,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
       imageUrl: nodeData.imageUrl,
       imageUrls: nodeData.imageUrls || [],
       imagePrompt: nodeData.imagePrompt,
-      postType: 'engaging'
+      postType: nodeData.postType || 'engaging',
+      selectedImageUrl: nodeData.selectedImageUrl || nodeData.imageUrl,
     };
 
     // Add node to state first for immediate UI feedback
@@ -326,10 +393,9 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
     try {
       const { NodeAPI } = await import('@/services/nodeService');
       
-      // Handle multiple images for new node
-      let imageUrlToStore = newNode.imageUrl;
-      
-      if (newNode.imageUrls && newNode.imageUrls.length > 0) {
+      // Handle multiple images for new node - prefer selectedImageUrl
+      let imageUrlToStore = newNode.selectedImageUrl || newNode.imageUrl;
+      if (!imageUrlToStore && newNode.imageUrls && newNode.imageUrls.length > 0) {
         imageUrlToStore = newNode.imageUrls[newNode.imageUrls.length - 1];
       }
       
@@ -345,6 +411,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({ chil
         imageUrl: imageUrlToStore,
         imageUrls: newNode.imageUrls || null,
         imagePrompt: newNode.imagePrompt,
+        postType: newNode.postType,
+        selectedImageUrl: newNode.selectedImageUrl || imageUrlToStore,
         ...(newNode.scheduledDate ? { scheduledDate: newNode.scheduledDate.toISOString() } : {}),
       };
 

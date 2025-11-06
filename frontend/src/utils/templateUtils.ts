@@ -242,26 +242,26 @@ export const applyTemplateToImage = async (imageUrl: string): Promise<string> =>
 };
 
 // Helper function to convert S3 URLs to proxy URLs
-const convertToProxyUrl = (imageUrl: string): string => {
-  // Check if it's an S3 URL that needs proxying
-  if (imageUrl.includes('s3-brewpost.s3.us-east-1.amazonaws.com') || imageUrl.includes('brewpost-assets')) {
-    try {
-      const url = new URL(imageUrl);
-      // Extract the S3 key from the URL
-      const s3Key = url.pathname.substring(1); // Remove leading slash
-      // Return proxy URL
+export const convertToProxyUrl = (imageUrl: string): string => {
+  if (!imageUrl) return imageUrl;
+  // Allow data URLs directly
+  if (imageUrl.startsWith('data:')) return imageUrl;
+  try {
+    const url = new URL(imageUrl);
+    const host = url.host;
+    const isBrewpostS3Host = /s3-brewpost\.s3(?:\.[a-z0-9-]+)?\.amazonaws\.com/i.test(host);
+    const isBrewpostAssets = host.includes('brewpost-assets') || imageUrl.includes('brewpost-assets');
+    if (isBrewpostS3Host || isBrewpostAssets) {
+      const s3Key = url.pathname.replace(/^\//, '');
       const proxyUrl = `http://localhost:5044/api/assets/proxy/${s3Key}`;
-      console.log('[templateUtils] Converting S3 URL to proxy:', imageUrl, '->', proxyUrl);
       return proxyUrl;
-    } catch (error) {
-      console.error('[templateUtils] Error parsing S3 URL:', error);
-      return imageUrl;
     }
+  } catch (error) {
+    // Fall back to original URL on parsing issues
+    console.warn('[templateUtils] convertToProxyUrl parse error:', error);
   }
-  
-  // Return original URL if not an S3 URL
   return imageUrl;
-};
+}
 
 const applyCompanyTextToCanvas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, settings: any, logoX?: number, logoY?: number, logoWidth?: number, logoHeight?: number) => {
   if (!settings.companyText) {

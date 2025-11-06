@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import type { ContentNode } from '@/components/planning/PlanningPanel';
 import { enhanceImagePromptWithTemplate, applyTemplateToImage, getTemplateSettings } from '@/utils/templateUtils';
 import { scheduleService } from '@/services/scheduleService';
+import { convertToProxyUrl } from '@/utils/templateUtils'
 
 interface NodeDetailsProps {
   node: ContentNode | null;
@@ -208,7 +209,8 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
         const updatedNode = {
           ...node,
           imageUrls: [...existingImages, processedImageUrl],
-          imageUrl: processedImageUrl // Keep for backward compatibility
+          imageUrl: processedImageUrl, // Keep for backward compatibility
+          selectedImageUrl: processedImageUrl
         };
         
         console.log('🎯 [NodeDetails] Saving updated node with new image...');
@@ -524,7 +526,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                                 (editedNode?.imageUrl || node.imageUrl) === imageUrl ? 'ring-2 ring-primary' : ''
                               }`}
                               onClick={() => {
-                                const updatedNode = { ...node, imageUrl: imageUrl };
+                                const updatedNode = { ...node, imageUrl: imageUrl, selectedImageUrl: imageUrl };
                                 setEditedNode(updatedNode);
                                 if (onSaveNode) {
                                   onSaveNode(updatedNode);
@@ -532,7 +534,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                               }}
                             >
                               <img 
-                                src={imageUrl} 
+                                src={convertToProxyUrl(imageUrl)} 
                                 alt={`Generated content ${index + 1}`} 
                                 className="w-[140px] h-[140px] object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
                                 onError={(e) => {
@@ -562,7 +564,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                               <DialogTitle className="sr-only">Full Size Image View</DialogTitle>
                               <div className="relative">
                                 <img 
-                                  src={imageUrl} 
+                                  src={convertToProxyUrl(imageUrl)} 
                                   alt={`Generated content ${index + 1} - Full size`} 
                                   className="w-full h-auto max-h-[90vh] object-contain"
                                 />

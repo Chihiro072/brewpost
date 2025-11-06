@@ -106,7 +106,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           postType: detectPostType(x.title, x.description ?? ''),
           connections: Array.isArray((x as any).connections) ? (x as any).connections : [],
           position: { x: x.x ?? 0, y: x.y ?? 0 },
-          postedAt: x.createdAt ? new Date(x.createdAt) : undefined
+          postedAt: x.createdAt ? new Date(x.createdAt) : undefined,
+          selectedImageUrl: (x as any).selectedImageUrl ?? undefined,
         }));
         
         // Load edges and populate connections
@@ -168,7 +169,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [nodes]);
 
   // Shared save function that works in both modes
-  const handleSaveNode = (updatedNode: ContentNode) => {
+  const handleSaveNode = async (updatedNode: ContentNode) => {
     console.log('=== MAIN LAYOUT HANDLE SAVE NODE DEBUG ===');
     console.log('MainLayout handleSaveNode called with:', updatedNode);
     console.log('Current viewMode:', viewMode);
@@ -178,75 +179,60 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     if (viewMode === 'nodes' && planningPanelRef.current?.handleSaveNode) {
       // Use PlanningPanel's save function in nodes mode
       console.log('Using PlanningPanel handleSaveNode');
-      planningPanelRef.current.handleSaveNode(updatedNode);
-    } else {
-      // Direct save in canvas mode
-      console.log('Using direct save in canvas mode');
-      console.log('Canvas mode: handleSaveNode called with:', updatedNode);
-      
-      // Update nodes state immediately - use debugSetNodes to sync with PlanningPanel
-      debugSetNodes(prevNodes => {
-        const updated = prevNodes.map(node => 
-          node.id === updatedNode.id ? updatedNode : node
-        );
-        console.log('Canvas mode: Updated nodes state with new scheduledDate:', updated.find(n => n.id === updatedNode.id)?.scheduledDate);
-        return updated;
-      });
-      
-      // Also update selectedNode directly if it's the same node
-      if (selectedNode && selectedNode.id === updatedNode.id) {
-        console.log('Canvas mode: Updating selectedNode directly:', updatedNode);
-        setSelectedNode(updatedNode);
-      }
-      
-      // Import and call NodeAPI directly
-      (async () => {
-        try {
-          const { NodeAPI } = await import('@/services/nodeService');
-          const raw = {
-            projectId: 'demo-project-123',
-            nodeId: updatedNode.id,
-            title: updatedNode.title,
-            description: updatedNode.content,
-            status: updatedNode.status,
-            type: updatedNode.type,
-            day: updatedNode.day,
-            imageUrl: updatedNode.imageUrl,
-            imageUrls: updatedNode.imageUrls,
-            imagePrompt: updatedNode.imagePrompt,
-            // only include scheduledDate if present to avoid sending explicit nulls
-            ...(updatedNode.scheduledDate ? { scheduledDate: updatedNode.scheduledDate.toISOString() } : {}),
-          } as Record<string, unknown>;
-
-          // Remove undefined properties to avoid GraphQL "Cannot return null for non-nullable type" errors
-          const updateData: Record<string, unknown> = {};
-          Object.keys(raw).forEach((k) => {
-            const v = (raw as Record<string, unknown>)[k];
-            if (v !== undefined && v !== null) updateData[k] = v;
-          });
-
-          console.log('Canvas mode: Sending update to NodeAPI:', updateData);
-          // cast to the NodeAPI.update input type at runtime-safe boundary
-          const resp = await NodeAPI.update(updateData as unknown as Parameters<typeof NodeAPI.update>[0]);
-          console.log('Canvas mode: Node updated successfully', resp);
-        } catch (error) {
-          console.error('Canvas mode: Failed to update node:', error);
-          try {
-            // Log common GraphQL/Apollo error properties when present
-            const e = error as unknown as { message?: string; graphQLErrors?: unknown; networkError?: unknown; response?: unknown; errors?: unknown; data?: unknown };
-            console.error('Error message:', e?.message);
-            if (e?.graphQLErrors) console.error('graphQLErrors:', e.graphQLErrors);
-            if (e?.networkError) console.error('networkError:', e.networkError);
-            if (e?.response) console.error('response:', e.response);
-            if (e?.errors) console.error('errors:', e.errors);
-            if (e?.data) console.error('data:', e.data);
-          } catch (logErr) {
-            console.error('Failed to stringify GraphQL error details:', logErr);
-          }
-        }
-      })();
+      await planningPanelRef.current.handleSaveNode(updatedNode);
+      return;
     }
-    console.log('=== END MAIN LAYOUT HANDLE SAVE NODE DEBUG ===');
+
+    // Direct save in canvas mode
+    console.log('Using direct save in canvas mode');
+    console.log('Canvas mode: handleSaveNode called with:', updatedNode);
+    
+    // Update nodes state immediately - use debugSetNodes to sync with PlanningPanel
+    debugSetNodes(prevNodes => {
+      const updated = prevNodes.map(node => 
+        node.id === updatedNode.id ? updatedNode : node
+      );
+      console.log('Canvas mode: Updated nodes state with new scheduledDate:', updated.find(n => n.id === updatedNode.id)?.scheduledDate);
+      return updated;
+    });
+    
+    // Also update selectedNode directly if it's the same node
+    if (selectedNode && selectedNode.id === updatedNode.id) {
+      setSelectedNode(updatedNode);
+    }
+    
+    // Persist to backend in canvas mode as well
+    try {
+      const { NodeAPI } = await import('@/services/nodeService');
+      let imageUrlToStore = updatedNode.selectedImageUrl || updatedNode.imageUrl;
+      if (!imageUrlToStore && updatedNode.imageUrls && updatedNode.imageUrls.length > 0) {
+        imageUrlToStore = updatedNode.imageUrls[updatedNode.imageUrls.length - 1];
+      }
+
+      const updateData = {
+        projectId: 'demo-project-123',
+        nodeId: updatedNode.id,
+        title: updatedNode.title,
+        description: updatedNode.content,
+        status: updatedNode.status,
+        type: updatedNode.type,
+        day: updatedNode.day,
+        x: updatedNode.position?.x || 0,
+        y: updatedNode.position?.y || 0,
+        imageUrl: imageUrlToStore,
+        imageUrls: updatedNode.imageUrls || null,
+        imagePrompt: updatedNode.imagePrompt,
+        postType: updatedNode.postType,
+        selectedImageUrl: updatedNode.selectedImageUrl || imageUrlToStore,
+        ...(updatedNode.scheduledDate ? { scheduledDate: updatedNode.scheduledDate.toISOString() } : {}),
+      };
+
+      console.log('Canvas mode: Persisting to backend with:', updateData);
+      await NodeAPI.update(updateData);
+      console.log('Canvas mode: Node updated successfully');
+    } catch (err) {
+      console.error('Canvas mode: Failed to persist node:', err);
+    }
   };
 
   // Shared post function that works in both modes

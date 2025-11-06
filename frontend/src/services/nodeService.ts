@@ -175,6 +175,7 @@ export type NodeDTO = {
   imageUrls?: string[] | null;
   imagePrompt?: string | null;
   scheduledDate?: string | null;
+  selectedImageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -196,6 +197,7 @@ const toNodeDTO = (node: any): NodeDTO => ({
   imageUrls: node.imageUrls ?? null,
   imagePrompt: node.imagePrompt ?? null,
   scheduledDate: node.scheduledDate ?? null,
+  selectedImageUrl: node.selectedImageUrl ?? null,
   createdAt: node.createdAt ?? new Date().toISOString(),
   updatedAt: node.updatedAt ?? new Date().toISOString(),
 });
@@ -243,6 +245,7 @@ export const NodeAPI = {
         postType: input.postType,
         focus: input.focus,
         scheduledDate: input.scheduledDate,
+        selectedImageUrl: input.selectedImageUrl,
         connections: Array.isArray(input.connections) ? input.connections : [],
       };
       const resp = await apiClient.post('/api/nodes', requestData);

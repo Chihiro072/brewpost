@@ -100,6 +100,17 @@ public class NodesController : ControllerBase
                 return Unauthorized(new { error = "User not authenticated" });
             }
 
+            // Compute a fallback post type if none provided
+            string DetectPostType(string title, string content)
+            {
+                var text = ($"{title} {content}").ToLowerInvariant();
+                string[] promo = ["buy","discount","sale","offer","limited","deal","promo"]; 
+                string[] branding = ["brand","identity","slogan","values","mission","vision"]; 
+                if (promo.Any(k => text.Contains(k))) return "promotional";
+                if (branding.Any(k => text.Contains(k))) return "branding";
+                return "engaging";
+            }
+
             var node = new Node
             {
                 UserId = userId.Value,
@@ -113,13 +124,27 @@ public class NodesController : ControllerBase
                 ImageUrls = request.ImageUrls != null ? JsonDocument.Parse(JsonSerializer.Serialize(request.ImageUrls)) : null,
                 ImagePrompt = request.ImagePrompt,
                 Day = request.Day,
-                PostType = request.PostType,
+                PostType = request.PostType ?? DetectPostType(request.Title ?? "Untitled Node", (request.Description ?? request.Content) ?? ""),
                 Focus = request.Focus,
                 ScheduledDate = request.ScheduledDate,
                 Connections = request.Connections != null ? JsonDocument.Parse(JsonSerializer.Serialize(request.Connections)) : JsonDocument.Parse("[]"),
+                SelectedImageUrl = request.SelectedImageUrl,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
+
+            // If ImageUrl not provided, prefer SelectedImageUrl, else latest from ImageUrls
+            if (string.IsNullOrWhiteSpace(node.ImageUrl))
+            {
+                if (!string.IsNullOrWhiteSpace(node.SelectedImageUrl))
+                {
+                    node.ImageUrl = node.SelectedImageUrl;
+                }
+                else if (request.ImageUrls != null && request.ImageUrls.Length > 0)
+                {
+                    node.ImageUrl = request.ImageUrls[^1];
+                }
+            }
 
             _context.Nodes.Add(node);
             await _context.SaveChangesAsync();
@@ -143,7 +168,14 @@ public class NodesController : ControllerBase
                 scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0]
+                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0],
+                position = new { x = node.X, y = node.Y },
+                postType = node.PostType,
+                focus = node.Focus,
+                postedAt = node.PostedAt,
+                postedTo = node.PostedTo != null ? JsonSerializer.Deserialize<string[]>(node.PostedTo) : null,
+                tweetId = node.TweetId,
+                selectedImageUrl = node.SelectedImageUrl
             };
 
             return CreatedAtAction(nameof(GetNode), new { id = node.Id }, response);
@@ -354,6 +386,7 @@ public class CreateNodeRequest
     public string? Focus { get; set; }
     public DateTime? ScheduledDate { get; set; }
     public string[]? Connections { get; set; }
+    public string? SelectedImageUrl { get; set; }
 }
 
 public class UpdateNodeRequest
