@@ -11,6 +11,9 @@ public class Node
     
     [Required]
     public Guid UserId { get; set; }
+
+    [MaxLength(255)]
+    public string? ProjectId { get; set; }
     
     [Required]
     [MaxLength(255)]

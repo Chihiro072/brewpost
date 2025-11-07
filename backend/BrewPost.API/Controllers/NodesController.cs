@@ -366,6 +366,78 @@ public class NodesController : ControllerBase
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
+
+    [HttpPost("{id}/schedule")]
+    public async Task<IActionResult> ScheduleNode(Guid id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { error = "User not authenticated" });
+            }
+
+            var node = await _context.Nodes
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
+            if (node == null)
+            {
+                return NotFound(new { error = "Node not found" });
+            }
+
+            node.Status = "scheduled";
+            node.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(node);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scheduling node {Id}", id);
+            return StatusCode(500, new { error = "An error occurred while scheduling the node" });
+        }
+    }
+
+    [HttpPost("schedule-all")]
+    public async Task<IActionResult> ScheduleAllNodes([FromQuery] string? projectId = null)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { error = "User not authenticated" });
+            }
+
+            var query = _context.Nodes.Where(n => n.UserId == userId);
+            
+            if (!string.IsNullOrEmpty(projectId))
+            {
+                query = query.Where(n => n.ProjectId == projectId);
+            }
+
+            var nodes = await query
+                .Where(n => n.Status != "scheduled" && n.Status != "published")
+                .ToListAsync();
+
+            foreach (var node in nodes)
+            {
+                node.Status = "scheduled";
+                node.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"{nodes.Count} nodes scheduled successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scheduling all nodes");
+            return StatusCode(500, new { error = "An error occurred while scheduling nodes" });
+        }
+    }
 }
 
 public class CreateNodeRequest
