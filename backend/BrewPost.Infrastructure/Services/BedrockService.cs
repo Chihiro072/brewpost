@@ -75,54 +75,74 @@ public class BedrockService : IBedrockService
             using var reader = new StreamReader(response.Body);
             var responseJson = await reader.ReadToEndAsync();
             
-            _logger.LogInformation("Received response from Bedrock");
-            _logger.LogDebug("Response JSON: {Response}", responseJson);
+            _logger.LogInformation("Received response from Bedrock, status: {StatusCode}", response.HttpStatusCode);
+            _logger.LogInformation("Response JSON length: {Length}", responseJson.Length);
+            _logger.LogInformation("Response JSON: {Response}", responseJson);
 
             // Parse the response to extract the generated text
             var responseObj = JsonSerializer.Deserialize<JsonElement>(responseJson);
+            _logger.LogInformation("Successfully parsed response JSON");
             
             // Try multiple response formats
             string? generatedText = null;
             
+            _logger.LogInformation("Attempting to extract text from response...");
+            
             // Format 1: Nova model response with "output" array
             if (responseObj.TryGetProperty("output", out var outputObj) && outputObj.TryGetProperty("message", out var messageObj))
             {
+                _logger.LogInformation("Found 'output.message' format");
                 if (messageObj.TryGetProperty("content", out var contentArray) && contentArray.GetArrayLength() > 0)
                 {
                     var firstContent = contentArray[0];
                     if (firstContent.TryGetProperty("text", out var textElement))
                     {
                         generatedText = textElement.GetString();
-        }
-    }
-}            // Format 2: Direct content array
+                        _logger.LogInformation("✅ Extracted text from Format 1, length: {Length}", generatedText?.Length ?? 0);
+                    }
+                }
+            }
+            
+            // Format 2: Direct content array
             if (string.IsNullOrEmpty(generatedText) && responseObj.TryGetProperty("content", out var directContent) && directContent.GetArrayLength() > 0)
             {
+                _logger.LogInformation("Found 'content' format");
                 var firstContent = directContent[0];
                 if (firstContent.TryGetProperty("text", out var textElement))
                 {
                     generatedText = textElement.GetString();
+                    _logger.LogInformation("✅ Extracted text from Format 2, length: {Length}", generatedText?.Length ?? 0);
                 }
             }
             
             // Format 3: Direct text property
             if (string.IsNullOrEmpty(generatedText) && responseObj.TryGetProperty("text", out var directText))
             {
+                _logger.LogInformation("Found 'text' format");
                 generatedText = directText.GetString();
+                _logger.LogInformation("✅ Extracted text from Format 3, length: {Length}", generatedText?.Length ?? 0);
             }
             
             if (!string.IsNullOrEmpty(generatedText))
             {
-                _logger.LogInformation("Successfully generated content from Bedrock");
+                _logger.LogInformation("✅ Successfully generated content from Bedrock, total length: {Length}", generatedText.Length);
                 return generatedText;
             }
             
-            _logger.LogWarning("Unexpected response format from Bedrock: {Response}", responseJson);
+            _logger.LogWarning("❌ Could not parse Bedrock response - tried all formats, response: {Response}", responseJson);
             throw new InvalidOperationException("Could not parse Bedrock response");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating content from Bedrock: {Message}", ex.Message);
+            _logger.LogError(ex, "❌ Error generating content from Bedrock");
+            _logger.LogError("Exception type: {ExceptionType}", ex.GetType().FullName);
+            _logger.LogError("Exception message: {Message}", ex.Message);
+            _logger.LogError("Exception stack trace: {StackTrace}", ex.StackTrace);
+            
+            if (ex.InnerException != null)
+            {
+                _logger.LogError("Inner exception: {InnerMessage}", ex.InnerException.Message);
+            }
             
             // Check if it's an authorization error
             if (ex.Message.Contains("not authorized") || ex.Message.Contains("bedrock:InvokeModel"))

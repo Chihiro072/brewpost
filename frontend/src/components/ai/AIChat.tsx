@@ -44,7 +44,6 @@ import {
 } from '@/utils/quotaUtils';
 import { PaymentModal } from './PaymentModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useToast } from '@/hooks/use-toast';
 
 const cleanField = (s?: string) =>
   (s ?? '')
@@ -380,8 +379,6 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
   const navigate = useNavigate();
   const [isRefining, setIsRefining] = useState(false);
 
-  // FIX: initialize toast hook
-  const { toast } = useToast();
   // Add plan and monthly quota state
   const { plan } = useSubscription();
   const [monthlyBreakdown, setMonthlyBreakdown] = useState(
@@ -531,14 +528,12 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
 Click the link icon on any node to start connecting them. What type of content flow are you planning?`;
     }
 
-    return `I'll create a smart content plan for: "${userInput}"
+    return `⚠️ I couldn't generate a planner right now. This might happen if:
+• The AI service is temporarily unavailable
+• Your request timed out
+• There was a connection issue
 
-**How it works:**
-• I automatically assign the best post type for each day
-• Each post is tailored to your specific topic
-• Strategic mix of engaging, promotional, and branding content
-
-Just tell me what you want to create content about!`;
+Please try again or refine your request. For a quick start, tell me what topic you'd like to create content about, and I'll help you plan it out!`;
   };
 
   // NEW: helper to append a message safely
@@ -711,17 +706,161 @@ Return only the refined prompt, nothing else.`,
         )
         .join('\n\n');
 
+      console.log('Sending prompt to backend:', prompt);
+
+      // Detect if this is likely a planner request (contains planning keywords)
+      // Check ONLY the current user message, not the entire history
+      const currentUserMessage = userMessage.content.toLowerCase();
+      
+      const plannerKeywords = ['plan', 'content', 'posts', 'strategy', 'create posts', 'create content', 'social media', 'generate content', 'design posts', 'thinking about', 'ideas for', 'brainstorm', 'create', 'make', 'generate'];
+      
+      // Information/definition requests - just want a quick answer, not a plan
+      const informationKeywords = ['definition', 'what is', 'explain', 'tell me about', 'how do', 'why', 'when', 'where', 'who', 'meaning of', 'can u'];
+      const isInformationRequest = informationKeywords.some(kw => currentUserMessage.includes(kw)) &&
+        !plannerKeywords.some(kw => currentUserMessage.includes(kw));
+      
+      // Casual greetings - just respond normally without creating a plan
+      const casualGreetings = ['hi', 'hello', 'hey', 'thanks', 'thank you', 'thx', 'ok', 'okay', 'sure', 'yep', 'nope', 'lol', 'lmao'];
+      const isCasualGreeting = casualGreetings.some(kw => currentUserMessage === kw || currentUserMessage.startsWith(kw + ' ')) &&
+        !plannerKeywords.some(kw => currentUserMessage.includes(kw));
+      
+      const isPlannerRequest = plannerKeywords.some(kw => currentUserMessage.includes(kw));
+
+      if (isInformationRequest) {
+        console.log('ℹ️ Detected information request, not creating planner');
+        // For info requests, send to backend but with explicit instructions
+        const infoPrompt = `The user is asking for information or a definition, NOT asking for a content plan. 
+Just answer their question directly and concisely. Do NOT create a multi-post content plan.
+
+User question: ${userMessage.content}`;
+        
+        const infoResp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ Prompt: infoPrompt }),
+        });
+
+        console.log('Response status:', infoResp.status, infoResp.statusText);
+
+        if (!infoResp.ok) {
+          const txt = await infoResp.text();
+          console.error('Backend error response:', txt);
+          throw new Error(txt || 'Generate failed');
+        }
+        const infoData: GenerateResponse = await infoResp.json();
+        console.log('Backend response:', infoData);
+
+        incrementQuota();
+        {
+          const planLimit = getPlanMonthlyLimit(plan);
+          incrementMonthlyUsage(planLimit);
+          setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
+        }
+        setRemainingMessages(getRemainingMessages());
+        setQuotaExceeded(isQuotaExceeded());
+        setQuotaBreakdown(getQuotaBreakdown());
+
+        if (infoData.content || infoData.text) {
+          const raw = infoData.content || infoData.text || '';
+          const display = stripMarkdownForDisplay(raw);
+          appendMessage({
+            id: (Date.now() + 1).toString(),
+            type: 'ai',
+            content: display,
+            rawText: raw,
+            timestamp: new Date(),
+            contentType: 'text',
+          });
+        } else {
+          appendMessage({
+            id: (Date.now() + 2).toString(),
+            type: 'ai',
+            content: 'I couldn\'t find an answer to that. Could you rephrase your question?',
+            rawText: '',
+            timestamp: new Date(),
+            contentType: 'text',
+          });
+        }
+        
+        setIsGenerating(false);
+        return;
+      }
+
+      if (isCasualGreeting) {
+        console.log('👋 Detected casual greeting, responding naturally without planner');
+        // For casual greetings, send to backend with explicit instructions not to create a plan
+        const casualPrompt = `The user is just greeting you or making a casual comment. They are NOT asking for a content plan. 
+Just respond naturally and conversationally. Do NOT create any posts or content plan.
+
+User message: ${userMessage.content}`;
+        
+        const casualResp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ Prompt: casualPrompt }),
+        });
+
+        console.log('Response status:', casualResp.status, casualResp.statusText);
+
+        if (!casualResp.ok) {
+          const txt = await casualResp.text();
+          console.error('Backend error response:', txt);
+          throw new Error(txt || 'Generate failed');
+        }
+        const casualData: GenerateResponse = await casualResp.json();
+        console.log('Backend response:', casualData);
+
+        incrementQuota();
+        {
+          const planLimit = getPlanMonthlyLimit(plan);
+          incrementMonthlyUsage(planLimit);
+          setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
+        }
+        setRemainingMessages(getRemainingMessages());
+        setQuotaExceeded(isQuotaExceeded());
+        setQuotaBreakdown(getQuotaBreakdown());
+
+        if (casualData.content || casualData.text) {
+          const raw = casualData.content || casualData.text || '';
+          const display = stripMarkdownForDisplay(raw);
+          appendMessage({
+            id: (Date.now() + 1).toString(),
+            type: 'ai',
+            content: display,
+            rawText: raw,
+            timestamp: new Date(),
+            contentType: 'text',
+          });
+        } else {
+          appendMessage({
+            id: (Date.now() + 2).toString(),
+            type: 'ai',
+            content: 'Hey! How can I help you with your content today?',
+            rawText: '',
+            timestamp: new Date(),
+            contentType: 'text',
+          });
+        }
+        
+        setIsGenerating(false);
+        return;
+      }
+
       const resp = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ Prompt: prompt }),
       });
 
+      console.log('Response status:', resp.status, resp.statusText);
+
       if (!resp.ok) {
         const txt = await resp.text();
+        console.error('Backend error response:', txt);
         throw new Error(txt || 'Generate failed');
       }
       const data: GenerateResponse = await resp.json();
+      console.log('Backend response:', data);
 
       // Increment quota after successful API call
       incrementQuota();
@@ -816,28 +955,32 @@ Return only the refined prompt, nothing else.`,
     const raw = text || '';
     const normalized = raw.toLowerCase();
 
-    // Flexible header detection for post-based planning
-    const hasPlannerHeader =
-      /planner\s*mode|content\s+plan|post\s+schedule/.test(normalized);
-
-    const postNumbers = /post\s+\d+/gi;
-    const postsFound = (normalized.match(postNumbers) || []).length;
-
-    // Section markers (Title/Caption/Image Prompt) often appear in your plans
-    const hasSectionMarkers =
-      /(title\s*[:\-])|(\bimage\s+prompt\b)|(\bcaption\s*[:\-])/.test(raw);
-
-    // Last-resort: actually try to parse – if we can extract several nodes, it's a planner
+    // Try to actually parse it as a planner first
     let parsedCount = 0;
     try {
       parsedCount = extractPlannerNodesFromText(raw).length;
     } catch {}
 
-    return (
-      (hasPlannerHeader && postsFound >= 2) || // header + a couple posts
-      postsFound >= 3 || // looks like a multi-post plan
-      (hasSectionMarkers && parsedCount >= 3) // parses into multiple nodes
-    );
+    // If we couldn't parse any nodes, it's definitely not a planner
+    if (parsedCount === 0) return false;
+
+    // If we parsed nodes, require at least 3 nodes to be confident it's a planner
+    // This prevents false positives from general responses that happen to mention posts
+    if (parsedCount < 3) return false;
+
+    // Flexible header detection for post-based planning
+    const hasPlannerHeader =
+      /planner\s*mode|content\s+plan|post\s+schedule/.test(normalized);
+
+    // Section markers (Title/Caption/Image Prompt) often appear in your plans
+    // More lenient matching to catch variations in formatting
+    const hasSectionMarkers =
+      /title\s*[\s:]/i.test(raw) || 
+      /caption\s*[\s:]/i.test(raw) || 
+      /image\s+prompt\s*[\s:]/i.test(raw);
+
+    // Must have section markers AND be able to parse multiple nodes
+    return hasSectionMarkers && parsedCount >= 3;
   };
 
   // Insert a caption into input (user can edit & send)
@@ -977,11 +1120,6 @@ Return only the refined prompt, nothing else.`,
                           (e.currentTarget.style.backgroundColor = '#03624C')
                         }
                         onClick={() => {
-                          const applyToast = toast({
-                            title: 'Applying planner',
-                            description: 'Adding nodes to the canvas...',
-                          });
-                    
                           const planner = extractPlannerNodesFromText(
                             message.rawText ?? message.content
                           );
@@ -1008,27 +1146,39 @@ Return only the refined prompt, nothing else.`,
                             setPlanningNodes(contentNodes);
                           }
                     
-                          const saveToast = toast({
-                            title: 'Saving planner',
-                            description: 'Persisting nodes to database...',
-                          });
-                    
                           const replaceInAppSync = async () => {
+                            let successCount = 0;
+                            let edgeSuccessCount = 0;
                             try {
-                              const existingNodes = await NodeAPI.list('demo-project-123');
-                              const existingEdges = await NodeAPI.listEdges('demo-project-123');
+                              console.log('🔄 Starting planner save...');
+                              let existingNodes = [];
+                              let existingEdges = [];
+                              
+                              try {
+                                existingNodes = await NodeAPI.list('demo-project-123');
+                                existingEdges = await NodeAPI.listEdges('demo-project-123');
+                                console.log(`📦 Found ${existingNodes.length} existing nodes and ${existingEdges.length} edges`);
+                              } catch (listErr) {
+                                console.warn('⚠️ Warning fetching existing nodes/edges:', listErr);
+                                // Continue anyway - we'll just create new nodes
+                              }
                     
-                              await Promise.all(
-                                existingEdges.map((edge) =>
-                                  NodeAPI.deleteEdge('demo-project-123', edge.edgeId).catch(() => {})
-                                )
-                              );
+                              try {
+                                await Promise.all(
+                                  existingEdges.map((edge) =>
+                                    NodeAPI.deleteEdge('demo-project-123', edge.edgeId).catch(() => {})
+                                  )
+                                );
                     
-                              await Promise.all(
-                                existingNodes.map((oldNode) =>
-                                  NodeAPI.remove('demo-project-123', oldNode.nodeId).catch(() => {})
-                                )
-                              );
+                                await Promise.all(
+                                  existingNodes.map((oldNode) =>
+                                    NodeAPI.remove('demo-project-123', oldNode.nodeId).catch(() => {})
+                                  )
+                                );
+                              } catch (deleteErr) {
+                                console.warn('⚠️ Warning during deletion phase:', deleteErr);
+                                // Don't throw - continue with creating new nodes
+                              }
                     
                               console.log(
                                 '✅ All deletions completed. Creating',
@@ -1039,7 +1189,6 @@ Return only the refined prompt, nothing else.`,
                               // Create all new nodes and track ID mapping
                               const idMapping = new Map();
                               const nodeResults = [];
-                              let successCount = 0;
                     
                               for (let i = 0; i < contentNodes.length; i++) {
                                 const node = contentNodes[i];
@@ -1059,10 +1208,13 @@ Return only the refined prompt, nothing else.`,
                                   });
                                   idMapping.set(node.id, result.nodeId);
                                   successCount += 1;
+                                  console.log(`✅ Created node ${i + 1}/${contentNodes.length}: ${node.title}`);
                                 } catch (err) {
+                                  console.error(`❌ Failed to create node ${i + 1}:`, err);
                                   // continue creating others
                                 }
                               }
+                              console.log(`📊 Successfully created ${successCount}/${contentNodes.length} nodes`);
                     
                               if (idMapping.size > 0 && typeof setPlanningNodes === 'function') {
                                 const updatedNodes = contentNodes.map((node) => {
@@ -1077,7 +1229,7 @@ Return only the refined prompt, nothing else.`,
                                 setPlanningNodes(updatedNodes);
                               }
                     
-                              const edgePromises: Promise<any>[] = [];
+                              const edgePromises: Promise<unknown>[] = [];
                               // Create sequential edges if none present, or use remapped ones
                               const nodesWithNewIds = contentNodes.map(n => ({
                                 ...n,
@@ -1105,26 +1257,16 @@ Return only the refined prompt, nothing else.`,
                                   }
                                 }
                               }
-                              await Promise.allSettled(edgePromises);
-                    
-                              applyToast.update({
-                                title: 'Planner applied',
-                                description: 'Nodes added to canvas.',
-                              });
-                    
-                              saveToast.update({
-                                title: 'Planner saved',
-                                description: `Saved ${successCount} nodes and ${edgePromises.length} connections.`,
-                              });
-                            } catch (error: any) {
-                              const message = error?.response?.status === 401
-                                ? 'Unauthorized. Please log in and try again.'
-                                : 'Could not persist nodes. Check your connection.';
-                              saveToast.update({
-                                title: 'Save failed',
-                                description: message,
-                                variant: 'destructive',
-                              });
+                              console.log(`🔗 Creating ${edgePromises.length} edges...`);
+                              const edgeResults = await Promise.allSettled(edgePromises);
+                              edgeSuccessCount = edgeResults.filter(r => r.status === 'fulfilled').length;
+                              console.log(`✅ Created ${edgeSuccessCount}/${edgePromises.length} edges`);
+                              console.log('✅ Planner saved successfully!');
+                            } catch (error: unknown) {
+                              console.error('❌ Error in save flow:', error);
+                              console.log('💾 successCount at error:', successCount, 'Total nodes:', contentNodes.length);
+                              const errorMsg = error instanceof Error ? error.message : String(error);
+                              console.error('Error details:', errorMsg);
                             }
                           };
                     

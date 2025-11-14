@@ -39,6 +39,31 @@ public class GenerateController : ControllerBase
             if (!string.IsNullOrEmpty(request.Prompt))
             {
                 userText = request.Prompt;
+                
+                // If the prompt contains multiple "User:" and "Assistant:" entries (chat history),
+                // extract just the last user message to avoid overwhelming Bedrock
+                if (userText.Contains("User:") && userText.Contains("Assistant:"))
+                {
+                    _logger.LogInformation("Detected chat history in prompt, extracting last user message");
+                    
+                    // Split by "User:" and get the last entry
+                    var userMessages = userText.Split(new[] { "User:" }, StringSplitOptions.None);
+                    if (userMessages.Length > 1)
+                    {
+                        // Get the last user message (everything after the last "User:")
+                        var lastUserMessage = userMessages[userMessages.Length - 1].Trim();
+                        
+                        // If this message contains "Assistant:" (meaning there's a response after it),
+                        // extract just the user part
+                        if (lastUserMessage.Contains("Assistant:"))
+                        {
+                            lastUserMessage = lastUserMessage.Split(new[] { "Assistant:" }, StringSplitOptions.None)[0].Trim();
+                        }
+                        
+                        _logger.LogInformation("Extracted last user message: {Message}", lastUserMessage);
+                        userText = lastUserMessage;
+                    }
+                }
             }
             else if (request.Messages != null && request.Messages.Any())
             {
@@ -48,7 +73,7 @@ public class GenerateController : ControllerBase
 
             // Check if this is an image generation request
             bool isImageRequest = !string.IsNullOrEmpty(userText) && 
-                System.Text.RegularExpressions.Regex.IsMatch(userText, @"image|cover|banner|foto|gambar", 
+                System.Text.RegularExpressions.Regex.IsMatch(userText, @"\b(image|cover|banner|foto|gambar)\b", 
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
             if (isImageRequest)
@@ -80,9 +105,7 @@ public class GenerateController : ControllerBase
             {
                 try
                 {
-                    _logger.LogInformation("Processing text generation request");
-
-                    _logger.LogInformation("Processing text generation request (forwarding to Bedrock)");
+                    _logger.LogInformation("Processing text generation request for userText: {UserText}", userText);
 
                     // Build the enhanced prompt for logging/debugging only. The Bedrock service
                     // will build its own final payload; we pass the raw user text to the service.
@@ -90,7 +113,10 @@ public class GenerateController : ControllerBase
                     _logger.LogDebug("Enhanced prompt preview: {Preview}",
                         enhancedPrompt?.Substring(0, Math.Min(800, enhancedPrompt.Length)));
 
+                    _logger.LogInformation("Calling BedrockService.GenerateContentAsync with prompt: {Prompt}", userText);
                     var generatedText = await _bedrockService.GenerateContentAsync(userText);
+                    
+                    _logger.LogInformation("Successfully generated text, length: {Length}", generatedText?.Length ?? 0);
 
                     return Ok(new
                     {
@@ -100,7 +126,8 @@ public class GenerateController : ControllerBase
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error generating text content");
+                    _logger.LogError(ex, "Error generating text content: {ExceptionMessage}", ex.Message);
+                    _logger.LogError("Exception type: {ExceptionType}, StackTrace: {StackTrace}", ex.GetType().Name, ex.StackTrace);
                     
                     if (ex.Message.Contains("403") || ex.Message.Contains("not authorized"))
                     {
@@ -126,33 +153,31 @@ public class GenerateController : ControllerBase
 
     private string BuildBrewPostPrompt(string userPrompt)
     {
-        return $@"INSTRUCTION: You are BrewPost assistant — a professional-grade **social media strategist and planner** for Instagram content.
+        return $@"You are BrewPost assistant, a social media strategy tool.
 
-You operate in TWO MODES:
+IMPORTANT - DETECT THE USER'S INTENT FIRST:
 
-1. PLANNER MODE:
-- Generate a 7-day weekly content plan (Monday–Sunday)
-- One post per day — **NO reels or carousels**. Only **single static image posts**
-- Each post must include:
-  - **Title**: Strong, curiosity-driven line that must be **visibly placed inside the image**
-  - **Caption**: Write a storytelling or educational caption (aim for blog-style or micro-essay length). It should be engaging, unique, non-repetitive, and include **2–3 relevant emojis** + strategic hashtags. Avoid filler or generic tips — write like a thought leader.
-  - **Image Prompt**: Describe the visual content of the post, including how the **title should appear inside the image** (font size/placement/vibe optional but encouraged)
+1. If the user is making CASUAL CONVERSATION (greeting, asking about you, small talk like 'hi', 'hello', 'how are you', 'what is brewpost'):
+   - Respond naturally and briefly in conversation mode
+   - Do NOT generate a planner
+   - Example: User says 'Hi!' → You respond 'Hi there! How can I help you create amazing content today?'
 
-2. STRATEGIST MODE:
-- When given goals, ideas, or raw themes, help by:
-  - Brainstorming compelling **title options**
-  - Crafting detailed **image prompt suggestions** (including embedded text/title)
-  - Recommending the **tone, structure, or opening hook** of the caption
-  - Offering complete **caption drafts** with strong strategic positioning
+2. If the user is asking for CONTENT PLANNING (contains words like 'plan', 'content', 'posts', 'strategy', 'create posts for', 'generate content for', 'social media plan'):
+   - Generate a 7-day content planner with 7 posts
+   - Each post must have: Title, Caption, Image Prompt
+   - Start with '## Post 1' and include all 7 posts
+   - Example: User says 'Plan content for coffee shop' → Generate full 7-post planner
 
-GENERAL RULES:
-- Always clarify if the user's goal is ambiguous.
-- **Never repeat ideas or reuse phrasing** — each output should feel tailor-made.
-- Think like a senior creative strategist — **sharp, persuasive, and brand-aware**
-- Focus on real content value, storytelling power, and audience psychology.
+3. If the user is asking for IDEAS/SUGGESTIONS (contains words like 'ideas', 'suggestions', 'brainstorm', 'help with', 'advice', 'tips'):
+   - Provide helpful brainstorming or advice
+   - Do NOT generate a full planner
+   - Example: User says 'Ideas for Instagram posts' → Suggest 3-5 topic ideas
 
-Output should always be structured, useful, and ready to deploy in a content calendar or automation pipeline.
+CRITICAL RULE: 
+- ONLY generate a 7-post planner (starting with '## Post 1') when the user explicitly asks for content planning, posts, or strategy
+- For greetings and casual chat, respond conversationally without any planner format
+- For advice/ideas requests, provide suggestions in paragraph form
 
-USER PROMPT: {userPrompt}";
+USER MESSAGE: {userPrompt}";
     }
 }
