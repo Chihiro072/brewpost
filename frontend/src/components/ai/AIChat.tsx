@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Send,
   Image,
@@ -22,14 +22,14 @@ import {
   X,
   Maximize2,
   Clock,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { ContentNode } from '@/components/planning/PlanningPanel';
-import { NodeAPI } from '@/services/nodeService';
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import type { ContentNode } from "@/components/planning/PlanningPanel";
+import { NodeAPI } from "@/services/nodeService";
 import {
   enhanceImagePromptWithTemplate,
   applyTemplateToImage,
-} from '@/utils/templateUtils';
+} from "@/utils/templateUtils";
 import {
   getRemainingMessages,
   isQuotaExceeded,
@@ -41,36 +41,36 @@ import {
   getPlanMonthlyLimit,
   getMonthlyQuotaBreakdown,
   incrementMonthlyUsage,
-} from '@/utils/quotaUtils';
-import { PaymentModal } from './PaymentModal';
-import { useSubscription } from '@/contexts/SubscriptionContext';
+} from "@/utils/quotaUtils";
+import { PaymentModal } from "./PaymentModal";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const cleanField = (s?: string) =>
-  (s ?? '')
+  (s ?? "")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&')
-    .replace(/^\s*(\*{1,}|[-•])\s*/, '')
-    .replace(/^\s*["'`]+|["'`]+$/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/&amp;/g, "&")
+    .replace(/^\s*(\*{1,}|[-•])\s*/, "")
+    .replace(/^\s*["'`]+|["'`]+$/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 
-const stripMarkdownForDisplay = (s: string = '') =>
+const stripMarkdownForDisplay = (s: string = "") =>
   s
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/^\s*[-*_]{3,}\s*$/gm, '')
-    .replace(/```([\s\S]*?)```/g, '$1')
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/^\s*[-*_]{3,}\s*$/gm, "")
+    .replace(/```([\s\S]*?)```/g, "$1")
     .trim();
 
 interface Message {
   id: string;
   title?: string;
-  type: 'user' | 'ai' | 'system';
+  type: "user" | "ai" | "system";
   content: string;
   rawText?: string;
   timestamp: Date;
-  contentType?: 'text' | 'image';
+  contentType?: "text" | "image";
   imageUrl?: string;
   imagePrompt?: string;
   captions?: string[];
@@ -84,7 +84,7 @@ type PlannerNode = {
 };
 
 function extractPlannerNodesFromText(raw: string): PlannerNode[] {
-  const text = raw.replace(/\r\n/g, '\n');
+  const text = raw.replace(/\r\n/g, "\n");
   const nodes: PlannerNode[] = [];
 
   // New format: Parse "Post X" blocks with Title, Caption, Image Prompt
@@ -102,8 +102,8 @@ function extractPlannerNodesFromText(raw: string): PlannerNode[] {
     const imagePromptMatch = content.match(/\*\*Image Prompt:\*\*\s*([^\n]+)/i);
 
     const title = titleMatch ? titleMatch[1].trim() : `Post ${postNum}`;
-    const caption = captionMatch ? captionMatch[1].trim() : '';
-    const imagePrompt = imagePromptMatch ? imagePromptMatch[1].trim() : '';
+    const caption = captionMatch ? captionMatch[1].trim() : "";
+    const imagePrompt = imagePromptMatch ? imagePromptMatch[1].trim() : "";
 
     nodes.push({
       day: `Post ${postNum}`,
@@ -115,7 +115,7 @@ function extractPlannerNodesFromText(raw: string): PlannerNode[] {
 
   // Fallback: Try to parse line-by-line format
   if (nodes.length === 0) {
-    const lines = text.split('\n');
+    const lines = text.split("\n");
     let currentPost: Partial<PlannerNode> = {};
     let postCount = 0;
 
@@ -130,8 +130,8 @@ function extractPlannerNodesFromText(raw: string): PlannerNode[] {
           nodes.push({
             day: currentPost.day,
             title: currentPost.title || `Post ${postCount}`,
-            caption: currentPost.caption || '',
-            imagePrompt: currentPost.imagePrompt || '',
+            caption: currentPost.caption || "",
+            imagePrompt: currentPost.imagePrompt || "",
           });
         }
 
@@ -174,21 +174,21 @@ function extractPlannerNodesFromText(raw: string): PlannerNode[] {
       nodes.push({
         day: currentPost.day,
         title: currentPost.title || `Post ${postCount}`,
-        caption: currentPost.caption || '',
-        imagePrompt: currentPost.imagePrompt || '',
+        caption: currentPost.caption || "",
+        imagePrompt: currentPost.imagePrompt || "",
       });
     }
   }
 
-  console.info(
-    'AIChat: parsed planner blocks ->',
-    nodes.map((n) => ({
-      day: n.day,
-      title: n.title,
-      caption: n.caption.substring(0, 50),
-      hasImagePrompt: !!n.imagePrompt,
-    }))
-  );
+  // console.info(
+  //   'AIChat: parsed planner blocks ->',
+  //   nodes.map((n) => ({
+  //     day: n.day,
+  //     title: n.title,
+  //     caption: n.caption.substring(0, 50),
+  //     hasImagePrompt: !!n.imagePrompt,
+  //   }))
+  // );
   return nodes;
 }
 
@@ -222,7 +222,7 @@ function mapPlannerNodesToContentNodes(
       )
     ) {
       console.log(`🎯 DETECTED: promotional`);
-      return 'promotional';
+      return "promotional";
     }
 
     // 🟡 BRANDING: Build brand identity, trust, and values
@@ -232,12 +232,12 @@ function mapPlannerNodesToContentNodes(
       )
     ) {
       console.log(`🎯 DETECTED: branding`);
-      return 'branding';
+      return "branding";
     }
 
     // 🟢 ENGAGING: Spark conversation, curiosity, or sharing (default for questions/discussions)
     console.log(`🎯 DETECTED: engaging (default)`);
-    return 'engaging';
+    return "engaging";
   };
 
   return plannerNodes.map((node, index) => {
@@ -245,21 +245,21 @@ function mapPlannerNodesToContentNodes(
     const x = startX + index * (spacing / 2);
     const y = isBottom ? bottomY : topY;
 
-    let cleanedCaption = (node.caption || '').trim();
+    let cleanedCaption = (node.caption || "").trim();
     const ipIdx = cleanedCaption.search(
       /(?:\*\*Image Prompt\*\*|Image Prompt)\b[:-]?/i
     );
     if (ipIdx >= 0) {
       cleanedCaption = cleanedCaption.slice(0, ipIdx).trim();
     }
-    cleanedCaption = cleanedCaption.replace(/^\*+\s*/, '').trim();
+    cleanedCaption = cleanedCaption.replace(/^\*+\s*/, "").trim();
 
     const postType = detectPostType(node.title, cleanedCaption);
 
-    let titleCandidate = (node.title || '').replace(/\*+/g, '').trim();
+    let titleCandidate = (node.title || "").replace(/\*+/g, "").trim();
     if (!titleCandidate) {
       const firstLine = (
-        cleanedCaption.split(/\r?\n/).find((l) => l.trim()) || ''
+        cleanedCaption.split(/\r?\n/).find((l) => l.trim()) || ""
       ).trim();
       titleCandidate = firstLine || `${node.day} Post`;
     }
@@ -267,8 +267,8 @@ function mapPlannerNodesToContentNodes(
     return {
       id: ids[index],
       title: titleCandidate,
-      type: 'post',
-      status: 'draft',
+      type: "post",
+      status: "draft",
       scheduledDate: getScheduledDate(index),
       content: cleanedCaption,
       imagePrompt: node.imagePrompt || undefined,
@@ -312,69 +312,72 @@ interface AIChatProps {
 // Resolve a stable per-user storage key for chat history
 function getChatStorageKey(): string {
   try {
-    if (typeof window === 'undefined') return 'bp_chat_guest';
-    let uid = window.localStorage.getItem('userId');
+    if (typeof window === "undefined") return "bp_chat_guest";
+    let uid = window.localStorage.getItem("userId");
     if (!uid) {
-      const authTokens = window.localStorage.getItem('auth_tokens');
+      const authTokens = window.localStorage.getItem("auth_tokens");
       if (authTokens) {
         try {
           const toks = JSON.parse(authTokens);
           const idToken = toks?.id_token;
-          if (idToken && typeof idToken === 'string') {
-            const parts = idToken.split('.');
+          if (idToken && typeof idToken === "string") {
+            const parts = idToken.split(".");
             if (parts.length >= 2) {
-              const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+              const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
               const json = decodeURIComponent(
                 atob(b64)
-                  .split('')
-                  .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                  .join('')
+                  .split("")
+                  .map(
+                    (c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+                  )
+                  .join("")
               );
               const payload = JSON.parse(json);
               if (payload && payload.sub) {
                 uid = payload.sub;
-                window.localStorage.setItem('userId', uid);
+                window.localStorage.setItem("userId", uid);
               }
             }
           }
         } catch (e) {
-          console.warn('AIChat: failed to decode id_token for userId', e);
+          console.warn("AIChat: failed to decode id_token for userId", e);
         }
       }
     }
-    return `bp_chat_${uid || 'guest'}`;
+    return `bp_chat_${uid || "guest"}`;
   } catch {
-    return 'bp_chat_guest';
+    return "bp_chat_guest";
   }
 }
 
 export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
   // Initial seed message (only used if no persisted history)
   const seedMessage: Message = {
-    id: '1',
-    type: 'ai',
+    id: "1",
+    type: "ai",
     content:
       'Welcome to BrewPost! 🎯 I can help you plan and create amazing content. Try asking me to "plan content structure" or "connect content pieces" to get strategic suggestions for your content flow!',
     timestamp: new Date(),
-    contentType: 'text',
+    contentType: "text",
   };
 
   // Load from localStorage once at mount
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
       const key = getChatStorageKey();
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+      const raw =
+        typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
       if (raw) {
         const parsed = JSON.parse(raw) as Message[];
         // revive Date objects
         return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
       }
     } catch (e) {
-      console.warn('AIChat: failed to load chat history:', e);
+      console.warn("AIChat: failed to load chat history:", e);
     }
     return [seedMessage];
   });
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const navigate = useNavigate();
   const [isRefining, setIsRefining] = useState(false);
@@ -392,13 +395,13 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
   const [quotaExceeded, setQuotaExceeded] = useState(isQuotaExceeded());
   const [timeUntilReset, setTimeUntilReset] = useState(formatTimeUntilReset());
   const [quotaBreakdown, setQuotaBreakdown] = useState(getQuotaBreakdown());
-  
+
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Image zoom state
   const [showZoomModal, setShowZoomModal] = useState(false);
-  const [zoomedImage, setZoomedImage] = useState<string>('');
+  const [zoomedImage, setZoomedImage] = useState<string>("");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
 
@@ -412,7 +415,7 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
 
   const closeZoomModal = () => {
     setShowZoomModal(false);
-    setZoomedImage('');
+    setZoomedImage("");
     setZoomLevel(1);
     setRotation(0);
   };
@@ -423,7 +426,7 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
 
   const downloadImage = () => {
     if (zoomedImage) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = zoomedImage;
       link.download = `generated-image-${Date.now()}.png`;
       document.body.appendChild(link);
@@ -453,49 +456,49 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
       if (!showZoomModal) return;
 
       switch (e.key) {
-        case 'Escape':
+        case "Escape":
           closeZoomModal();
           break;
-        case '+':
-        case '=':
+        case "+":
+        case "=":
           e.preventDefault();
           zoomIn();
           break;
-        case '-':
+        case "-":
           e.preventDefault();
           zoomOut();
           break;
-        case 'r':
-        case 'R':
+        case "r":
+        case "R":
           e.preventDefault();
           rotateImage();
           break;
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showZoomModal]);
 
   const quickPrompts = [
-    { icon: Image, text: 'Plan content structure' },
-    { icon: Type, text: 'Connect content pieces' },
-    { icon: Wand2, text: 'Marketing campaign' },
+    { icon: Image, text: "Plan content structure" },
+    { icon: Type, text: "Connect content pieces" },
+    { icon: Wand2, text: "Marketing campaign" },
   ];
 
   // Check if user specified content category
   const detectContentCategory = (input: string) => {
     const lower = input.toLowerCase();
-    if (lower.includes('engaging') || lower.includes('engagement'))
-      return 'engaging';
+    if (lower.includes("engaging") || lower.includes("engagement"))
+      return "engaging";
     if (
-      lower.includes('promotional') ||
-      lower.includes('promotion') ||
-      lower.includes('promo')
+      lower.includes("promotional") ||
+      lower.includes("promotion") ||
+      lower.includes("promo")
     )
-      return 'promotional';
-    if (lower.includes('branding') || lower.includes('brand'))
-      return 'branding';
+      return "promotional";
+    if (lower.includes("branding") || lower.includes("brand"))
+      return "branding";
     return null;
   };
 
@@ -517,7 +520,7 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
   const generatePlanningResponse = (userInput: string) => {
     const lowerInput = userInput.toLowerCase();
 
-    if (lowerInput.includes('connect') || lowerInput.includes('link')) {
+    if (lowerInput.includes("connect") || lowerInput.includes("link")) {
       return `Great! I can help you connect your content nodes strategically:
 
 **Connection Strategies:**
@@ -539,16 +542,20 @@ Please try again or refine your request. For a quick start, tell me what topic y
   // NEW: helper to append a message safely
   const appendMessage = (m: Message) => setMessages((prev) => [...prev, m]);
 
-// Persist chat messages to localStorage whenever they change
-useEffect(() => {
-  try {
-    const key = getChatStorageKey();
-    const serializable = messages.map((m) => ({ ...m, timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp }));
-    window.localStorage.setItem(key, JSON.stringify(serializable));
-  } catch (e) {
-    console.warn('AIChat: failed to persist chat history:', e);
-  }
-}, [messages]);
+  // Persist chat messages to localStorage whenever they change
+  useEffect(() => {
+    try {
+      const key = getChatStorageKey();
+      const serializable = messages.map((m) => ({
+        ...m,
+        timestamp:
+          m.timestamp instanceof Date ? m.timestamp.toISOString() : m.timestamp,
+      }));
+      window.localStorage.setItem(key, JSON.stringify(serializable));
+    } catch (e) {
+      console.warn("AIChat: failed to persist chat history:", e);
+    }
+  }, [messages]);
 
   // NEW: Prompt Refiner Function (updated implementation)
   const refinePrompt2 = async () => {
@@ -562,28 +569,32 @@ useEffect(() => {
     try {
       const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.\n\nUser prompt: "${input.trim()}"\n\nGuidelines:\n- Make it clear, specific and actionable for content creation.\n- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).\n- Keep the original intent and tone.`;
 
-      const apiUrl = '/generate';
+      const apiUrl = "/generate";
       const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Prompt: prompt }),
       });
 
       if (!resp.ok) {
-        const txt = await resp.text().catch(() => '');
-        throw new Error(txt || 'Refine request failed');
+        const txt = await resp.text().catch(() => "");
+        throw new Error(txt || "Refine request failed");
       }
 
       const data: GenerateResponse = await resp.json();
-      const refined = (data.text || data.content || '').trim();
+      const refined = (data.text || data.content || "").trim();
       if (refined) {
         setInput(refined);
       } else {
-        setInput(`Enhanced: ${input.trim()} - with clearer objectives and a focus on engagement.`);
+        setInput(
+          `Enhanced: ${input.trim()} - with clearer objectives and a focus on engagement.`
+        );
       }
     } catch (err: unknown) {
-      console.error('Prompt refinement failed:', err);
-      setInput(`Enhanced: ${input.trim()} - with strategic approach and clearer objectives.`);
+      console.error("Prompt refinement failed:", err);
+      setInput(
+        `Enhanced: ${input.trim()} - with strategic approach and clearer objectives.`
+      );
     } finally {
       setIsRefining(false);
     }
@@ -598,7 +609,7 @@ useEffect(() => {
     try {
       const refinementPrompt = [
         {
-          role: 'user',
+          role: "user",
           content: `Please refine and improve this prompt to make it more clear, specific, and effective for content creation: "${input.trim()}"
 
 Guidelines for refinement:
@@ -612,16 +623,16 @@ Return only the refined prompt, nothing else.`,
         },
       ];
 
-      const apiUrl = '/generate';
+      const apiUrl = "/generate";
 
       const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: refinementPrompt }),
       });
 
       if (!resp.ok) {
-        throw new Error('Failed to refine prompt');
+        throw new Error("Failed to refine prompt");
       }
 
       const data = await resp.json();
@@ -635,7 +646,7 @@ Return only the refined prompt, nothing else.`,
         setInput(refined);
       }
     } catch (err: unknown) {
-      console.error('Prompt refinement failed:', err);
+      console.error("Prompt refinement failed:", err);
       // Fallback local refinement
       const refined = `Enhanced: ${input.trim()} - with strategic approach, clear objectives, and engaging presentation.`;
       setInput(refined);
@@ -664,10 +675,10 @@ Return only the refined prompt, nothing else.`,
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      type: 'user',
+      type: "user",
       content: input,
       timestamp: new Date(),
-      contentType: 'text',
+      contentType: "text",
     };
 
     // optimistic append
@@ -677,14 +688,14 @@ Return only the refined prompt, nothing else.`,
     const MAX_TURNS = 6;
     const allTurns = [...messages, userMessage]; // include new message immediately
     const filteredTurns = allTurns
-      .filter((m) => !(m.type === 'ai' && m.id === '1')) // remove static UI welcome
+      .filter((m) => !(m.type === "ai" && m.id === "1")) // remove static UI welcome
       .filter(
         (m) =>
-          (m.type === 'user' || m.type === 'ai') &&
-          (!m.contentType || m.contentType === 'text')
+          (m.type === "user" || m.type === "ai") &&
+          (!m.contentType || m.contentType === "text")
       )
       .map((m) => ({
-        role: m.type === 'user' ? 'user' : 'assistant',
+        role: m.type === "user" ? "user" : "assistant",
         content: m.content,
       }));
     const recent = filteredTurns.slice(
@@ -692,63 +703,111 @@ Return only the refined prompt, nothing else.`,
     );
     const messagesForBackend = recent;
 
-    setInput('');
+    setInput("");
     setIsGenerating(true);
 
     try {
-      const apiUrl = '/generate';
+      const apiUrl = "/generate";
 
       // Convert messages to a single prompt string for the backend
       const prompt = messagesForBackend
         .map(
           (msg) =>
-            `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
+            `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
         )
-        .join('\n\n');
+        .join("\n\n");
 
-      console.log('Sending prompt to backend:', prompt);
+      console.log("Sending prompt to backend:", prompt);
 
       // Detect if this is likely a planner request (contains planning keywords)
       // Check ONLY the current user message, not the entire history
       const currentUserMessage = userMessage.content.toLowerCase();
-      
-      const plannerKeywords = ['plan', 'content', 'posts', 'strategy', 'create posts', 'create content', 'social media', 'generate content', 'design posts', 'thinking about', 'ideas for', 'brainstorm', 'create', 'make', 'generate'];
-      
+
+      const plannerKeywords = [
+        "plan",
+        "content",
+        "posts",
+        "strategy",
+        "create posts",
+        "create content",
+        "social media",
+        "generate content",
+        "design posts",
+        "thinking about",
+        "ideas for",
+        "brainstorm",
+        "create",
+        "make",
+        "generate",
+      ];
+
       // Information/definition requests - just want a quick answer, not a plan
-      const informationKeywords = ['definition', 'what is', 'explain', 'tell me about', 'how do', 'why', 'when', 'where', 'who', 'meaning of', 'can u'];
-      const isInformationRequest = informationKeywords.some(kw => currentUserMessage.includes(kw)) &&
-        !plannerKeywords.some(kw => currentUserMessage.includes(kw));
-      
+      const informationKeywords = [
+        "definition",
+        "what is",
+        "explain",
+        "tell me about",
+        "how do",
+        "why",
+        "when",
+        "where",
+        "who",
+        "meaning of",
+        "can u",
+      ];
+      const isInformationRequest =
+        informationKeywords.some((kw) => currentUserMessage.includes(kw)) &&
+        !plannerKeywords.some((kw) => currentUserMessage.includes(kw));
+
       // Casual greetings - just respond normally without creating a plan
-      const casualGreetings = ['hi', 'hello', 'hey', 'thanks', 'thank you', 'thx', 'ok', 'okay', 'sure', 'yep', 'nope', 'lol', 'lmao'];
-      const isCasualGreeting = casualGreetings.some(kw => currentUserMessage === kw || currentUserMessage.startsWith(kw + ' ')) &&
-        !plannerKeywords.some(kw => currentUserMessage.includes(kw));
-      
-      const isPlannerRequest = plannerKeywords.some(kw => currentUserMessage.includes(kw));
+      const casualGreetings = [
+        "hi",
+        "hello",
+        "hey",
+        "thanks",
+        "thank you",
+        "thx",
+        "ok",
+        "okay",
+        "sure",
+        "yep",
+        "nope",
+        "lol",
+        "lmao",
+      ];
+      const isCasualGreeting =
+        casualGreetings.some(
+          (kw) =>
+            currentUserMessage === kw || currentUserMessage.startsWith(kw + " ")
+        ) && !plannerKeywords.some((kw) => currentUserMessage.includes(kw));
+
+      const isPlannerRequest = plannerKeywords.some((kw) =>
+        currentUserMessage.includes(kw)
+      );
 
       if (isInformationRequest) {
-        console.log('ℹ️ Detected information request, not creating planner');
+        console.log("ℹ️ Detected information request, not creating planner");
         // For info requests, send to backend but with explicit instructions
         const infoPrompt = `The user is asking for information or a definition, NOT asking for a content plan. 
 Just answer their question directly and concisely. Do NOT create a multi-post content plan.
 
 User question: ${userMessage.content}`;
-        
+
         const infoResp = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ Prompt: infoPrompt }),
         });
 
-        console.log('Response status:', infoResp.status, infoResp.statusText);
+        console.log("Response status:", infoResp.status, infoResp.statusText);
 
         if (!infoResp.ok) {
           const txt = await infoResp.text();
-          console.error('Backend error response:', txt);
-          throw new Error(txt || 'Generate failed');
+          console.error("Backend error response:", txt);
+          throw new Error(txt || "Generate failed");
         }
         const infoData: GenerateResponse = await infoResp.json();
-        console.log('Backend response:', infoData);
+        console.log("Backend response:", infoData);
 
         incrementQuota();
         {
@@ -761,54 +820,61 @@ User question: ${userMessage.content}`;
         setQuotaBreakdown(getQuotaBreakdown());
 
         if (infoData.content || infoData.text) {
-          const raw = infoData.content || infoData.text || '';
+          const raw = infoData.content || infoData.text || "";
           const display = stripMarkdownForDisplay(raw);
           appendMessage({
             id: (Date.now() + 1).toString(),
-            type: 'ai',
+            type: "ai",
             content: display,
             rawText: raw,
             timestamp: new Date(),
-            contentType: 'text',
+            contentType: "text",
           });
         } else {
           appendMessage({
             id: (Date.now() + 2).toString(),
-            type: 'ai',
-            content: 'I couldn\'t find an answer to that. Could you rephrase your question?',
-            rawText: '',
+            type: "ai",
+            content:
+              "I couldn't find an answer to that. Could you rephrase your question?",
+            rawText: "",
             timestamp: new Date(),
-            contentType: 'text',
+            contentType: "text",
           });
         }
-        
+
         setIsGenerating(false);
         return;
       }
 
       if (isCasualGreeting) {
-        console.log('👋 Detected casual greeting, responding naturally without planner');
+        console.log(
+          "👋 Detected casual greeting, responding naturally without planner"
+        );
         // For casual greetings, send to backend with explicit instructions not to create a plan
         const casualPrompt = `The user is just greeting you or making a casual comment. They are NOT asking for a content plan. 
 Just respond naturally and conversationally. Do NOT create any posts or content plan.
 
 User message: ${userMessage.content}`;
-        
+
         const casualResp = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ Prompt: casualPrompt }),
         });
 
-        console.log('Response status:', casualResp.status, casualResp.statusText);
+        console.log(
+          "Response status:",
+          casualResp.status,
+          casualResp.statusText
+        );
 
         if (!casualResp.ok) {
           const txt = await casualResp.text();
-          console.error('Backend error response:', txt);
-          throw new Error(txt || 'Generate failed');
+          console.error("Backend error response:", txt);
+          throw new Error(txt || "Generate failed");
         }
         const casualData: GenerateResponse = await casualResp.json();
-        console.log('Backend response:', casualData);
+        console.log("Backend response:", casualData);
 
         incrementQuota();
         {
@@ -821,46 +887,46 @@ User message: ${userMessage.content}`;
         setQuotaBreakdown(getQuotaBreakdown());
 
         if (casualData.content || casualData.text) {
-          const raw = casualData.content || casualData.text || '';
+          const raw = casualData.content || casualData.text || "";
           const display = stripMarkdownForDisplay(raw);
           appendMessage({
             id: (Date.now() + 1).toString(),
-            type: 'ai',
+            type: "ai",
             content: display,
             rawText: raw,
             timestamp: new Date(),
-            contentType: 'text',
+            contentType: "text",
           });
         } else {
           appendMessage({
             id: (Date.now() + 2).toString(),
-            type: 'ai',
-            content: 'Hey! How can I help you with your content today?',
-            rawText: '',
+            type: "ai",
+            content: "Hey! How can I help you with your content today?",
+            rawText: "",
             timestamp: new Date(),
-            contentType: 'text',
+            contentType: "text",
           });
         }
-        
+
         setIsGenerating(false);
         return;
       }
 
       const resp = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Prompt: prompt }),
       });
 
-      console.log('Response status:', resp.status, resp.statusText);
+      console.log("Response status:", resp.status, resp.statusText);
 
       if (!resp.ok) {
         const txt = await resp.text();
-        console.error('Backend error response:', txt);
-        throw new Error(txt || 'Generate failed');
+        console.error("Backend error response:", txt);
+        throw new Error(txt || "Generate failed");
       }
       const data: GenerateResponse = await resp.json();
-      console.log('Backend response:', data);
+      console.log("Backend response:", data);
 
       // Increment quota after successful API call
       incrementQuota();
@@ -876,7 +942,7 @@ User message: ${userMessage.content}`;
       setQuotaBreakdown(getQuotaBreakdown());
 
       if (data.content || data.text) {
-        let raw = data.content || data.text || '';
+        let raw = data.content || data.text || "";
         // If it's a planner response, clean it
         if (isPlannerMessage(raw)) {
           raw = cleanAIResponse(raw);
@@ -886,11 +952,11 @@ User message: ${userMessage.content}`;
         appendMessage({
           id: (Date.now() + 1).toString(),
           title: maybePlanner[0]?.title,
-          type: 'ai',
+          type: "ai",
           content: display,
           rawText: raw,
           timestamp: new Date(),
-          contentType: 'text',
+          contentType: "text",
           imagePrompt: maybePlanner[0]?.imagePrompt,
         });
       } else {
@@ -900,11 +966,11 @@ User message: ${userMessage.content}`;
         appendMessage({
           id: (Date.now() + 2).toString(),
           title: maybePlanner[0]?.title,
-          type: 'ai',
+          type: "ai",
           content: display,
           rawText: raw,
           timestamp: new Date(),
-          contentType: 'text',
+          contentType: "text",
           imagePrompt: maybePlanner[0]?.imagePrompt,
         });
       }
@@ -915,36 +981,36 @@ User message: ${userMessage.content}`;
 
           appendMessage({
             id: (Date.now() + 3).toString(),
-            type: 'ai',
+            type: "ai",
             content:
-              'Image generated with template settings — choose a caption below or edit it.',
+              "Image generated with template settings — choose a caption below or edit it.",
             timestamp: new Date(),
-            contentType: 'image',
+            contentType: "image",
             imageUrl: finalImageUrl,
             captions: Array.isArray(data.captions) ? data.captions : [],
           });
         } catch (error) {
-          console.error('Template application failed:', error);
+          console.error("Template application failed:", error);
           appendMessage({
             id: (Date.now() + 3).toString(),
-            type: 'ai',
-            content: 'Image generated — choose a caption below or edit it.',
+            type: "ai",
+            content: "Image generated — choose a caption below or edit it.",
             timestamp: new Date(),
-            contentType: 'image',
+            contentType: "image",
             imageUrl: data.imageUrl,
             captions: Array.isArray(data.captions) ? data.captions : [],
           });
         }
       }
     } catch (err: unknown) {
-      console.error('AIChat generate error', err);
+      console.error("AIChat generate error", err);
       appendMessage({
         id: (Date.now() + 4).toString(),
-        type: 'system',
+        type: "system",
         content:
-          'Sorry, something went wrong generating the reply. Check server logs.',
+          "Sorry, something went wrong generating the reply. Check server logs.",
         timestamp: new Date(),
-        contentType: 'text',
+        contentType: "text",
       });
     } finally {
       setIsGenerating(false);
@@ -952,7 +1018,7 @@ User message: ${userMessage.content}`;
   };
 
   const isPlannerMessage = (text: string) => {
-    const raw = text || '';
+    const raw = text || "";
     const normalized = raw.toLowerCase();
 
     // Try to actually parse it as a planner first
@@ -975,8 +1041,8 @@ User message: ${userMessage.content}`;
     // Section markers (Title/Caption/Image Prompt) often appear in your plans
     // More lenient matching to catch variations in formatting
     const hasSectionMarkers =
-      /title\s*[\s:]/i.test(raw) || 
-      /caption\s*[\s:]/i.test(raw) || 
+      /title\s*[\s:]/i.test(raw) ||
+      /caption\s*[\s:]/i.test(raw) ||
       /image\s+prompt\s*[\s:]/i.test(raw);
 
     // Must have section markers AND be able to parse multiple nodes
@@ -990,22 +1056,22 @@ User message: ${userMessage.content}`;
   const handlePaymentSuccess = (messages: number) => {
     // Add paid messages to quota
     addPaidMessages(messages);
-    
+
     // Update quota state
     setRemainingMessages(getRemainingMessages());
     setQuotaExceeded(isQuotaExceeded());
     setQuotaBreakdown(getQuotaBreakdown());
-    
+
     // Close payment modal
     setShowPaymentModal(false);
-    
+
     // Show success message
     const successMessage: Message = {
       id: Date.now().toString(),
-      type: 'system',
+      type: "system",
       content: `Payment successful! ${messages} messages have been added to your account. You can now continue using the AI Content Generator.`,
       timestamp: new Date(),
-      contentType: 'text',
+      contentType: "text",
     };
     appendMessage(successMessage);
   };
@@ -1024,7 +1090,9 @@ User message: ${userMessage.content}`;
           <div className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium w-56 min-w-fit">
             <div className="flex items-center">
               <span>Free messages left:</span>
-              <span className="ml-1 font-bold">{quotaBreakdown.freeRemaining}</span>
+              <span className="ml-1 font-bold">
+                {quotaBreakdown.freeRemaining}
+              </span>
             </div>
             <div className="flex items-center">
               <span>Resets In:</span>
@@ -1032,12 +1100,18 @@ User message: ${userMessage.content}`;
             </div>
             <div className="flex items-center">
               <span>Plan messages left:</span>
-              <span className="ml-1 font-bold">{monthlyBreakdown.limit === Infinity ? '∞' : monthlyBreakdown.remaining}</span>
+              <span className="ml-1 font-bold">
+                {monthlyBreakdown.limit === Infinity
+                  ? "∞"
+                  : monthlyBreakdown.remaining}
+              </span>
             </div>
             {quotaBreakdown.paidRemaining > 0 && (
               <div className="flex items-center">
                 <span>Purchased messages left:</span>
-                <span className="ml-1 font-bold">{quotaBreakdown.paidRemaining}</span>
+                <span className="ml-1 font-bold">
+                  {quotaBreakdown.paidRemaining}
+                </span>
               </div>
             )}
           </div>
@@ -1050,17 +1124,17 @@ User message: ${userMessage.content}`;
           <div
             key={message.id}
             className={`flex ${
-              message.type === 'user' ? 'justify-end' : 'justify-start'
+              message.type === "user" ? "justify-end" : "justify-start"
             }`}
           >
             <Card
               className={`max-w-[80%] p-3 text-white`}
               style={{
                 backgroundColor:
-                  message.type === 'user' ? '#03624C' : '#2CC295',
+                  message.type === "user" ? "#03624C" : "#2CC295",
               }}
             >
-              {message.contentType === 'image' && message.imageUrl ? (
+              {message.contentType === "image" && message.imageUrl ? (
                 <div>
                   <div
                     className="relative group cursor-pointer"
@@ -1106,32 +1180,33 @@ User message: ${userMessage.content}`;
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {message.content}
                   </p>
-                  {message.type === 'ai' &&
-                    message.contentType === 'text' &&
+                  {message.type === "ai" &&
+                    message.contentType === "text" &&
                     isPlannerMessage(message.rawText ?? message.content) && (
                       <Button
                         size="sm"
                         className="mt-4 text-white shadow-lg transition-colors border border-[#03624C]/50"
-                        style={{ backgroundColor: '#03624C' }}
+                        style={{ backgroundColor: "#03624C" }}
                         onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = '#2CC295')
+                          (e.currentTarget.style.backgroundColor = "#2CC295")
                         }
                         onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = '#03624C')
+                          (e.currentTarget.style.backgroundColor = "#03624C")
                         }
                         onClick={() => {
                           const planner = extractPlannerNodesFromText(
                             message.rawText ?? message.content
                           );
-                          const contentNodes = mapPlannerNodesToContentNodes(planner);
-                    
+                          const contentNodes =
+                            mapPlannerNodesToContentNodes(planner);
+
                           if (contentNodes.length === 0) {
                             const fallback: ContentNode[] = [
                               {
-                                id: Date.now().toString() + '-fallback',
-                                title: 'AI Planner Suggestion',
-                                type: 'post',
-                                status: 'draft',
+                                id: Date.now().toString() + "-fallback",
+                                title: "AI Planner Suggestion",
+                                type: "post",
+                                status: "draft",
                                 scheduledDate: new Date(),
                                 content: message.content.slice(0, 800),
                                 connections: [],
@@ -1141,60 +1216,78 @@ User message: ${userMessage.content}`;
                             ];
                             contentNodes.push(...fallback);
                           }
-                    
-                          if (typeof setPlanningNodes === 'function') {
+
+                          if (typeof setPlanningNodes === "function") {
                             setPlanningNodes(contentNodes);
                           }
-                    
+
                           const replaceInAppSync = async () => {
                             let successCount = 0;
                             let edgeSuccessCount = 0;
                             try {
-                              console.log('🔄 Starting planner save...');
+                              console.log("🔄 Starting planner save...");
                               let existingNodes = [];
                               let existingEdges = [];
-                              
+
                               try {
-                                existingNodes = await NodeAPI.list('demo-project-123');
-                                existingEdges = await NodeAPI.listEdges('demo-project-123');
-                                console.log(`📦 Found ${existingNodes.length} existing nodes and ${existingEdges.length} edges`);
+                                existingNodes = await NodeAPI.list(
+                                  "demo-project-123"
+                                );
+                                existingEdges = await NodeAPI.listEdges(
+                                  "demo-project-123"
+                                );
+                                console.log(
+                                  `📦 Found ${existingNodes.length} existing nodes and ${existingEdges.length} edges`
+                                );
                               } catch (listErr) {
-                                console.warn('⚠️ Warning fetching existing nodes/edges:', listErr);
+                                console.warn(
+                                  "⚠️ Warning fetching existing nodes/edges:",
+                                  listErr
+                                );
                                 // Continue anyway - we'll just create new nodes
                               }
-                    
+
                               try {
                                 await Promise.all(
                                   existingEdges.map((edge) =>
-                                    NodeAPI.deleteEdge('demo-project-123', edge.edgeId).catch(() => {})
+                                    NodeAPI.deleteEdge(
+                                      "demo-project-123",
+                                      edge.edgeId
+                                    ).catch(() => {})
                                   )
                                 );
-                    
+
                                 await Promise.all(
                                   existingNodes.map((oldNode) =>
-                                    NodeAPI.remove('demo-project-123', oldNode.nodeId).catch(() => {})
+                                    NodeAPI.remove(
+                                      "demo-project-123",
+                                      oldNode.nodeId
+                                    ).catch(() => {})
                                   )
                                 );
                               } catch (deleteErr) {
-                                console.warn('⚠️ Warning during deletion phase:', deleteErr);
+                                console.warn(
+                                  "⚠️ Warning during deletion phase:",
+                                  deleteErr
+                                );
                                 // Don't throw - continue with creating new nodes
                               }
-                    
+
                               console.log(
-                                '✅ All deletions completed. Creating',
+                                "✅ All deletions completed. Creating",
                                 contentNodes.length,
-                                'new nodes...'
+                                "new nodes..."
                               );
-                    
+
                               // Create all new nodes and track ID mapping
                               const idMapping = new Map();
                               const nodeResults = [];
-                    
+
                               for (let i = 0; i < contentNodes.length; i++) {
                                 const node = contentNodes[i];
                                 try {
                                   const result = await NodeAPI.create({
-                                    projectId: 'demo-project-123',
+                                    projectId: "demo-project-123",
                                     title: node.title,
                                     description: node.content,
                                     x: node.position.x,
@@ -1204,72 +1297,133 @@ User message: ${userMessage.content}`;
                                     day: node.day,
                                     imageUrl: node.imageUrl,
                                     imagePrompt: node.imagePrompt,
-                                    scheduledDate: node.scheduledDate?.toISOString(),
+                                    scheduledDate:
+                                      node.scheduledDate?.toISOString(),
                                   });
                                   idMapping.set(node.id, result.nodeId);
                                   successCount += 1;
-                                  console.log(`✅ Created node ${i + 1}/${contentNodes.length}: ${node.title}`);
+                                  console.log(
+                                    `✅ Created node ${i + 1}/${
+                                      contentNodes.length
+                                    }: ${node.title}`
+                                  );
                                 } catch (err) {
-                                  console.error(`❌ Failed to create node ${i + 1}:`, err);
+                                  console.error(
+                                    `❌ Failed to create node ${i + 1}:`,
+                                    err
+                                  );
                                   // continue creating others
                                 }
                               }
-                              console.log(`📊 Successfully created ${successCount}/${contentNodes.length} nodes`);
-                    
-                              if (idMapping.size > 0 && typeof setPlanningNodes === 'function') {
-                                const updatedNodes = contentNodes.map((node) => {
-                                  const newId = idMapping.get(node.id) || node.id;
-                                  const remappedConnections = Array.isArray(node.connections)
-                                    ? node.connections
-                                        .map((oldConn) => idMapping.get(oldConn) || oldConn)
-                                        .filter(Boolean)
-                                    : [];
-                                  return { ...node, id: newId, connections: remappedConnections };
-                                });
+                              console.log(
+                                `📊 Successfully created ${successCount}/${contentNodes.length} nodes`
+                              );
+
+                              if (
+                                idMapping.size > 0 &&
+                                typeof setPlanningNodes === "function"
+                              ) {
+                                const updatedNodes = contentNodes.map(
+                                  (node) => {
+                                    const newId =
+                                      idMapping.get(node.id) || node.id;
+                                    const remappedConnections = Array.isArray(
+                                      node.connections
+                                    )
+                                      ? node.connections
+                                          .map(
+                                            (oldConn) =>
+                                              idMapping.get(oldConn) || oldConn
+                                          )
+                                          .filter(Boolean)
+                                      : [];
+                                    return {
+                                      ...node,
+                                      id: newId,
+                                      connections: remappedConnections,
+                                    };
+                                  }
+                                );
                                 setPlanningNodes(updatedNodes);
                               }
-                    
+
                               const edgePromises: Promise<unknown>[] = [];
                               // Create sequential edges if none present, or use remapped ones
-                              const nodesWithNewIds = contentNodes.map(n => ({
+                              const nodesWithNewIds = contentNodes.map((n) => ({
                                 ...n,
                                 id: idMapping.get(n.id) || n.id,
                                 connections: Array.isArray(n.connections)
-                                  ? n.connections.map(c => idMapping.get(c) || c).filter(Boolean)
-                                  : []
+                                  ? n.connections
+                                      .map((c) => idMapping.get(c) || c)
+                                      .filter(Boolean)
+                                  : [],
                               }));
-                              const hasAnyConnections = nodesWithNewIds.some(n => (n.connections?.length ?? 0) > 0);
+                              const hasAnyConnections = nodesWithNewIds.some(
+                                (n) => (n.connections?.length ?? 0) > 0
+                              );
                               if (hasAnyConnections) {
                                 for (const node of nodesWithNewIds) {
                                   const fromId = node.id;
                                   for (const toId of node.connections || []) {
                                     if (!fromId || !toId) continue;
-                                    edgePromises.push(NodeAPI.createEdge('demo-project-123', fromId, toId));
+                                    edgePromises.push(
+                                      NodeAPI.createEdge(
+                                        "demo-project-123",
+                                        fromId,
+                                        toId
+                                      )
+                                    );
                                   }
                                 }
                               } else {
                                 // Sequentially connect nodes to reflect planner flow
-                                for (let i = 0; i < nodesWithNewIds.length - 1; i++) {
+                                for (
+                                  let i = 0;
+                                  i < nodesWithNewIds.length - 1;
+                                  i++
+                                ) {
                                   const fromId = nodesWithNewIds[i].id;
                                   const toId = nodesWithNewIds[i + 1].id;
                                   if (fromId && toId) {
-                                    edgePromises.push(NodeAPI.createEdge('demo-project-123', fromId, toId));
+                                    edgePromises.push(
+                                      NodeAPI.createEdge(
+                                        "demo-project-123",
+                                        fromId,
+                                        toId
+                                      )
+                                    );
                                   }
                                 }
                               }
-                              console.log(`🔗 Creating ${edgePromises.length} edges...`);
-                              const edgeResults = await Promise.allSettled(edgePromises);
-                              edgeSuccessCount = edgeResults.filter(r => r.status === 'fulfilled').length;
-                              console.log(`✅ Created ${edgeSuccessCount}/${edgePromises.length} edges`);
-                              console.log('✅ Planner saved successfully!');
+                              console.log(
+                                `🔗 Creating ${edgePromises.length} edges...`
+                              );
+                              const edgeResults = await Promise.allSettled(
+                                edgePromises
+                              );
+                              edgeSuccessCount = edgeResults.filter(
+                                (r) => r.status === "fulfilled"
+                              ).length;
+                              console.log(
+                                `✅ Created ${edgeSuccessCount}/${edgePromises.length} edges`
+                              );
+                              console.log("✅ Planner saved successfully!");
                             } catch (error: unknown) {
-                              console.error('❌ Error in save flow:', error);
-                              console.log('💾 successCount at error:', successCount, 'Total nodes:', contentNodes.length);
-                              const errorMsg = error instanceof Error ? error.message : String(error);
-                              console.error('Error details:', errorMsg);
+                              console.error("❌ Error in save flow:", error);
+                              console.log(
+                                "💾 successCount at error:",
+                                successCount,
+                                "Total nodes:",
+                                contentNodes.length
+                              );
+                              const errorMsg =
+                                error instanceof Error
+                                  ? error.message
+                                  : String(error);
+                              console.error("Error details:", errorMsg);
                             }
                           };
-                    
+
                           replaceInAppSync();
                         }}
                       >
@@ -1281,11 +1435,11 @@ User message: ${userMessage.content}`;
 
               <div className="flex items-center justify-between mt-2">
                 <Badge variant="secondary" className="text-xs opacity-70">
-                  {message.type === 'ai'
-                    ? 'AI'
-                    : message.type === 'user'
-                    ? 'You'
-                    : 'System'}
+                  {message.type === "ai"
+                    ? "AI"
+                    : message.type === "user"
+                    ? "You"
+                    : "System"}
                 </Badge>
                 <span className="text-xs opacity-70">
                   {message.timestamp.toLocaleTimeString()}
@@ -1302,11 +1456,11 @@ User message: ${userMessage.content}`;
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 <div
                   className="w-2 h-2 bg-primary rounded-full animate-pulse"
-                  style={{ animationDelay: '0.2s' }}
+                  style={{ animationDelay: "0.2s" }}
                 ></div>
                 <div
                   className="w-2 h-2 bg-primary rounded-full animate-pulse"
-                  style={{ animationDelay: '0.4s' }}
+                  style={{ animationDelay: "0.4s" }}
                 ></div>
                 <span className="text-sm text-muted-foreground ml-2">
                   Generating content...
@@ -1327,7 +1481,7 @@ User message: ${userMessage.content}`;
               placeholder="Describe the content you want to create..."
               className="h-11 min-h-11 max-h-11 resize-none glow-focus border-primary/20 focus:border-primary/40 pr-12 py-2"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
@@ -1345,7 +1499,7 @@ User message: ${userMessage.content}`;
               >
                 <Wand2
                   className={`w-4 h-4 text-primary/70 group-hover:text-primary transition-all ${
-                    isRefining ? 'animate-spin' : 'group-hover:scale-110'
+                    isRefining ? "animate-spin" : "group-hover:scale-110"
                   }`}
                 />
               </Button>
@@ -1358,17 +1512,17 @@ User message: ${userMessage.content}`;
             style={{
               backgroundColor:
                 !input.trim() || isGenerating || quotaExceeded
-                  ? '#03624C60'
-                  : '#03624C',
+                  ? "#03624C60"
+                  : "#03624C",
             }}
             onMouseEnter={(e) => {
               if (!(!input.trim() || isGenerating || quotaExceeded)) {
-                e.currentTarget.style.backgroundColor = '#2CC295';
+                e.currentTarget.style.backgroundColor = "#2CC295";
               }
             }}
             onMouseLeave={(e) => {
               if (!(!input.trim() || isGenerating || quotaExceeded)) {
-                e.currentTarget.style.backgroundColor = '#03624C';
+                e.currentTarget.style.backgroundColor = "#03624C";
               }
             }}
           >
@@ -1467,9 +1621,9 @@ User message: ${userMessage.content}`;
                     className="max-w-none transition-all duration-300 ease-out shadow-2xl"
                     style={{
                       transform: `scale(${zoomLevel}) rotate(${rotation}deg)`,
-                      maxHeight: zoomLevel <= 1 ? '80vh' : 'none',
-                      maxWidth: zoomLevel <= 1 ? '80vw' : 'none',
-                      objectFit: 'contain',
+                      maxHeight: zoomLevel <= 1 ? "80vh" : "none",
+                      maxWidth: zoomLevel <= 1 ? "80vw" : "none",
+                      objectFit: "contain",
                     }}
                     draggable={false}
                   />
