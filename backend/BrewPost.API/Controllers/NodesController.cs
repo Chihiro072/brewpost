@@ -44,18 +44,25 @@ public class NodesController : ControllerBase
                 return Unauthorized(new { error = "User not authenticated" });
             }
 
+            try
+            {
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault() ?? string.Empty;
+                var maskedAuth = authHeader.Length > 20 ? authHeader.Substring(0, 10) + "..." + authHeader.Substring(authHeader.Length - 10) : authHeader;
+                _logger.LogInformation("GetNodes called. projectId={ProjectId}, AuthorizationHeader(masked)={Auth}", projectId, maskedAuth);
+            }
+            catch (Exception logEx)
+            {
+                _logger.LogWarning(logEx, "Failed to log authorization header for GetNodes");
+            }
+
             var query = _context.Nodes.Where(n => n.UserId == userId);
-            
-            // If projectId is provided, filter by it (for compatibility with frontend)
-            // For now, we'll treat projectId as a filter but store all nodes under the user
-            
             var nodes = await query.OrderBy(n => n.CreatedAt).ToListAsync();
             
             var nodeList = nodes.Select(n => new
             {
                 id = n.Id.ToString(),
-                projectId = projectId ?? "default", // Return the requested projectId or default
-                nodeId = n.Id.ToString(), // Use the same ID for nodeId for compatibility
+                projectId = "default",
+                nodeId = n.Id.ToString(),
                 title = n.Title,
                 description = n.Content,
                 x = n.X,
@@ -65,17 +72,17 @@ public class NodesController : ControllerBase
                 type = n.Type,
                 day = n.Day,
                 imageUrl = n.ImageUrl,
-                imageUrls = n.ImageUrls != null ? JsonSerializer.Deserialize<string[]>(n.ImageUrls) : null,
+                imageUrls = DeserializeJsonArray(n.ImageUrls),
                 imagePrompt = n.ImagePrompt,
                 scheduledDate = n.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = n.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 updatedAt = n.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                connections = n.Connections != null ? JsonSerializer.Deserialize<string[]>(n.Connections) : new string[0],
+                connections = DeserializeJsonArray(n.Connections),
                 position = new { x = n.X, y = n.Y },
                 postType = n.PostType,
                 focus = n.Focus,
                 postedAt = n.PostedAt,
-                postedTo = n.PostedTo != null ? JsonSerializer.Deserialize<string[]>(n.PostedTo) : null,
+                postedTo = DeserializeJsonArray(n.PostedTo),
                 tweetId = n.TweetId,
                 selectedImageUrl = n.SelectedImageUrl
             }).ToList();
@@ -85,7 +92,24 @@ public class NodesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving nodes");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = "Internal server error", details = ex.Message });
+        }
+    }
+
+    private string[] DeserializeJsonArray(JsonDocument? doc)
+    {
+        try
+        {
+            if (doc == null) return new string[0];
+            var json = doc.RootElement.GetRawText();
+            if (string.IsNullOrWhiteSpace(json)) return new string[0];
+            var result = JsonSerializer.Deserialize<string[]>(json);
+            return result ?? new string[0];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error deserializing JSON array");
+            return new string[0];
         }
     }
 
@@ -152,7 +176,7 @@ public class NodesController : ControllerBase
             var response = new
             {
                 id = node.Id.ToString(),
-                projectId = request.ProjectId ?? "default",
+                projectId = "default",
                 nodeId = node.Id.ToString(),
                 title = node.Title,
                 description = node.Content,
@@ -163,17 +187,17 @@ public class NodesController : ControllerBase
                 type = node.Type,
                 day = node.Day,
                 imageUrl = node.ImageUrl,
-                imageUrls = node.ImageUrls != null ? JsonSerializer.Deserialize<string[]>(node.ImageUrls) : null,
+                imageUrls = DeserializeJsonArray(node.ImageUrls),
                 imagePrompt = node.ImagePrompt,
                 scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0],
+                connections = DeserializeJsonArray(node.Connections),
                 position = new { x = node.X, y = node.Y },
                 postType = node.PostType,
                 focus = node.Focus,
                 postedAt = node.PostedAt,
-                postedTo = node.PostedTo != null ? JsonSerializer.Deserialize<string[]>(node.PostedTo) : null,
+                postedTo = DeserializeJsonArray(node.PostedTo),
                 tweetId = node.TweetId,
                 selectedImageUrl = node.SelectedImageUrl
             };
@@ -223,17 +247,17 @@ public class NodesController : ControllerBase
                 type = node.Type,
                 day = node.Day,
                 imageUrl = node.ImageUrl,
-                imageUrls = node.ImageUrls != null ? JsonSerializer.Deserialize<string[]>(node.ImageUrls) : null,
+                imageUrls = DeserializeJsonArray(node.ImageUrls),
                 imagePrompt = node.ImagePrompt,
                 scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0],
+                connections = DeserializeJsonArray(node.Connections),
                 position = new { x = node.X, y = node.Y },
                 postType = node.PostType,
                 focus = node.Focus,
                 postedAt = node.PostedAt,
-                postedTo = node.PostedTo != null ? JsonSerializer.Deserialize<string[]>(node.PostedTo) : null,
+                postedTo = DeserializeJsonArray(node.PostedTo),
                 tweetId = node.TweetId,
                 selectedImageUrl = node.SelectedImageUrl
             };
@@ -243,7 +267,7 @@ public class NodesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving node");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = "Internal server error", details = ex.Message });
         }
     }
 
@@ -300,7 +324,7 @@ public class NodesController : ControllerBase
             var response = new
             {
                 id = node.Id.ToString(),
-                projectId = request.ProjectId ?? "default",
+                projectId = "default",
                 nodeId = node.Id.ToString(),
                 title = node.Title,
                 description = node.Content,
@@ -311,17 +335,17 @@ public class NodesController : ControllerBase
                 type = node.Type,
                 day = node.Day,
                 imageUrl = node.ImageUrl,
-                imageUrls = node.ImageUrls != null ? JsonSerializer.Deserialize<string[]>(node.ImageUrls) : null,
+                imageUrls = DeserializeJsonArray(node.ImageUrls),
                 imagePrompt = node.ImagePrompt,
                 scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                 updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                connections = node.Connections != null ? JsonSerializer.Deserialize<string[]>(node.Connections) : new string[0],
+                connections = DeserializeJsonArray(node.Connections),
                 position = new { x = node.X, y = node.Y },
                 postType = node.PostType,
                 focus = node.Focus,
                 postedAt = node.PostedAt,
-                postedTo = node.PostedTo != null ? JsonSerializer.Deserialize<string[]>(node.PostedTo) : null,
+                postedTo = DeserializeJsonArray(node.PostedTo),
                 tweetId = node.TweetId,
                 selectedImageUrl = node.SelectedImageUrl
             };
@@ -331,7 +355,7 @@ public class NodesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating node");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = "Internal server error", details = ex.Message });
         }
     }
 
@@ -391,12 +415,41 @@ public class NodesController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            return Ok(node);
+            var response = new
+            {
+                id = node.Id.ToString(),
+                projectId = "default",
+                nodeId = node.Id.ToString(),
+                title = node.Title,
+                description = node.Content,
+                x = node.X,
+                y = node.Y,
+                status = node.Status,
+                contentId = node.Id.ToString(),
+                type = node.Type,
+                day = node.Day,
+                imageUrl = node.ImageUrl,
+                imageUrls = DeserializeJsonArray(node.ImageUrls),
+                imagePrompt = node.ImagePrompt,
+                scheduledDate = node.ScheduledDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                createdAt = node.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                updatedAt = node.UpdatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                connections = DeserializeJsonArray(node.Connections),
+                position = new { x = node.X, y = node.Y },
+                postType = node.PostType,
+                focus = node.Focus,
+                postedAt = node.PostedAt,
+                postedTo = DeserializeJsonArray(node.PostedTo),
+                tweetId = node.TweetId,
+                selectedImageUrl = node.SelectedImageUrl
+            };
+
+            return Ok(response);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error scheduling node {Id}", id);
-            return StatusCode(500, new { error = "An error occurred while scheduling the node" });
+            return StatusCode(500, new { error = "An error occurred while scheduling the node", details = ex.Message });
         }
     }
 

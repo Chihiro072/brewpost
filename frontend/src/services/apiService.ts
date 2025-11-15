@@ -1,22 +1,31 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 180000, // Increased to 3 minutes for AI operations (Bedrock can be slow)
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (token) {
+      // Mask the token for logging to avoid leaking full credentials
+      const masked =
+        token.length > 12
+          ? `${token.substring(0, 6)}...${token.substring(token.length - 6)}`
+          : token;
+      console.log("[apiClient] Attaching auth token (masked):", masked);
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.log("[apiClient] No auth token found in localStorage");
     }
     return config;
   },
@@ -31,8 +40,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
-      localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      localStorage.removeItem("authToken");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
@@ -105,64 +114,75 @@ export interface Schedule {
 // Auth API
 export const authAPI = {
   login: async (email: string, password: string) => {
-    const response = await apiClient.post('/api/auth/login', { email, password });
+    const response = await apiClient.post("/api/auth/login", {
+      email,
+      password,
+    });
     if (response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem("authToken", response.data.token);
     }
     return response.data;
   },
 
-  register: async (userData: { email: string; password: string; firstName?: string; lastName?: string }) => {
-    console.log('🔗 Making registration API call to:', '/api/auth/register');
-    console.log('📤 Sending data:', userData);
-    
+  register: async (userData: {
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+  }) => {
+    console.log("🔗 Making registration API call to:", "/api/auth/register");
+    console.log("📤 Sending data:", userData);
+
     try {
-      const response = await apiClient.post('/api/auth/register', userData);
-      console.log('📥 Registration response:', response);
-      console.log('📥 Response data:', response.data);
-      console.log('📥 Response status:', response.status);
-      
+      const response = await apiClient.post("/api/auth/register", userData);
+      console.log("📥 Registration response:", response);
+      console.log("📥 Response data:", response.data);
+      console.log("📥 Response status:", response.status);
+
       if (response.data.token) {
-        console.log('🔑 Storing token in localStorage');
-        localStorage.setItem('authToken', response.data.token);
+        console.log("🔑 Storing token in localStorage");
+        localStorage.setItem("authToken", response.data.token);
       } else {
-        console.warn('⚠️ No token in response');
+        console.warn("⚠️ No token in response");
       }
-      
+
       return response.data;
     } catch (error) {
-      console.error('💥 Registration API error:', error);
+      console.error("💥 Registration API error:", error);
       throw error;
     }
   },
 
   logout: async () => {
-    localStorage.removeItem('authToken');
-    const response = await apiClient.post('/api/auth/logout');
+    localStorage.removeItem("authToken");
+    const response = await apiClient.post("/api/auth/logout");
     return response.data;
   },
 
   refreshToken: async () => {
-    const response = await apiClient.post('/api/auth/refresh');
+    const response = await apiClient.post("/api/auth/refresh");
     if (response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem("authToken", response.data.token);
     }
     return response.data;
   },
 
   checkStatus: async () => {
-    const response = await apiClient.get('/api/auth/status');
+    const response = await apiClient.get("/api/auth/status");
     return response.data;
   },
 
   oauthCallback: async (platform: string, code: string, state?: string) => {
-    const response = await apiClient.post(`/api/auth/oauth/${platform}/callback`, {
-      code,
-      state,
-      redirectUri: window.location.origin + '/callback'
-    });
+    const response = await apiClient.post(
+      `/api/auth/oauth/${platform}/callback`,
+      {
+        code,
+        state,
+        redirectUri: window.location.origin + "/callback",
+      }
+    );
     if (response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem("authToken", response.data.token);
     }
     return response.data;
   },
@@ -171,30 +191,37 @@ export const authAPI = {
 // Users API
 export const usersAPI = {
   getProfile: async (): Promise<User> => {
-    const response = await apiClient.get('/api/users/profile');
+    const response = await apiClient.get("/api/users/profile");
     return response.data;
   },
 
   updateProfile: async (profileData: Partial<User>): Promise<User> => {
-    const response = await apiClient.put('/api/users/profile', profileData);
+    const response = await apiClient.put("/api/users/profile", profileData);
     return response.data;
   },
 
   getSocialAccounts: async (): Promise<SocialAccount[]> => {
-    const response = await apiClient.get('/api/users/social-accounts');
+    const response = await apiClient.get("/api/users/social-accounts");
     return response.data;
   },
 
   disconnectSocialAccount: async (accountId: string) => {
-    const response = await apiClient.delete(`/api/users/social-accounts/${accountId}`);
+    const response = await apiClient.delete(
+      `/api/users/social-accounts/${accountId}`
+    );
     return response.data;
   },
 };
 
 // Posts API
 export const postsAPI = {
-  getPosts: async (page: number = 1, limit: number = 10): Promise<{ posts: Post[], total: number }> => {
-    const response = await apiClient.get(`/api/posts?page=${page}&limit=${limit}`);
+  getPosts: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ posts: Post[]; total: number }> => {
+    const response = await apiClient.get(
+      `/api/posts?page=${page}&limit=${limit}`
+    );
     return response.data;
   },
 
@@ -204,7 +231,7 @@ export const postsAPI = {
   },
 
   createPost: async (postData: Partial<Post>): Promise<Post> => {
-    const response = await apiClient.post('/api/posts', postData);
+    const response = await apiClient.post("/api/posts", postData);
     return response.data;
   },
 
@@ -224,7 +251,9 @@ export const postsAPI = {
   },
 
   schedulePost: async (id: string, scheduledAt: string) => {
-    const response = await apiClient.post(`/api/posts/${id}/schedule`, { scheduledAt });
+    const response = await apiClient.post(`/api/posts/${id}/schedule`, {
+      scheduledAt,
+    });
     return response.data;
   },
 };
@@ -233,18 +262,23 @@ export const postsAPI = {
 export const assetsAPI = {
   uploadAsset: async (file: File): Promise<Asset> => {
     const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await apiClient.post('/api/assets/upload', formData, {
+    formData.append("file", file);
+
+    const response = await apiClient.post("/api/assets/upload", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   },
 
-  getAssets: async (page: number = 1, limit: number = 10): Promise<{ assets: Asset[], total: number }> => {
-    const response = await apiClient.get(`/api/assets?page=${page}&limit=${limit}`);
+  getAssets: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ assets: Asset[]; total: number }> => {
+    const response = await apiClient.get(
+      `/api/assets?page=${page}&limit=${limit}`
+    );
     return response.data;
   },
 
@@ -256,17 +290,27 @@ export const assetsAPI = {
 
 // Schedules API
 export const schedulesAPI = {
-  getSchedules: async (page: number = 1, limit: number = 10): Promise<{ schedules: Schedule[], total: number }> => {
-    const response = await apiClient.get(`/api/schedules?page=${page}&limit=${limit}`);
+  getSchedules: async (
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ schedules: Schedule[]; total: number }> => {
+    const response = await apiClient.get(
+      `/api/schedules?page=${page}&limit=${limit}`
+    );
     return response.data;
   },
 
-  createSchedule: async (scheduleData: Partial<Schedule>): Promise<Schedule> => {
-    const response = await apiClient.post('/api/schedules', scheduleData);
+  createSchedule: async (
+    scheduleData: Partial<Schedule>
+  ): Promise<Schedule> => {
+    const response = await apiClient.post("/api/schedules", scheduleData);
     return response.data;
   },
 
-  updateSchedule: async (id: string, scheduleData: Partial<Schedule>): Promise<Schedule> => {
+  updateSchedule: async (
+    id: string,
+    scheduleData: Partial<Schedule>
+  ): Promise<Schedule> => {
     const response = await apiClient.put(`/api/schedules/${id}`, scheduleData);
     return response.data;
   },
@@ -280,7 +324,7 @@ export const schedulesAPI = {
 // Analytics API
 export const analyticsAPI = {
   getOverview: async () => {
-    const response = await apiClient.get('/api/analytics/overview');
+    const response = await apiClient.get("/api/analytics/overview");
     return response.data;
   },
 
@@ -289,12 +333,18 @@ export const analyticsAPI = {
     return response.data;
   },
 
-  getPlatformAnalytics: async (platform: string, startDate?: string, endDate?: string) => {
+  getPlatformAnalytics: async (
+    platform: string,
+    startDate?: string,
+    endDate?: string
+  ) => {
     const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    
-    const response = await apiClient.get(`/api/analytics/platforms/${platform}?${params}`);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    const response = await apiClient.get(
+      `/api/analytics/platforms/${platform}?${params}`
+    );
     return response.data;
   },
 };

@@ -307,12 +307,13 @@ function hasAppSync(): boolean {
 export const NodeAPI = {
   list: async (projectId?: string) => {
     try {
-      console.log("[NodeAPI] list called");
+      console.log("[NodeAPI] list called with projectId:", projectId);
       const resp = await apiClient.get("/api/nodes", {
         params: projectId ? { projectId } : {},
       });
       const raw = Array.isArray(resp.data) ? resp.data : [];
       const nodes: NodeDTO[] = raw.map(toNodeDTO);
+      console.log("[NodeAPI] list result:", nodes);
       return nodes;
     } catch (error) {
       console.error("[NodeAPI] Error in list:", error);
@@ -393,11 +394,11 @@ export const NodeAPI = {
   },
 
   // Edge operations via REST: persist connections array on source node
-  async listEdges(projectId: string) {
+  async listEdges(id: string) {
     try {
       // Fetch nodes and convert connections to edges
       const resp = await apiClient.get("/api/nodes", {
-        params: projectId ? { projectId } : {},
+        params: id ? { id } : {},
       });
       const nodes = Array.isArray(resp.data) ? resp.data : [];
       const edges: { edgeId: string; from: string; to: string }[] = [];
