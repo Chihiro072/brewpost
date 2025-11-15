@@ -1,19 +1,49 @@
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
-import { Calendar, Clock, Eye, Target, Zap, Send, Save, Sparkles, X, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
-import type { ContentNode } from '@/components/planning/PlanningPanel';
-import { enhanceImagePromptWithTemplate, applyTemplateToImage, getTemplateSettings } from '@/utils/templateUtils';
-import { scheduleService } from '@/services/scheduleService';
-import { convertToProxyUrl } from '@/utils/templateUtils'
+import React, { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Calendar,
+  Clock,
+  Eye,
+  Target,
+  Zap,
+  Send,
+  Save,
+  Sparkles,
+  X,
+  RefreshCw,
+} from "lucide-react";
+import { format } from "date-fns";
+import type { ContentNode } from "@/components/planning/PlanningPanel";
+import {
+  enhanceImagePromptWithTemplate,
+  applyTemplateToImage,
+  getTemplateSettings,
+} from "@/utils/templateUtils";
+import { scheduleNodeService } from "@/services/nodeService";
+import { convertToProxyUrl } from "@/utils/templateUtils";
 
 interface NodeDetailsProps {
   node: ContentNode | null;
@@ -22,19 +52,24 @@ interface NodeDetailsProps {
   onPostNode?: (node: ContentNode) => void;
 }
 
-export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSaveNode, onPostNode }) => {
-  console.log('NodeDetails rendering with node:', node?.title);
-  
+export const NodeDetails: React.FC<NodeDetailsProps> = ({
+  node,
+  nodes = [],
+  onSaveNode,
+  onPostNode,
+}) => {
+  console.log("NodeDetails rendering with node:", node?.title);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedNode, setEditedNode] = useState<ContentNode | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState('09:00');
+  const [selectedTime, setSelectedTime] = useState("09:00");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  
+
   React.useEffect(() => {
     if (node) {
-      console.log('NodeDetails: node prop changed, updating editedNode:', node);
+      console.log("NodeDetails: node prop changed, updating editedNode:", node);
       setEditedNode({ ...node });
       setIsEditing(false);
     }
@@ -42,13 +77,15 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
 
   // Use the latest node data for display (either from props or editedNode)
   const displayNode = node;
-  
+
   if (!node) {
     return (
       <div className="flex flex-col h-full bg-gradient-subtle">
         <div className="p-6 border-b border-border/20">
           <h2 className="text-xl font-semibold">Node Details</h2>
-          <p className="text-sm text-muted-foreground">Select a node to view its details</p>
+          <p className="text-sm text-muted-foreground">
+            Select a node to view its details
+          </p>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
@@ -60,21 +97,29 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
     );
   }
 
-  const getStatusColor = (status: ContentNode['status']) => {
+  const getStatusColor = (status: ContentNode["status"]) => {
     switch (status) {
-      case 'published': return 'bg-success text-success-foreground';
-      case 'scheduled': return 'bg-primary text-primary-foreground';
-      case 'draft': return 'bg-muted text-muted-foreground';
-      default: return 'bg-muted text-muted-foreground';
+      case "published":
+        return "bg-success text-success-foreground";
+      case "scheduled":
+        return "bg-primary text-primary-foreground";
+      case "draft":
+        return "bg-muted text-muted-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
-  const getTypeIcon = (type: ContentNode['type']) => {
+  const getTypeIcon = (type: ContentNode["type"]) => {
     switch (type) {
-      case 'post': return Target;
-      case 'image': return Eye;
-      case 'story': return Zap;
-      default: return Target;
+      case "post":
+        return Target;
+      case "image":
+        return Eye;
+      case "story":
+        return Zap;
+      default:
+        return Target;
     }
   };
 
@@ -82,48 +127,53 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
 
   const handleGeneratePrompt = async () => {
     if (!node || isGeneratingPrompt) return;
-    
+
     setIsGeneratingPrompt(true);
     try {
-      const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:5044';
-      
-      const response = await fetch(`${BACKEND_URL}/api/generate-enhanced-prompt`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: node.title,
-          content: node.content,
-          postType: node.postType || 'promotional'
-        })
-      });
-      
+      const BACKEND_URL =
+        (import.meta.env.VITE_API_BASE_URL as string) ??
+        "http://localhost:5044";
+
+      const response = await fetch(
+        `${BACKEND_URL}/api/generate-enhanced-prompt`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: node.title,
+            content: node.content,
+            postType: node.postType || "promotional",
+          }),
+        }
+      );
+
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate enhanced prompt');
+        throw new Error(data.error || "Failed to generate enhanced prompt");
       }
-      
+
       if (data.ok && data.enhancedPrompt) {
         // Update the node with the enhanced prompt
         const updatedNode = {
           ...node,
-          imagePrompt: data.enhancedPrompt
+          imagePrompt: data.enhancedPrompt,
         };
-        
+
         if (onSaveNode) {
           onSaveNode(updatedNode);
         }
-        
+
         // Update local state immediately for UI feedback
         setEditedNode(updatedNode);
-        
-        console.log('Enhanced prompt generated:', data.enhancedPrompt);
+
+        console.log("Enhanced prompt generated:", data.enhancedPrompt);
       }
     } catch (error) {
-      console.error('Error generating enhanced prompt:', error);
-      alert('Failed to generate enhanced prompt: ' + error.message);
+      console.error("Error generating enhanced prompt:", error);
+      alert("Failed to generate enhanced prompt: " + error.message);
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -131,102 +181,132 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
 
   const handleGenerateImage = async () => {
     if (!node || isGeneratingImage) return;
-    
+
     setIsGeneratingImage(true);
     try {
-      const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL as string) ?? 'http://localhost:5044';
-      
+      const BACKEND_URL =
+        (import.meta.env.VITE_API_BASE_URL as string) ??
+        "http://localhost:5044";
+
       // Enhance prompt with template settings and stronger color emphasis
-      let enhancedPrompt = enhanceImagePromptWithTemplate(node.imagePrompt || node.title || node.content || '');
-      
+      let enhancedPrompt = enhanceImagePromptWithTemplate(
+        node.imagePrompt || node.title || node.content || ""
+      );
+
       // Add stronger color emphasis for node generation
       const template = getTemplateSettings();
-      if (template?.selectedColor && template.selectedColor !== 'transparent') {
+      if (template?.selectedColor && template.selectedColor !== "transparent") {
         enhancedPrompt += ` Make sure to prominently feature ${template.selectedColor} color throughout the entire image composition, use it for backgrounds, accents, and key visual elements. The ${template.selectedColor} should be the dominant color theme.`;
       }
-      
-      const response = await fetch(`${BACKEND_URL}/api/canvas-generate-from-node`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nodeId: node.id,
-          imagePrompt: enhancedPrompt,
-          title: node.title,
-          content: node.content
-        })
-      });
-      
+
+      const response = await fetch(
+        `${BACKEND_URL}/api/canvas-generate-from-node`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            nodeId: node.id,
+            imagePrompt: enhancedPrompt,
+            title: node.title,
+            content: node.content,
+          }),
+        }
+      );
+
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate image');
+        throw new Error(data.error || "Failed to generate image");
       }
-      
+
       if (data.ok && data.imageUrl) {
-        console.log('🎯 [NodeDetails] Image generation successful, starting template processing...');
-        console.log('🎯 [NodeDetails] Original image URL:', data.imageUrl);
-        
+        console.log(
+          "🎯 [NodeDetails] Image generation successful, starting template processing..."
+        );
+        console.log("🎯 [NodeDetails] Original image URL:", data.imageUrl);
+
         // Check if template processing is actually needed
         const template = getTemplateSettings();
-        console.log('🎯 [NodeDetails] Template settings retrieved:', template);
-        
-        const needsProcessing = template && (template.logoPreview || template.companyText);
-        console.log('🎯 [NodeDetails] Template processing needed?', needsProcessing, {
-          hasTemplate: !!template,
-          hasLogo: !!template?.logoPreview,
-          hasCompanyText: !!template?.companyText,
-          logoPreview: template?.logoPreview ? template.logoPreview.substring(0, 50) + '...' : 'none',
-          companyText: template?.companyText || 'none'
-        });
-        
+        console.log("🎯 [NodeDetails] Template settings retrieved:", template);
+
+        const needsProcessing =
+          template && (template.logoPreview || template.companyText);
+        console.log(
+          "🎯 [NodeDetails] Template processing needed?",
+          needsProcessing,
+          {
+            hasTemplate: !!template,
+            hasLogo: !!template?.logoPreview,
+            hasCompanyText: !!template?.companyText,
+            logoPreview: template?.logoPreview
+              ? template.logoPreview.substring(0, 50) + "..."
+              : "none",
+            companyText: template?.companyText || "none",
+          }
+        );
+
         // Only apply template processing if there's a logo or text to add
         let processedImageUrl = data.imageUrl;
         if (needsProcessing) {
-          console.log('🎯 [NodeDetails] Calling applyTemplateToImage...');
+          console.log("🎯 [NodeDetails] Calling applyTemplateToImage...");
           try {
             processedImageUrl = await applyTemplateToImage(data.imageUrl);
-            console.log('🎯 [NodeDetails] Template processing completed successfully');
+            console.log(
+              "🎯 [NodeDetails] Template processing completed successfully"
+            );
           } catch (templateError) {
-            console.error('🎯 [NodeDetails] Template processing failed:', templateError);
+            console.error(
+              "🎯 [NodeDetails] Template processing failed:",
+              templateError
+            );
             processedImageUrl = data.imageUrl; // Fallback to original
           }
         } else {
-          console.log('🎯 [NodeDetails] Skipping template processing - no logo or company text configured');
+          console.log(
+            "🎯 [NodeDetails] Skipping template processing - no logo or company text configured"
+          );
         }
-        
-        console.log('🎯 [NodeDetails] Image processing result:', { 
-          original: data.imageUrl, 
-          processed: processedImageUrl.substring(0, 100) + '...', 
+
+        console.log("🎯 [NodeDetails] Image processing result:", {
+          original: data.imageUrl,
+          processed: processedImageUrl.substring(0, 100) + "...",
           needsProcessing,
-          isDataUrl: processedImageUrl.startsWith('data:'),
-          templateApplied: needsProcessing && processedImageUrl !== data.imageUrl
+          isDataUrl: processedImageUrl.startsWith("data:"),
+          templateApplied:
+            needsProcessing && processedImageUrl !== data.imageUrl,
         });
-        
+
         // Add new image to imageUrls array
         const existingImages = node.imageUrls || [];
         const updatedNode = {
           ...node,
           imageUrls: [...existingImages, processedImageUrl],
           imageUrl: processedImageUrl, // Keep for backward compatibility
-          selectedImageUrl: processedImageUrl
+          selectedImageUrl: processedImageUrl,
         };
-        
-        console.log('🎯 [NodeDetails] Saving updated node with new image...');
+
+        console.log("🎯 [NodeDetails] Saving updated node with new image...");
         if (onSaveNode) {
           onSaveNode(updatedNode);
         }
-        
+
         // Update local state immediately for UI feedback
         setEditedNode(updatedNode);
-        
-        console.log('🎯 [NodeDetails] Image generated successfully:', processedImageUrl.substring(0, 100) + '...');
-        console.log('🎯 [NodeDetails] Total images:', updatedNode.imageUrls.length);
+
+        console.log(
+          "🎯 [NodeDetails] Image generated successfully:",
+          processedImageUrl.substring(0, 100) + "..."
+        );
+        console.log(
+          "🎯 [NodeDetails] Total images:",
+          updatedNode.imageUrls.length
+        );
       }
     } catch (error) {
-      console.error('Error generating image:', error);
-      alert('Failed to generate image: ' + error.message);
+      console.error("Error generating image:", error);
+      alert("Failed to generate image: " + error.message);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -241,16 +321,14 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <TypeIcon className="w-6 h-6 text-primary" />
             <div>
               <h2 className="text-xl font-semibold">{node.title}</h2>
-              <p className="text-sm text-muted-foreground font-mono">{node.id}</p>
+              <p className="text-sm text-muted-foreground font-mono">
+                {node.id}
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Badge className={getStatusColor(node.status)}>
-              {node.status}
-            </Badge>
-            <Badge variant="outline">
-              {node.type}
-            </Badge>
+            <Badge className={getStatusColor(node.status)}>{node.status}</Badge>
+            <Badge variant="outline">{node.type}</Badge>
           </div>
         </div>
         {node.day && (
@@ -270,19 +348,21 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           </h3>
           {isEditing ? (
             <Textarea
-              value={editedNode?.content || ''}
-              onChange={(e) => setEditedNode(prev => prev ? { ...prev, content: e.target.value } : null)}
+              value={editedNode?.content || ""}
+              onChange={(e) =>
+                setEditedNode((prev) =>
+                  prev ? { ...prev, content: e.target.value } : null
+                )
+              }
               className="min-h-[120px] text-sm"
               placeholder="Enter content..."
             />
           ) : (
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-              {node.content || 'No content available'}
+              {node.content || "No content available"}
             </div>
           )}
         </Card>
-
-
 
         {/* Posted Information */}
         {node.postedAt && node.postedTo && (
@@ -292,11 +372,12 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
               Posted
             </h3>
             <div className="text-sm text-muted-foreground space-y-2">
-              <div>Posted on: {node.postedAt.toLocaleDateString()} at {node.postedAt.toLocaleTimeString()}</div>
-              <div>Platforms: {node.postedTo.join(', ')}</div>
-              {node.tweetId && (
-                <div>Tweet ID: {node.tweetId}</div>
-              )}
+              <div>
+                Posted on: {node.postedAt.toLocaleDateString()} at{" "}
+                {node.postedAt.toLocaleTimeString()}
+              </div>
+              <div>Platforms: {node.postedTo.join(", ")}</div>
+              {node.tweetId && <div>Tweet ID: {node.tweetId}</div>}
             </div>
           </Card>
         )}
@@ -307,18 +388,22 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <h3 className="text-sm font-medium mb-2">Connected Nodes</h3>
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
-                {node.connections.length} connection{node.connections.length !== 1 ? 's' : ''}
+                {node.connections.length} connection
+                {node.connections.length !== 1 ? "s" : ""}
               </div>
               <div className="space-y-2">
                 {node.connections.map((connectedId, index) => {
                   // Find the connected node to show its title
-                  const connectedNode = nodes.find(n => n.id === connectedId);
+                  const connectedNode = nodes.find((n) => n.id === connectedId);
                   return (
-                    <div key={connectedId} className="flex items-center gap-2 text-xs p-2 bg-muted/30 rounded border">
+                    <div
+                      key={connectedId}
+                      className="flex items-center gap-2 text-xs p-2 bg-muted/30 rounded border"
+                    >
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
                       <div className="flex-1">
                         <div className="font-medium text-foreground">
-                          {connectedNode?.title || 'Unknown Node'}
+                          {connectedNode?.title || "Unknown Node"}
                         </div>
                         <div className="text-muted-foreground font-mono text-xs">
                           {connectedId}
@@ -342,8 +427,12 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           <h3 className="text-sm font-medium mb-2">Title</h3>
           {isEditing ? (
             <Input
-              value={editedNode?.title || ''}
-              onChange={(e) => setEditedNode(prev => prev ? { ...prev, title: e.target.value } : null)}
+              value={editedNode?.title || ""}
+              onChange={(e) =>
+                setEditedNode((prev) =>
+                  prev ? { ...prev, title: e.target.value } : null
+                )
+              }
               placeholder="Enter title..."
             />
           ) : (
@@ -357,9 +446,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <h3 className="text-sm font-medium mb-2">Status</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.status || 'draft'}
-                onValueChange={(value: 'draft' | 'scheduled' | 'published') => 
-                  setEditedNode(prev => prev ? { ...prev, status: value } : null)
+                value={editedNode?.status || "draft"}
+                onValueChange={(value: "draft" | "scheduled" | "published") =>
+                  setEditedNode((prev) =>
+                    prev ? { ...prev, status: value } : null
+                  )
                 }
               >
                 <SelectTrigger>
@@ -372,7 +463,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                 </SelectContent>
               </Select>
             ) : (
-              <div className="text-sm text-muted-foreground capitalize">{node.status}</div>
+              <div className="text-sm text-muted-foreground capitalize">
+                {node.status}
+              </div>
             )}
           </Card>
 
@@ -380,9 +473,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <h3 className="text-sm font-medium mb-2">Type</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.type || 'post'}
-                onValueChange={(value: 'post' | 'image' | 'story') => 
-                  setEditedNode(prev => prev ? { ...prev, type: value } : null)
+                value={editedNode?.type || "post"}
+                onValueChange={(value: "post" | "image" | "story") =>
+                  setEditedNode((prev) =>
+                    prev ? { ...prev, type: value } : null
+                  )
                 }
               >
                 <SelectTrigger>
@@ -395,7 +490,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                 </SelectContent>
               </Select>
             ) : (
-              <div className="text-sm text-muted-foreground capitalize">{node.type}</div>
+              <div className="text-sm text-muted-foreground capitalize">
+                {node.type}
+              </div>
             )}
           </Card>
         </div>
@@ -406,12 +503,18 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <h3 className="text-sm font-medium mb-2">Day</h3>
             {isEditing ? (
               <Input
-                value={editedNode?.day || ''}
-                onChange={(e) => setEditedNode(prev => prev ? { ...prev, day: e.target.value } : null)}
+                value={editedNode?.day || ""}
+                onChange={(e) =>
+                  setEditedNode((prev) =>
+                    prev ? { ...prev, day: e.target.value } : null
+                  )
+                }
                 placeholder="e.g., Monday, Tuesday..."
               />
             ) : (
-              <div className="text-sm text-muted-foreground">{node.day || 'No day specified'}</div>
+              <div className="text-sm text-muted-foreground">
+                {node.day || "No day specified"}
+              </div>
             )}
           </Card>
 
@@ -419,9 +522,13 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             <h3 className="text-sm font-medium mb-2">Post Type</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.postType || 'branding'}
-                onValueChange={(value: 'engaging' | 'promotional' | 'branding') => 
-                  setEditedNode(prev => prev ? { ...prev, postType: value } : null)
+                value={editedNode?.postType || "branding"}
+                onValueChange={(
+                  value: "engaging" | "promotional" | "branding"
+                ) =>
+                  setEditedNode((prev) =>
+                    prev ? { ...prev, postType: value } : null
+                  )
                 }
               >
                 <SelectTrigger>
@@ -435,10 +542,10 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
               </Select>
             ) : (
               <div className="text-sm text-muted-foreground capitalize">
-                {node.postType === 'engaging' && '🟢 Engaging'}
-                {node.postType === 'promotional' && '🔵 Promotional'}
-                {node.postType === 'branding' && '🟡 Branding'}
-                {!node.postType && 'Not specified'}
+                {node.postType === "engaging" && "🟢 Engaging"}
+                {node.postType === "promotional" && "🔵 Promotional"}
+                {node.postType === "branding" && "🟡 Branding"}
+                {!node.postType && "Not specified"}
               </div>
             )}
           </Card>
@@ -453,15 +560,18 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           {(() => {
             const template = getTemplateSettings();
             const color = template?.selectedColor;
-            
-            if (!color || color === 'transparent') {
+
+            if (!color || color === "transparent") {
               return (
-                <div className="text-sm text-muted-foreground">No color selected</div>
+                <div className="text-sm text-muted-foreground">
+                  No color selected
+                </div>
               );
             }
-            
+
             return (
-              <div className="w-8 h-8 rounded border border-border/20 shadow-sm"
+              <div
+                className="w-8 h-8 rounded border border-border/20 shadow-sm"
                 style={{ backgroundColor: color }}
               />
             );
@@ -496,88 +606,112 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           </div>
           {isEditing ? (
             <Input
-              value={editedNode?.imageUrl || ''}
-              onChange={(e) => setEditedNode(prev => prev ? { ...prev, imageUrl: e.target.value } : null)}
+              value={editedNode?.imageUrl || ""}
+              onChange={(e) =>
+                setEditedNode((prev) =>
+                  prev ? { ...prev, imageUrl: e.target.value } : null
+                )
+              }
               placeholder="https://example.com/image.jpg"
             />
           ) : (
             <div className="space-y-2">
-              {(node.imageUrl || node.imageUrls) ? (() => {
-                // Combine all images into one array for display
-                const allImages = [];
-                if (node.imageUrls && node.imageUrls.length > 0) {
-                  allImages.push(...node.imageUrls);
-                }
-                if (node.imageUrl && !allImages.includes(node.imageUrl)) {
-                  allImages.push(node.imageUrl);
-                }
-                
-                return (
-                  <>
-                    <div className="text-xs text-muted-foreground">
-                      Generated Images ({allImages.length}) - Click to select:
-                    </div>
-                    <div className={`${allImages.length > 3 ? 'max-h-96 overflow-y-auto' : ''}`}>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
-                        {allImages.map((imageUrl, index) => (
-                          <Dialog key={`${imageUrl}-${index}`}>
-                            <div 
-                              className={`relative group cursor-pointer flex-shrink-0 ${
-                                (editedNode?.imageUrl || node.imageUrl) === imageUrl ? 'ring-2 ring-primary' : ''
-                              }`}
-                              onClick={() => {
-                                const updatedNode = { ...node, imageUrl: imageUrl, selectedImageUrl: imageUrl };
-                                setEditedNode(updatedNode);
-                                if (onSaveNode) {
-                                  onSaveNode(updatedNode);
-                                }
-                              }}
-                            >
-                              <img 
-                                src={convertToProxyUrl(imageUrl)} 
-                                alt={`Generated content ${index + 1}`} 
-                                className="w-32 h-32 object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                              <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
-                                {index + 1}
-                              </div>
-                              {(editedNode?.imageUrl || node.imageUrl) === imageUrl && (
-                                <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-xs px-1 rounded">
-                                  ✓
-                                </div>
-                              )}
-                              <DialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="absolute bottom-1 right-1 h-6 w-6 p-0 bg-black/70 hover:bg-black/90 text-white border-white/20"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Eye className="w-3 h-3" />
-                                </Button>
-                              </DialogTrigger>
-                            </div>
-                            <DialogContent className="max-w-4xl w-full p-0 bg-black/90">
-                              <DialogTitle className="sr-only">Full Size Image View</DialogTitle>
-                              <div className="relative">
-                                <img 
-                                  src={convertToProxyUrl(imageUrl)} 
-                                  alt={`Generated content ${index + 1} - Full size`} 
-                                  className="w-full h-auto max-h-[90vh] object-contain"
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        ))}
+              {node.imageUrl || node.imageUrls ? (
+                (() => {
+                  // Combine all images into one array for display
+                  const allImages = [];
+                  if (node.imageUrls && node.imageUrls.length > 0) {
+                    allImages.push(...node.imageUrls);
+                  }
+                  if (node.imageUrl && !allImages.includes(node.imageUrl)) {
+                    allImages.push(node.imageUrl);
+                  }
+
+                  return (
+                    <>
+                      <div className="text-xs text-muted-foreground">
+                        Generated Images ({allImages.length}) - Click to select:
                       </div>
-                    </div>
-                  </>
-                );
-              })() : (
-                <div className="text-sm text-muted-foreground">No images generated</div>
+                      <div
+                        className={`${
+                          allImages.length > 3 ? "max-h-96 overflow-y-auto" : ""
+                        }`}
+                      >
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
+                          {allImages.map((imageUrl, index) => (
+                            <Dialog key={`${imageUrl}-${index}`}>
+                              <div
+                                className={`relative group cursor-pointer flex-shrink-0 ${
+                                  (editedNode?.imageUrl || node.imageUrl) ===
+                                  imageUrl
+                                    ? "ring-2 ring-primary"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  const updatedNode = {
+                                    ...node,
+                                    imageUrl: imageUrl,
+                                    selectedImageUrl: imageUrl,
+                                  };
+                                  setEditedNode(updatedNode);
+                                  if (onSaveNode) {
+                                    onSaveNode(updatedNode);
+                                  }
+                                }}
+                              >
+                                <img
+                                  src={convertToProxyUrl(imageUrl)}
+                                  alt={`Generated content ${index + 1}`}
+                                  className="w-32 h-32 object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
+                                />
+                                <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
+                                  {index + 1}
+                                </div>
+                                {(editedNode?.imageUrl || node.imageUrl) ===
+                                  imageUrl && (
+                                  <div className="absolute top-1 right-1 bg-primary text-primary-foreground text-xs px-1 rounded">
+                                    ✓
+                                  </div>
+                                )}
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="absolute bottom-1 right-1 h-6 w-6 p-0 bg-black/70 hover:bg-black/90 text-white border-white/20"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                </DialogTrigger>
+                              </div>
+                              <DialogContent className="max-w-4xl w-full p-0 bg-black/90">
+                                <DialogTitle className="sr-only">
+                                  Full Size Image View
+                                </DialogTitle>
+                                <div className="relative">
+                                  <img
+                                    src={convertToProxyUrl(imageUrl)}
+                                    alt={`Generated content ${
+                                      index + 1
+                                    } - Full size`}
+                                    className="w-full h-auto max-h-[90vh] object-contain"
+                                  />
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No images generated
+                </div>
               )}
             </div>
           )}
@@ -611,14 +745,18 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
           </div>
           {isEditing ? (
             <Textarea
-              value={editedNode?.imagePrompt || ''}
-              onChange={(e) => setEditedNode(prev => prev ? { ...prev, imagePrompt: e.target.value } : null)}
+              value={editedNode?.imagePrompt || ""}
+              onChange={(e) =>
+                setEditedNode((prev) =>
+                  prev ? { ...prev, imagePrompt: e.target.value } : null
+                )
+              }
               className="min-h-[80px] text-sm"
               placeholder="Enter image prompt..."
             />
           ) : (
             <div className="text-sm text-muted-foreground">
-              {(editedNode?.imagePrompt || node.imagePrompt) || 'No image prompt'}
+              {editedNode?.imagePrompt || node.imagePrompt || "No image prompt"}
             </div>
           )}
         </Card>
@@ -648,30 +786,52 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                     selected={editedNode?.scheduledDate}
                     onSelect={(date) => {
                       if (date) {
-                        const [hours, minutes] = selectedTime.split(':');
+                        const [hours, minutes] = selectedTime.split(":");
                         const newDate = new Date(date);
-                        newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                        console.log('NodeDetails: Calendar date selected:', date, 'with time:', selectedTime, 'result:', newDate);
-                        setEditedNode(prev => prev ? { ...prev, scheduledDate: newDate } : null);
+                        newDate.setHours(
+                          parseInt(hours),
+                          parseInt(minutes),
+                          0,
+                          0
+                        );
+                        console.log(
+                          "NodeDetails: Calendar date selected:",
+                          date,
+                          "with time:",
+                          selectedTime,
+                          "result:",
+                          newDate
+                        );
+                        setEditedNode((prev) =>
+                          prev ? { ...prev, scheduledDate: newDate } : null
+                        );
                       }
                     }}
                     initialFocus
                   />
                   <div className="border-t pt-3">
-                    <label className="text-sm font-medium mb-2 block">Time</label>
+                    <label className="text-sm font-medium mb-2 block">
+                      Time
+                    </label>
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedTime('09:00');
+                          setSelectedTime("09:00");
                           if (editedNode?.scheduledDate) {
                             const newDate = new Date(editedNode.scheduledDate);
                             newDate.setHours(9, 0, 0, 0);
-                            setEditedNode(prev => prev ? { ...prev, scheduledDate: newDate } : null);
+                            setEditedNode((prev) =>
+                              prev ? { ...prev, scheduledDate: newDate } : null
+                            );
                           }
                         }}
-                        className={selectedTime === '09:00' ? 'bg-primary text-primary-foreground' : ''}
+                        className={
+                          selectedTime === "09:00"
+                            ? "bg-primary text-primary-foreground"
+                            : ""
+                        }
                       >
                         9:00 AM
                       </Button>
@@ -679,14 +839,20 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedTime('12:00');
+                          setSelectedTime("12:00");
                           if (editedNode?.scheduledDate) {
                             const newDate = new Date(editedNode.scheduledDate);
                             newDate.setHours(12, 0, 0, 0);
-                            setEditedNode(prev => prev ? { ...prev, scheduledDate: newDate } : null);
+                            setEditedNode((prev) =>
+                              prev ? { ...prev, scheduledDate: newDate } : null
+                            );
                           }
                         }}
-                        className={selectedTime === '12:00' ? 'bg-primary text-primary-foreground' : ''}
+                        className={
+                          selectedTime === "12:00"
+                            ? "bg-primary text-primary-foreground"
+                            : ""
+                        }
                       >
                         12:00 PM
                       </Button>
@@ -694,14 +860,20 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedTime('18:00');
+                          setSelectedTime("18:00");
                           if (editedNode?.scheduledDate) {
                             const newDate = new Date(editedNode.scheduledDate);
                             newDate.setHours(18, 0, 0, 0);
-                            setEditedNode(prev => prev ? { ...prev, scheduledDate: newDate } : null);
+                            setEditedNode((prev) =>
+                              prev ? { ...prev, scheduledDate: newDate } : null
+                            );
                           }
                         }}
-                        className={selectedTime === '18:00' ? 'bg-primary text-primary-foreground' : ''}
+                        className={
+                          selectedTime === "18:00"
+                            ? "bg-primary text-primary-foreground"
+                            : ""
+                        }
                       >
                         6:00 PM
                       </Button>
@@ -712,10 +884,17 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                       onChange={(e) => {
                         setSelectedTime(e.target.value);
                         if (editedNode?.scheduledDate) {
-                          const [hours, minutes] = e.target.value.split(':');
+                          const [hours, minutes] = e.target.value.split(":");
                           const newDate = new Date(editedNode.scheduledDate);
-                          newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                          setEditedNode(prev => prev ? { ...prev, scheduledDate: newDate } : null);
+                          newDate.setHours(
+                            parseInt(hours),
+                            parseInt(minutes),
+                            0,
+                            0
+                          );
+                          setEditedNode((prev) =>
+                            prev ? { ...prev, scheduledDate: newDate } : null
+                          );
                         }
                       }}
                       className="mb-3"
@@ -725,7 +904,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          setEditedNode(prev => prev ? { ...prev, scheduledDate: undefined } : null);
+                          setEditedNode((prev) =>
+                            prev ? { ...prev, scheduledDate: undefined } : null
+                          );
                           setCalendarOpen(false);
                         }}
                         className="flex-1"
@@ -746,7 +927,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
             </Popover>
           ) : (
             <div className="text-sm text-muted-foreground">
-              {node.scheduledDate ? node.scheduledDate.toLocaleString() : 'No scheduled date'}
+              {node.scheduledDate
+                ? node.scheduledDate.toLocaleString()
+                : "No scheduled date"}
             </div>
           )}
         </Card>
@@ -760,13 +943,19 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
               <Button
                 onClick={() => {
                   if (editedNode && onSaveNode) {
-                    console.log('=== NODE DETAILS SAVE DEBUG ===');
-                    console.log('NodeDetails: Save Changes clicked');
-                    console.log('Original node:', node);
-                    console.log('Original node scheduledDate:', node.scheduledDate);
-                    console.log('Edited node:', editedNode);
-                    console.log('Edited node scheduledDate:', editedNode.scheduledDate);
-                    console.log('=== END NODE DETAILS SAVE DEBUG ===');
+                    console.log("=== NODE DETAILS SAVE DEBUG ===");
+                    console.log("NodeDetails: Save Changes clicked");
+                    console.log("Original node:", node);
+                    console.log(
+                      "Original node scheduledDate:",
+                      node.scheduledDate
+                    );
+                    console.log("Edited node:", editedNode);
+                    console.log(
+                      "Edited node scheduledDate:",
+                      editedNode.scheduledDate
+                    );
+                    console.log("=== END NODE DETAILS SAVE DEBUG ===");
                     onSaveNode(editedNode);
                     setIsEditing(false);
                   }
@@ -800,55 +989,48 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({ node, nodes = [], onSa
                 <Button
                   onClick={async () => {
                     if (!node.scheduledDate) {
-                      alert('Please set a scheduled date first by editing the node.');
+                      alert(
+                        "Please set a scheduled date first by editing the node."
+                      );
                       return;
                     }
-                    
+
                     try {
                       // Schedule this individual node through AppSync
-                      console.log('Scheduling individual node:', {
+                      console.log("Scheduling individual node:", {
                         id: node.id,
                         title: node.title,
                         scheduledDate: node.scheduledDate?.toISOString(),
                         imageUrl: node.imageUrl,
-                        imageUrls: node.imageUrls
-                      });
-                      
-                      const result = await scheduleService.createSchedules([{
-                        id: node.id,
-                        nodeId: node.id,
-                        projectId: 'demo-project-123',
-                        title: node.title,
-                        description: node.content,
-                        type: node.type,
-                        imageUrl: node.imageUrl,
                         imageUrls: node.imageUrls,
-                        scheduledDate: node.scheduledDate.toISOString(),
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                      }]);
-                      
-                      console.log('Schedule result:', result);
-                      
-                      if (result.ok) {
-                        // Update node status to scheduled
+                      });
+
+                      const scheduled = await scheduleNodeService(node.id);
+                      console.log("Schedule result:", scheduled);
+                      if (scheduled) {
                         const updatedNode = {
                           ...node,
-                          status: 'scheduled' as const
+                          status: "scheduled" as const,
+                          scheduledDate:
+                            scheduled.scheduledDate ?? node.scheduledDate,
                         };
-                        onPostNode(updatedNode);
+                        if (onPostNode) onPostNode(updatedNode);
                       } else {
-                        alert('Failed to schedule node. Please try again.');
+                        alert("Failed to schedule node. Please try again.");
                       }
                     } catch (error) {
-                      console.error('Error scheduling node:', error);
-                      alert('Failed to schedule node: ' + error.message);
+                      console.error("Error scheduling node:", error);
+                      alert("Failed to schedule node: " + error.message);
                     }
                   }}
                   className="text-white shadow-lg transition-colors flex-1"
-                  style={{backgroundColor: '#03624C'}}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2CC295'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#03624C'}
+                  style={{ backgroundColor: "#03624C" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#2CC295")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#03624C")
+                  }
                 >
                   <Clock className="w-4 h-4 mr-2" />
                   Schedule Now
