@@ -448,7 +448,7 @@ export function CircleCanvas({
         {/* Central campaign area */}
         <div className="relative flex items-center justify-center">
         <div className="relative transition-all duration-300 ease-out">
-          <div className="relative w-48 h-48 flex items-center justify-center">
+          <div className="relative w-40 h-40 flex items-center justify-center">
             {/* Outer spinning ring */}
             <div
               className={[
@@ -640,8 +640,8 @@ export function CircleCanvas({
                 key={component.id}
                 className="absolute -translate-x-1/2 -translate-y-1/2 animate-float cursor-pointer"
                 style={{
-                  left: `calc(25% + ${x}px)`,
-                  top: `calc(50% + ${y}px)`,
+                  left: `calc(50% + ${x}px)`,
+                  top: `calc(65% + ${y}px)`,
                   animationDelay: `${index * 0.2}s`,
                   zIndex: 10 + index,
                 }}

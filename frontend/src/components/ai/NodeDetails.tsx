@@ -735,27 +735,6 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium">Image Prompt</h3>
-            {!isEditing && (node.title || node.content) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleGeneratePrompt}
-                disabled={isGeneratingPrompt}
-                className="h-7 px-2 text-xs"
-              >
-                {isGeneratingPrompt ? (
-                  <>
-                    <div className="w-3 h-3 border border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
-                    Enhancing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Enhance
-                  </>
-                )}
-              </Button>
-            )}
           </div>
           {isEditing ? (
             <Textarea

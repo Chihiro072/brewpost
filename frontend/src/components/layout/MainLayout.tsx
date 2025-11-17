@@ -592,7 +592,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               />
             </div>
           ) : (
-            <div className="h-full bg-gradient-subtle relative">
+            <div className="h-full bg-gradient-subtle relative flex flex-col overflow-hidden">
               <CircleCanvas 
                 selectedComponents={selectedCanvasComponents}
                 isGenerating={isGenerating}
@@ -634,18 +634,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 }}
               />
               <ComponentSidebar 
-                components={canvasComponents as unknown as CampaignComponentLocal[]}
+                generatedComponents={canvasComponents}
                 onAddComponent={(component) => {
                   const newComponent: SelectedCanvasComponent = {
                     id: component.id,
-                    name: component.title,
+                    name: component.title || component.name,
                     category: component.category,
                     color: component.color ?? '#0EA5E9',
                     position: { x: Math.random() * 300 + 50, y: Math.random() * 200 + 50 },
                   };
                   setSelectedCanvasComponents(prev => [...prev, newComponent]);
                 }}
-                onClear={() => setSelectedCanvasComponents([])}
+                isLoadingAi={aiLoading}
+                generationProgress={aiLoading}
               />
             </div>
           )}
