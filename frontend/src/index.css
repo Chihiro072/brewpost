@@ -17,9 +17,8 @@
 
 .node-card {
   will-change: transform;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-              box-shadow 0.2s ease-out,
-              scale 0.2s ease-out;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease-out, scale 0.2s ease-out;
   /* Hardware acceleration optimizations */
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -43,9 +42,8 @@
 
 .node-card:not(.dragging) {
   /* Smooth hover transitions when not dragging */
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-              box-shadow 0.2s ease-out,
-              border-color 0.2s ease-out;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s ease-out, border-color 0.2s ease-out;
 }
 
 .node-card:not(.dragging):hover {
@@ -81,11 +79,7 @@
     --accent-foreground: 0 0% 100%;
 
     /* Theme gradients with BrewPost logo colors */
-    --gradient-primary: linear-gradient(
-      135deg,
-      #78FFD6,
-      #3BC6FF
-    );
+    --gradient-primary: linear-gradient(135deg, #78ffd6, #3bc6ff);
     --gradient-secondary: linear-gradient(
       135deg,
       hsl(191 15% 25%),
@@ -258,26 +252,27 @@
 
   /* Scrollbar hide utility - Enhanced for all browsers */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none; /* Firefox */
   }
 
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;             /* Safari and Chrome */
+    display: none; /* Safari and Chrome */
   }
 
   /* Global scrollbar hiding - Apply to all scrollable elements */
   * {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none; /* Firefox */
   }
 
   *::-webkit-scrollbar {
-    display: none;             /* Safari and Chrome */
+    display: none; /* Safari and Chrome */
   }
 
   /* Specific scrollbar hiding for common scrollable elements */
-  html, body {
+  html,
+  body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
@@ -288,7 +283,12 @@
   }
 
   /* Override for any containers that might show scrollbars */
-  div, section, article, main, aside, nav {
+  div,
+  section,
+  article,
+  main,
+  aside,
+  nav {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
@@ -319,30 +319,29 @@
     -ms-user-select: none !important;
     user-select: none !important;
     /* pointer-events: none !important; */
-    }
-    
-    /* Limit pointer-events disabling to canvas area only */
-    .dragging .canvas-container * {
+  }
+
+  /* Limit pointer-events disabling to canvas area only */
+  .dragging .canvas-container * {
     pointer-events: none !important;
-    }
-    
-    .dragging .node-card {
+  }
+
+  .dragging .node-card {
     pointer-events: auto !important;
-    }
-    
-    /* Ensure buttons are always clickable */
-    .node-card button {
+  }
+
+  /* Ensure buttons are always clickable */
+  .node-card button {
     pointer-events: auto !important;
-    }
+  }
 
   /* Enhanced dragging visual feedback */
   .dragging .node-card.dragging-node {
     transform: scale(1.05) translateZ(0) !important;
     z-index: 9999 !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 
-                0 0 0 2px hsl(var(--primary) / 0.6),
-                0 0 40px hsl(var(--primary) / 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4),
+      0 0 0 2px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
     filter: brightness(1.15) saturate(1.1);
     /* Smooth pulsing effect during drag */
     animation: drag-pulse 0.8s ease-in-out infinite alternate;
@@ -427,16 +426,14 @@
 
 @keyframes drag-pulse {
   0% {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 
-                0 0 0 2px hsl(var(--primary) / 0.6),
-                0 0 40px hsl(var(--primary) / 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4),
+      0 0 0 2px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   100% {
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 
-                0 0 0 3px hsl(var(--primary) / 0.8),
-                0 0 50px hsl(var(--primary) / 0.6),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 3px hsl(var(--primary) / 0.8), 0 0 50px hsl(var(--primary) / 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -451,4 +448,27 @@
 
 .hover\:scale-102:hover {
   transform: scale(1.02);
+}
+
+/* React Day Picker - Weekday header styling for equal widths */
+.rdp-weekdays {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.rdp-cell.rdp-head_cell {
+  flex: 1;
+  min-width: 0;
+  width: auto !important;
+}
+
+.rdp-head_cell {
+  padding: 0.5rem 0 !important;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
 }

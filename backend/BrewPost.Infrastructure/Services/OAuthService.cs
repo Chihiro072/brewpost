@@ -1,9 +1,10 @@
 using BrewPost.Core.Entities;
 using BrewPost.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Web;
+using BrewPost.Infrastructure.Data;
 
 namespace BrewPost.Infrastructure.Services;
 
@@ -12,20 +13,62 @@ public class OAuthService : IOAuthService
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
     private readonly Dictionary<string, OAuthProvider> _providers;
+    private readonly BrewPostDbContext _dbContext;
 
-    public OAuthService(HttpClient httpClient, IConfiguration configuration)
+    public OAuthService(HttpClient httpClient, IConfiguration configuration, BrewPostDbContext dbContext)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _dbContext = dbContext;
         _providers = InitializeProviders();
     }
 
-    public async Task<string> GetAuthorizationUrlAsync(string provider, string redirectUri, string state)
+    /// <summary>
+    /// Links a social account (Instagram, Facebook, LinkedIn) to an existing app user.
+    /// Does NOT handle login or JWT generation.
+    /// </summary>
+    public async Task<User> LinkSocialAccountAsync(User user, string socialProvider, SocialUserProfile profile, OAuthTokenResponse token)
     {
-        if (!_providers.TryGetValue(provider.ToLower(), out var providerConfig))
+        // Check if the social account already exists for this provider and provider ID
+        var socialAccount = await _dbContext.SocialAccounts
+            .FirstOrDefaultAsync(sa => sa.Provider == socialProvider && sa.ProviderId == profile.ProviderId);
+
+        if (socialAccount == null)
         {
-            throw new ArgumentException($"Unsupported OAuth provider: {provider}");
+            // Create new social account
+            socialAccount = new SocialAccount
+            {
+                UserId = user.Id,
+                Provider = socialProvider,
+                ProviderId = profile.ProviderId,
+                AccessToken = token.AccessToken,
+                RefreshToken = token.RefreshToken,
+                ExpiresAt = token.ExpiresAt,
+                ProfileData = JsonDocument.Parse(JsonSerializer.Serialize(profile)),
+            };
+
+            _dbContext.SocialAccounts.Add(socialAccount);
         }
+        else
+        {
+            // Update existing tokens
+            socialAccount.AccessToken = token.AccessToken;
+            socialAccount.RefreshToken = token.RefreshToken;
+            socialAccount.ExpiresAt = token.ExpiresAt;
+            socialAccount.ProfileData = JsonDocument.Parse(JsonSerializer.Serialize(profile));
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return user;
+    }
+
+    /// <summary>
+    /// Gets the authorization URL to redirect the user for social account connection.
+    /// </summary>
+    public Task<string> GetAuthorizationUrlAsync(string socialProvider, string redirectUri, string state)
+    {
+        if (!_providers.TryGetValue(socialProvider.ToLower(), out var providerConfig))
+            throw new ArgumentException($"Unsupported OAuth provider: {socialProvider}");
 
         var queryParams = new Dictionary<string, string>
         {
@@ -35,22 +78,20 @@ public class OAuthService : IOAuthService
             ["response_type"] = "code"
         };
 
-        // Add provider-specific scopes
         if (!string.IsNullOrEmpty(providerConfig.Scope))
-        {
             queryParams["scope"] = providerConfig.Scope;
-        }
 
         var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={HttpUtility.UrlEncode(kvp.Value)}"));
-        return $"{providerConfig.AuthorizationEndpoint}?{queryString}";
+        return Task.FromResult($"{providerConfig.AuthorizationEndpoint}?{queryString}");
     }
 
-    public async Task<OAuthTokenResponse> ExchangeCodeForTokenAsync(string provider, string code, string redirectUri)
+    /// <summary>
+    /// Exchanges the OAuth code for an access token.
+    /// </summary>
+    public async Task<OAuthTokenResponse> ExchangeCodeForTokenAsync(string socialProvider, string code, string redirectUri)
     {
-        if (!_providers.TryGetValue(provider.ToLower(), out var providerConfig))
-        {
-            throw new ArgumentException($"Unsupported OAuth provider: {provider}");
-        }
+        if (!_providers.TryGetValue(socialProvider.ToLower(), out var providerConfig))
+            throw new ArgumentException($"Unsupported OAuth provider: {socialProvider}");
 
         var requestData = new Dictionary<string, string>
         {
@@ -63,7 +104,7 @@ public class OAuthService : IOAuthService
 
         var content = new FormUrlEncodedContent(requestData);
         var response = await _httpClient.PostAsync(providerConfig.TokenEndpoint, content);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
@@ -86,18 +127,18 @@ public class OAuthService : IOAuthService
         };
     }
 
-    public async Task<SocialUserProfile> GetUserProfileAsync(string provider, string accessToken)
+    /// <summary>
+    /// Fetches the user's profile from the social provider using the access token.
+    /// </summary>
+    public async Task<SocialUserProfile> GetUserProfileAsync(string socialProvider, string accessToken)
     {
-        if (!_providers.TryGetValue(provider.ToLower(), out var providerConfig))
-        {
-            throw new ArgumentException($"Unsupported OAuth provider: {provider}");
-        }
+        if (!_providers.TryGetValue(socialProvider.ToLower(), out var providerConfig))
+            throw new ArgumentException($"Unsupported OAuth provider: {socialProvider}");
 
         _httpClient.DefaultRequestHeaders.Clear();
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _httpClient.GetAsync(providerConfig.UserInfoEndpoint);
-        
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
@@ -107,26 +148,22 @@ public class OAuthService : IOAuthService
         var responseContent = await response.Content.ReadAsStringAsync();
         var userData = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
-        return provider.ToLower() switch
+        return socialProvider.ToLower() switch
         {
             "instagram" => ParseInstagramProfile(userData),
             "facebook" => ParseFacebookProfile(userData),
             "linkedin" => ParseLinkedInProfile(userData),
-            _ => throw new ArgumentException($"Unsupported provider: {provider}")
+            _ => throw new ArgumentException($"Unsupported provider: {socialProvider}")
         };
     }
 
+    /// <summary>
+    /// Refreshes the access token for a linked social account.
+    /// </summary>
     public async Task<bool> RefreshTokenAsync(SocialAccount socialAccount)
     {
-        if (string.IsNullOrEmpty(socialAccount.RefreshToken))
-        {
-            return false;
-        }
-
-        if (!_providers.TryGetValue(socialAccount.Provider.ToLower(), out var providerConfig))
-        {
-            return false;
-        }
+        if (string.IsNullOrEmpty(socialAccount.RefreshToken)) return false;
+        if (!_providers.TryGetValue(socialAccount.Provider.ToLower(), out var providerConfig)) return false;
 
         try
         {
@@ -140,30 +177,22 @@ public class OAuthService : IOAuthService
 
             var content = new FormUrlEncodedContent(requestData);
             var response = await _httpClient.PostAsync(providerConfig.TokenEndpoint, content);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                return false;
-            }
+
+            if (!response.IsSuccessStatusCode) return false;
 
             var responseContent = await response.Content.ReadAsStringAsync();
             var tokenData = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
             if (tokenData.TryGetProperty("access_token", out var accessTokenProp))
-            {
                 socialAccount.AccessToken = accessTokenProp.GetString() ?? socialAccount.AccessToken;
-            }
 
             if (tokenData.TryGetProperty("refresh_token", out var refreshTokenProp))
-            {
                 socialAccount.RefreshToken = refreshTokenProp.GetString() ?? socialAccount.RefreshToken;
-            }
 
             if (tokenData.TryGetProperty("expires_in", out var expiresInProp))
-            {
                 socialAccount.ExpiresAt = DateTime.UtcNow.AddSeconds(expiresInProp.GetInt32());
-            }
 
+            await _dbContext.SaveChangesAsync();
             return true;
         }
         catch
@@ -171,6 +200,8 @@ public class OAuthService : IOAuthService
             return false;
         }
     }
+
+    #region Provider Initialization & Parsing
 
     private Dictionary<string, OAuthProvider> InitializeProviders()
     {
@@ -206,47 +237,41 @@ public class OAuthService : IOAuthService
         };
     }
 
-    private static SocialUserProfile ParseInstagramProfile(JsonElement userData)
+    private static SocialUserProfile ParseInstagramProfile(JsonElement userData) => new SocialUserProfile
     {
-        return new SocialUserProfile
+        ProviderId = userData.GetProperty("id").GetString() ?? string.Empty,
+        Name = userData.TryGetProperty("username", out var usernameProp) ? usernameProp.GetString() ?? string.Empty : string.Empty,
+        Email = string.Empty, // Instagram does not provide email
+        AdditionalData = new Dictionary<string, object>
         {
-            ProviderId = userData.GetProperty("id").GetString() ?? string.Empty,
-            Name = userData.TryGetProperty("username", out var usernameProp) ? usernameProp.GetString() ?? string.Empty : string.Empty,
-            Email = string.Empty, // Instagram doesn't provide email
-            AdditionalData = new Dictionary<string, object>
-            {
-                ["username"] = userData.TryGetProperty("username", out var u) ? u.GetString() ?? string.Empty : string.Empty,
-                ["account_type"] = userData.TryGetProperty("account_type", out var at) ? at.GetString() ?? string.Empty : string.Empty
-            }
-        };
-    }
+            ["username"] = userData.TryGetProperty("username", out var u) ? u.GetString() ?? string.Empty : string.Empty,
+            ["account_type"] = userData.TryGetProperty("account_type", out var at) ? at.GetString() ?? string.Empty : string.Empty
+        }
+    };
 
-    private static SocialUserProfile ParseFacebookProfile(JsonElement userData)
+    private static SocialUserProfile ParseFacebookProfile(JsonElement userData) => new SocialUserProfile
     {
-        return new SocialUserProfile
+        ProviderId = userData.GetProperty("id").GetString() ?? string.Empty,
+        Name = userData.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? string.Empty : string.Empty,
+        Email = userData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty,
+        AvatarUrl = userData.TryGetProperty("picture", out var pictureProp) &&
+                    pictureProp.TryGetProperty("data", out var dataProp) &&
+                    dataProp.TryGetProperty("url", out var urlProp) ? urlProp.GetString() : null,
+        AdditionalData = new Dictionary<string, object>
         {
-            ProviderId = userData.GetProperty("id").GetString() ?? string.Empty,
-            Name = userData.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? string.Empty : string.Empty,
-            Email = userData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty,
-            AvatarUrl = userData.TryGetProperty("picture", out var pictureProp) && 
-                       pictureProp.TryGetProperty("data", out var dataProp) && 
-                       dataProp.TryGetProperty("url", out var urlProp) ? urlProp.GetString() : null,
-            AdditionalData = new Dictionary<string, object>
-            {
-                ["facebook_id"] = userData.GetProperty("id").GetString() ?? string.Empty
-            }
-        };
-    }
+            ["facebook_id"] = userData.GetProperty("id").GetString() ?? string.Empty
+        }
+    };
 
     private static SocialUserProfile ParseLinkedInProfile(JsonElement userData)
     {
-        var firstName = userData.TryGetProperty("firstName", out var firstNameProp) && 
-                       firstNameProp.TryGetProperty("localized", out var firstLocalizedProp) && 
-                       firstLocalizedProp.TryGetProperty("en_US", out var firstEnProp) ? firstEnProp.GetString() ?? string.Empty : string.Empty;
-        
-        var lastName = userData.TryGetProperty("lastName", out var lastNameProp) && 
-                      lastNameProp.TryGetProperty("localized", out var lastLocalizedProp) && 
-                      lastLocalizedProp.TryGetProperty("en_US", out var lastEnProp) ? lastEnProp.GetString() ?? string.Empty : string.Empty;
+        var firstName = userData.TryGetProperty("firstName", out var firstNameProp) &&
+                        firstNameProp.TryGetProperty("localized", out var firstLocalizedProp) &&
+                        firstLocalizedProp.TryGetProperty("en_US", out var firstEnProp) ? firstEnProp.GetString() ?? string.Empty : string.Empty;
+
+        var lastName = userData.TryGetProperty("lastName", out var lastNameProp) &&
+                       lastNameProp.TryGetProperty("localized", out var lastLocalizedProp) &&
+                       lastLocalizedProp.TryGetProperty("en_US", out var lastEnProp) ? lastEnProp.GetString() ?? string.Empty : string.Empty;
 
         return new SocialUserProfile
         {
@@ -261,6 +286,8 @@ public class OAuthService : IOAuthService
             }
         };
     }
+
+    #endregion
 
     private class OAuthProvider
     {

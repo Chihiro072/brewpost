@@ -1,4 +1,4 @@
-import React from "react";  
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +20,7 @@ import TestLinkedInPage from "./pages/TestLinkedInPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import SocialCallback from "./pages/SocialMediaCallback";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,11 @@ const App = () => (
                 <Route path="/x-callback" element={<XCallbackPage />} />
                 <Route path="/test-linkedin" element={<TestLinkedInPage />} />
                 <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route
+                  path="/settings/connections/callback/:provider"
+                  element={<SocialCallback />}
+                />
+
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -1,41 +1,43 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useNavigate } from 'react-router-dom';
-import { authAPI } from '@/services/apiService';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useNavigate } from "react-router-dom";
+import { authAPI } from "@/services/apiService";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       await authAPI.login(formData.email, formData.password);
       await checkAuth(); // Update auth context
-      navigate('/app'); // Redirect to main app
+      navigate("/app"); // Redirect to main app
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -88,30 +90,26 @@ export const Login: React.FC = () => {
             </div>
           )}
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Signing In..." : "Sign In"}
           </Button>
         </form>
 
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
-            <Button 
-              variant="link" 
+            Don't have an account?{" "}
+            <Button
+              variant="link"
               className="p-0 h-auto font-normal"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate("/register")}
             >
               Sign up
             </Button>
           </p>
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             className="p-0 h-auto font-normal text-sm"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
           >
             Back to Home
           </Button>

@@ -43,6 +43,7 @@ import {
   getTemplateSettings,
 } from "@/utils/templateUtils";
 import { scheduleNodeService } from "@/services/nodeService";
+import { toast } from "@/hooks/use-toast";
 import { convertToProxyUrl } from "@/utils/templateUtils";
 
 interface NodeDetailsProps {
@@ -70,7 +71,20 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
   React.useEffect(() => {
     if (node) {
       console.log("NodeDetails: node prop changed, updating editedNode:", node);
-      setEditedNode({ ...node });
+      // Normalize scheduledDate to a Date object so the calendar selection highlights correctly
+      const normalized = node.scheduledDate
+        ? new Date(node.scheduledDate)
+        : undefined;
+      setEditedNode({ ...node, scheduledDate: normalized });
+      // Sync selectedTime to the node's scheduled time if present
+      if (normalized) {
+        try {
+          const hhmm = format(normalized, "HH:mm");
+          setSelectedTime(hhmm);
+        } catch (e) {
+          // ignore formatting errors
+        }
+      }
       setIsEditing(false);
     }
   }, [node]);
@@ -779,8 +793,8 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="p-3 space-y-3">
+              <PopoverContent className="w-auto p-3 space-y-3" align="start">
+                <div>
                   <CalendarComponent
                     mode="single"
                     selected={editedNode?.scheduledDate}
@@ -789,139 +803,137 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                         const [hours, minutes] = selectedTime.split(":");
                         const newDate = new Date(date);
                         newDate.setHours(
+                          parseInt(hours || "0"),
+                          parseInt(minutes || "0"),
+                          0,
+                          0
+                        );
+                        setEditedNode((prev) =>
+                          prev ? { ...prev, scheduledDate: newDate } : null
+                        );
+                        toast({
+                          title: "Date selected",
+                          description: newDate.toLocaleString(),
+                        });
+                      }
+                    }}
+                    initialFocus
+                  />
+                </div>
+                <div className="border-t pt-3 space-y-2">
+                  <label className="text-sm font-medium block">Time</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTime("09:00");
+                        if (editedNode?.scheduledDate) {
+                          const newDate = new Date(editedNode.scheduledDate);
+                          newDate.setHours(9, 0, 0, 0);
+                          setEditedNode((prev) =>
+                            prev ? { ...prev, scheduledDate: newDate } : null
+                          );
+                        }
+                      }}
+                      className={
+                        selectedTime === "09:00"
+                          ? "bg-primary text-primary-foreground"
+                          : ""
+                      }
+                    >
+                      9:00 AM
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTime("12:00");
+                        if (editedNode?.scheduledDate) {
+                          const newDate = new Date(editedNode.scheduledDate);
+                          newDate.setHours(12, 0, 0, 0);
+                          setEditedNode((prev) =>
+                            prev ? { ...prev, scheduledDate: newDate } : null
+                          );
+                        }
+                      }}
+                      className={
+                        selectedTime === "12:00"
+                          ? "bg-primary text-primary-foreground"
+                          : ""
+                      }
+                    >
+                      12:00 PM
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTime("18:00");
+                        if (editedNode?.scheduledDate) {
+                          const newDate = new Date(editedNode.scheduledDate);
+                          newDate.setHours(18, 0, 0, 0);
+                          setEditedNode((prev) =>
+                            prev ? { ...prev, scheduledDate: newDate } : null
+                          );
+                        }
+                      }}
+                      className={
+                        selectedTime === "18:00"
+                          ? "bg-primary text-primary-foreground"
+                          : ""
+                      }
+                    >
+                      6:00 PM
+                    </Button>
+                  </div>
+                  <Input
+                    type="time"
+                    value={selectedTime}
+                    onChange={(e) => {
+                      setSelectedTime(e.target.value);
+                      if (editedNode?.scheduledDate) {
+                        const [hours, minutes] = e.target.value.split(":");
+                        const newDate = new Date(editedNode.scheduledDate);
+                        newDate.setHours(
                           parseInt(hours),
                           parseInt(minutes),
                           0,
                           0
-                        );
-                        console.log(
-                          "NodeDetails: Calendar date selected:",
-                          date,
-                          "with time:",
-                          selectedTime,
-                          "result:",
-                          newDate
                         );
                         setEditedNode((prev) =>
                           prev ? { ...prev, scheduledDate: newDate } : null
                         );
                       }
                     }}
-                    initialFocus
+                    className="mt-2 w-full text-center border border-border/50 rounded bg-card/50 text-foreground"
                   />
-                  <div className="border-t pt-3">
-                    <label className="text-sm font-medium mb-2 block">
-                      Time
-                    </label>
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTime("09:00");
-                          if (editedNode?.scheduledDate) {
-                            const newDate = new Date(editedNode.scheduledDate);
-                            newDate.setHours(9, 0, 0, 0);
-                            setEditedNode((prev) =>
-                              prev ? { ...prev, scheduledDate: newDate } : null
-                            );
-                          }
-                        }}
-                        className={
-                          selectedTime === "09:00"
-                            ? "bg-primary text-primary-foreground"
-                            : ""
-                        }
-                      >
-                        9:00 AM
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTime("12:00");
-                          if (editedNode?.scheduledDate) {
-                            const newDate = new Date(editedNode.scheduledDate);
-                            newDate.setHours(12, 0, 0, 0);
-                            setEditedNode((prev) =>
-                              prev ? { ...prev, scheduledDate: newDate } : null
-                            );
-                          }
-                        }}
-                        className={
-                          selectedTime === "12:00"
-                            ? "bg-primary text-primary-foreground"
-                            : ""
-                        }
-                      >
-                        12:00 PM
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTime("18:00");
-                          if (editedNode?.scheduledDate) {
-                            const newDate = new Date(editedNode.scheduledDate);
-                            newDate.setHours(18, 0, 0, 0);
-                            setEditedNode((prev) =>
-                              prev ? { ...prev, scheduledDate: newDate } : null
-                            );
-                          }
-                        }}
-                        className={
-                          selectedTime === "18:00"
-                            ? "bg-primary text-primary-foreground"
-                            : ""
-                        }
-                      >
-                        6:00 PM
-                      </Button>
-                    </div>
-                    <Input
-                      type="time"
-                      value={selectedTime}
-                      onChange={(e) => {
-                        setSelectedTime(e.target.value);
-                        if (editedNode?.scheduledDate) {
-                          const [hours, minutes] = e.target.value.split(":");
-                          const newDate = new Date(editedNode.scheduledDate);
-                          newDate.setHours(
-                            parseInt(hours),
-                            parseInt(minutes),
-                            0,
-                            0
-                          );
-                          setEditedNode((prev) =>
-                            prev ? { ...prev, scheduledDate: newDate } : null
-                          );
-                        }
-                      }}
-                      className="mb-3"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditedNode((prev) =>
-                            prev ? { ...prev, scheduledDate: undefined } : null
-                          );
-                          setCalendarOpen(false);
-                        }}
-                        className="flex-1"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setCalendarOpen(false)}
-                        className="flex-1"
-                      >
-                        Done
-                      </Button>
-                    </div>
-                  </div>
+                </div>
+                <div className="flex gap-2 border-t pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditedNode((prev) =>
+                        prev ? { ...prev, scheduledDate: undefined } : null
+                      );
+                      setCalendarOpen(false);
+                      toast({
+                        title: "Cleared date",
+                        description: "Scheduled date removed",
+                      });
+                    }}
+                    className="flex-1"
+                  >
+                    Clear
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setCalendarOpen(false)}
+                    className="flex-1"
+                  >
+                    Done
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -989,9 +1001,12 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 <Button
                   onClick={async () => {
                     if (!node.scheduledDate) {
-                      alert(
-                        "Please set a scheduled date first by editing the node."
-                      );
+                      toast({
+                        title: "No scheduled date",
+                        description:
+                          "Please set a scheduled date first by editing the node.",
+                        variant: "destructive",
+                      });
                       return;
                     }
 
@@ -1015,12 +1030,25 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                             scheduled.scheduledDate ?? node.scheduledDate,
                         };
                         if (onPostNode) onPostNode(updatedNode);
+                        toast({
+                          title: "Scheduled",
+                          description: "Node scheduled successfully",
+                        });
                       } else {
-                        alert("Failed to schedule node. Please try again.");
+                        toast({
+                          title: "Schedule failed",
+                          description:
+                            "Failed to schedule node. Please try again.",
+                          variant: "destructive",
+                        });
                       }
                     } catch (error) {
                       console.error("Error scheduling node:", error);
-                      alert("Failed to schedule node: " + error.message);
+                      toast({
+                        title: "Schedule failed",
+                        description: String(error?.message || error),
+                        variant: "destructive",
+                      });
                     }
                   }}
                   className="text-white shadow-lg transition-colors flex-1"

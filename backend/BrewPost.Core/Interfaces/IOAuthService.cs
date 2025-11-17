@@ -8,6 +8,7 @@ public interface IOAuthService
     Task<OAuthTokenResponse> ExchangeCodeForTokenAsync(string provider, string code, string redirectUri);
     Task<SocialUserProfile> GetUserProfileAsync(string provider, string accessToken);
     Task<bool> RefreshTokenAsync(SocialAccount socialAccount);
+    Task<User> LinkSocialAccountAsync(User user, string socialProvider, SocialUserProfile profile, OAuthTokenResponse token);
 }
 
 public class OAuthTokenResponse

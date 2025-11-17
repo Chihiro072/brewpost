@@ -369,17 +369,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           {/* Month Navigation */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-center gap-4 mb-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => navigateMonth("prev")}
-              className="border-primary/20 hover:border-primary/40"
+              className="border-primary/20 hover:border-primary/40 w-10 flex justify-center"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
 
-            <h3 className="text-xl font-semibold">
+            <h3 className="text-xl font-semibold w-40 text-center">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h3>
 
@@ -387,7 +387,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               variant="outline"
               size="sm"
               onClick={() => navigateMonth("next")}
-              className="border-primary/20 hover:border-primary/40"
+              className="border-primary/20 hover:border-primary/40 w-10 flex justify-center"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>

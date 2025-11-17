@@ -11,6 +11,7 @@ import { CalendarModal } from "@/components/modals/CalendarModal";
 import { EditNodeModal } from "@/components/modals/EditNodeModal";
 import { NodeAPI, scheduleAllNodesService } from "@/services/nodeService";
 import { scheduleService } from "@/services/scheduleService";
+import { toast } from "@/hooks/use-toast";
 import {
   Calendar,
   Clock,
@@ -562,7 +563,12 @@ export const PlanningPanel = React.forwardRef<
       );
 
       if (nodesToSchedule.length === 0) {
-        alert("No eligible nodes to schedule. Set scheduled dates first.");
+        toast({
+          title: "No nodes",
+          description:
+            "No eligible nodes to schedule. Set scheduled dates first.",
+          variant: "info",
+        });
         setShowScheduleConfirmation(false);
         return;
       }
@@ -580,13 +586,25 @@ export const PlanningPanel = React.forwardRef<
         setNodes(updated);
         setShowScheduleConfirmation(false);
         if (count > 0) {
+          toast({
+            title: "Scheduled",
+            description: `Scheduled ${count} nodes`,
+          });
           navigate("/calendar", { state: { nodes: updated, editable: true } });
         } else {
-          alert("No nodes were scheduled.");
+          toast({
+            title: "No nodes",
+            description: "No nodes were scheduled.",
+            variant: "info",
+          });
         }
       } catch (err) {
         console.error("handleConfirmSchedule error:", err);
-        alert("Failed to schedule nodes. See console for details.");
+        toast({
+          title: "Schedule failed",
+          description: "Failed to schedule nodes. See console for details.",
+          variant: "destructive",
+        });
         setShowScheduleConfirmation(false);
       }
     };
