@@ -116,11 +116,12 @@ export const scheduleService = {
 
   async deleteSchedule(scheduleId: string) {
     try {
-      const response = await apiClient.delete(`/api/schedules/${scheduleId}`);
-      console.log(`✅ Deleted schedule: ${scheduleId}`, response.status);
+      // Delete node via REST endpoint instead of legacy schedules endpoint
+      const response = await apiClient.delete(`/api/nodes/${scheduleId}`);
+      console.log(`✅ Deleted node: ${scheduleId}`, response.status);
       return { ok: true };
     } catch (error) {
-      console.error(`Failed to delete schedule ${scheduleId}:`, error);
+      console.error(`Failed to delete node ${scheduleId}:`, error);
       return {
         ok: false,
         error: error instanceof Error ? error.message : "Unknown error",
