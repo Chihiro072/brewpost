@@ -735,6 +735,27 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium">Image Prompt</h3>
+            {!isEditing && (node.title || node.content) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleGeneratePrompt}
+                disabled={isGeneratingPrompt}
+                className="h-7 px-2 text-xs"
+              >
+                {isGeneratingPrompt ? (
+                  <>
+                    <div className="w-3 h-3 border border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
+                    Enhancing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Enhance
+                  </>
+                )}
+              </Button>
+            )}
           </div>
           {isEditing ? (
             <Textarea
@@ -866,27 +887,6 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       6:00 PM
                     </Button>
                   </div>
-                  <Input
-                    type="time"
-                    value={selectedTime}
-                    onChange={(e) => {
-                      setSelectedTime(e.target.value);
-                      if (editedNode?.scheduledDate) {
-                        const [hours, minutes] = e.target.value.split(":");
-                        const newDate = new Date(editedNode.scheduledDate);
-                        newDate.setHours(
-                          parseInt(hours),
-                          parseInt(minutes),
-                          0,
-                          0
-                        );
-                        setEditedNode((prev) =>
-                          prev ? { ...prev, scheduledDate: newDate } : null
-                        );
-                      }
-                    }}
-                    className="mt-2 w-full text-center border border-border/50 rounded bg-card/50 text-foreground"
-                  />
                 </div>
                 <div className="flex gap-2 border-t pt-3">
                   <Button

@@ -453,7 +453,7 @@
 /* React Day Picker - Weekday header styling for equal widths */
 .rdp-weekdays {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -470,5 +470,54 @@
   font-size: 0.75rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: hsl(var(--muted-foreground));
+  color: #ffffff;
+}
+
+/* Calendar popover black background with white text */
+.rdp-months {
+  background-color: #000000;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.rdp-caption_label {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.rdp-head_cell {
+  color: #ffffff !important;
+}
+
+.rdp-day {
+  color: #ffffff;
+  border: 1px solid transparent;
+}
+
+.rdp-day_selected {
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid #ffffff;
+}
+
+.rdp-day_today {
+  color: #78ffd6;
+  font-weight: bold;
+  border: 1px solid #78ffd6;
+}
+
+.rdp-nav_button {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  border: 1px solid #ffffff;
+  background-color: transparent;
+}
+
+.rdp-nav_button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.rdp-day:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
