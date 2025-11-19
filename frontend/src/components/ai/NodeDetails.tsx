@@ -811,10 +811,6 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                         setEditedNode((prev) =>
                           prev ? { ...prev, scheduledDate: newDate } : null
                         );
-                        toast({
-                          title: "Date selected",
-                          description: newDate.toLocaleString(),
-                        });
                       }
                     }}
                     initialFocus
