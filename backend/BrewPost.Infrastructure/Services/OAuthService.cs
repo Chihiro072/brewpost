@@ -205,36 +205,64 @@ public class OAuthService : IOAuthService
 
     private Dictionary<string, OAuthProvider> InitializeProviders()
     {
-        return new Dictionary<string, OAuthProvider>
+        string GetValue(params string[] keys)
         {
-            ["instagram"] = new OAuthProvider
+            foreach (var k in keys)
             {
-                ClientId = _configuration["OAuth:Instagram:ClientId"] ?? throw new InvalidOperationException("Instagram ClientId not configured"),
-                ClientSecret = _configuration["OAuth:Instagram:ClientSecret"] ?? throw new InvalidOperationException("Instagram ClientSecret not configured"),
+                var v = _configuration[k];
+                if (!string.IsNullOrWhiteSpace(v)) return v;
+            }
+            return string.Empty;
+        }
+
+        var providers = new Dictionary<string, OAuthProvider>();
+
+        var igClientId = GetValue("OAuth:Instagram:ClientId", "INSTAGRAM_CLIENT_ID");
+        var igClientSecret = GetValue("OAuth:Instagram:ClientSecret", "INSTAGRAM_CLIENT_SECRET");
+        if (!string.IsNullOrWhiteSpace(igClientId) && !string.IsNullOrWhiteSpace(igClientSecret))
+        {
+            providers["instagram"] = new OAuthProvider
+            {
+                ClientId = igClientId,
+                ClientSecret = igClientSecret,
                 AuthorizationEndpoint = "https://api.instagram.com/oauth/authorize",
                 TokenEndpoint = "https://api.instagram.com/oauth/access_token",
                 UserInfoEndpoint = "https://graph.instagram.com/me?fields=id,username,account_type",
                 Scope = "user_profile,user_media"
-            },
-            ["facebook"] = new OAuthProvider
+            };
+        }
+
+        var fbClientId = GetValue("OAuth:Facebook:ClientId", "FACEBOOK_CLIENT_ID");
+        var fbClientSecret = GetValue("OAuth:Facebook:ClientSecret", "FACEBOOK_CLIENT_SECRET");
+        if (!string.IsNullOrWhiteSpace(fbClientId) && !string.IsNullOrWhiteSpace(fbClientSecret))
+        {
+            providers["facebook"] = new OAuthProvider
             {
-                ClientId = _configuration["OAuth:Facebook:ClientId"] ?? throw new InvalidOperationException("Facebook ClientId not configured"),
-                ClientSecret = _configuration["OAuth:Facebook:ClientSecret"] ?? throw new InvalidOperationException("Facebook ClientSecret not configured"),
+                ClientId = fbClientId,
+                ClientSecret = fbClientSecret,
                 AuthorizationEndpoint = "https://www.facebook.com/v18.0/dialog/oauth",
                 TokenEndpoint = "https://graph.facebook.com/v18.0/oauth/access_token",
                 UserInfoEndpoint = "https://graph.facebook.com/me?fields=id,name,email,picture",
                 Scope = "email,public_profile,pages_manage_posts,pages_read_engagement"
-            },
-            ["linkedin"] = new OAuthProvider
+            };
+        }
+
+        var liClientId = GetValue("OAuth:LinkedIn:ClientId", "LINKEDIN_CLIENT_ID");
+        var liClientSecret = GetValue("OAuth:LinkedIn:ClientSecret", "LINKEDIN_CLIENT_SECRET");
+        if (!string.IsNullOrWhiteSpace(liClientId) && !string.IsNullOrWhiteSpace(liClientSecret))
+        {
+            providers["linkedin"] = new OAuthProvider
             {
-                ClientId = _configuration["OAuth:LinkedIn:ClientId"] ?? throw new InvalidOperationException("LinkedIn ClientId not configured"),
-                ClientSecret = _configuration["OAuth:LinkedIn:ClientSecret"] ?? throw new InvalidOperationException("LinkedIn ClientSecret not configured"),
+                ClientId = liClientId,
+                ClientSecret = liClientSecret,
                 AuthorizationEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
                 TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
                 UserInfoEndpoint = "https://api.linkedin.com/v2/people/~?projection=(id,firstName,lastName,emailAddress,profilePicture(displayImage~:playableStreams))",
                 Scope = "r_liteprofile r_emailaddress w_member_social"
-            }
-        };
+            };
+        }
+
+        return providers;
     }
 
     private static SocialUserProfile ParseInstagramProfile(JsonElement userData) => new SocialUserProfile

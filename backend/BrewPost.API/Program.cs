@@ -86,14 +86,15 @@ if (useInMemory)
 else
 {
     Console.WriteLine("🐘 Using PostgreSQL provider");
+    var dbConn = builder.Configuration["DB_CONNECTION_STRING"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
     builder.Services.AddDbContext<BrewPostDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
+        options.UseNpgsql(dbConn,
             b => b.MigrationsAssembly("BrewPost.API")));
 }
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var secretKey = builder.Configuration["JWT_SECRET"] ?? jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var key = Encoding.ASCII.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
@@ -110,9 +111,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"],
+        ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? jwtSettings["Issuer"],
         ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"],
+        ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? jwtSettings["Audience"],
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
