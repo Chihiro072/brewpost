@@ -9,20 +9,54 @@ using Amazon.S3;
 using Amazon.Extensions.NETCore.Setup;
 using DotNetEnv;
 using Stripe;
+using Amazon.SecretsManager;
+using Amazon.SecretsManager.Model;
+using System.Text.Json;
 
-// Load .env file from backend directory (go up 1 level from BrewPost.API)
-var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
-if (System.IO.File.Exists(envPath))
-{
-    Env.Load(envPath);
-    Console.WriteLine($"✅ Loaded .env file from: {envPath}");
-}
-else
-{
-    Console.WriteLine($"⚠️ .env file not found at: {envPath}");
-}
 
 var builder = WebApplication.CreateBuilder(args);
+
+// // Load .env file from backend directory (go up 1 level from BrewPost.API)
+// var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+// if (System.IO.File.Exists(envPath))
+// {
+//     Env.Load(envPath);
+//     Console.WriteLine($"✅ Loaded .env file from: {envPath}");
+// }
+// else
+// {
+//     Console.WriteLine($"⚠️ .env file not found at: {envPath}");
+// }
+
+// Only for production (EC2)
+if (!builder.Environment.IsDevelopment())
+{
+    try
+    {
+        var secretsClient = new AmazonSecretsManagerClient(); // Uses EC2 IAM role automatically
+        var secretRequest = new GetSecretValueRequest
+        {
+            SecretId = "brewpost/prod/app-config-secrets" // Replace with your secret name
+        };
+        var secretResponse = await secretsClient.GetSecretValueAsync(secretRequest);
+
+        if (!string.IsNullOrEmpty(secretResponse.SecretString))
+        {
+            var secretsDict = JsonSerializer.Deserialize<Dictionary<string, string>>(secretResponse.SecretString);
+
+            foreach (var kvp in secretsDict)
+            {
+                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+            }
+
+            Console.WriteLine("✅ Loaded secrets from AWS Secrets Manager");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Failed to load secrets from Secrets Manager: {ex.Message}");
+    }
+}
 
 // Add environment variables to configuration - this should take precedence
 builder.Configuration.AddEnvironmentVariables();

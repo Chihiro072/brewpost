@@ -291,18 +291,6 @@ const toNodeDTO = (node: any): NodeDTO => ({
   updatedAt: node.updatedAt ?? new Date().toISOString(),
 });
 
-// Check if AppSync client is available
-function hasAppSync(): boolean {
-  try {
-    const apiKey = import.meta.env.VITE_APPSYNC_API_KEY as string;
-    const clientAny =
-      typeof window !== "undefined" ? (window as any).client : undefined;
-    return !!apiKey && !!clientAny && typeof clientAny.graphql === "function";
-  } catch {
-    return false;
-  }
-}
-
 // NodeAPI object for compatibility with existing code - now using REST API
 export const NodeAPI = {
   list: async (projectId?: string) => {
