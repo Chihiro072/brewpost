@@ -1106,14 +1106,7 @@ User message: ${userMessage.content}`;
                   : monthlyBreakdown.remaining}
               </span>
             </div>
-            {quotaBreakdown.paidRemaining > 0 && (
-              <div className="flex items-center">
-                <span>Purchased messages left:</span>
-                <span className="ml-1 font-bold">
-                  {quotaBreakdown.paidRemaining}
-                </span>
-              </div>
-            )}
+    
           </div>
         </div>
       </div>

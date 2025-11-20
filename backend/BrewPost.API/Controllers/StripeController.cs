@@ -80,7 +80,7 @@ namespace BrewPost.API.Controllers
                     UiMode = "hosted", // ensure hosted checkout returns session.url
                     PaymentMethodTypes = new List<string> { "card" },
                     LineItems = new List<SessionLineItemOptions>(),
-                    SuccessUrl = $"{frontendBase}/app?plan={planKey}",
+                    SuccessUrl = $"{frontendBase}/payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}",
                     CancelUrl = $"{frontendBase}/settings?checkout=cancel",
                 };
 
