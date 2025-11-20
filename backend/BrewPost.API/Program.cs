@@ -16,47 +16,47 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// // Load .env file from backend directory (go up 1 level from BrewPost.API)
-// var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
-// if (System.IO.File.Exists(envPath))
-// {
-//     Env.Load(envPath);
-//     Console.WriteLine($"✅ Loaded .env file from: {envPath}");
-// }
-// else
-// {
-//     Console.WriteLine($"⚠️ .env file not found at: {envPath}");
-// }
+// Load .env file from backend directory (go up 1 level from BrewPost.API)
+var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+if (System.IO.File.Exists(envPath))
+{
+    Env.Load(envPath);
+    Console.WriteLine($"✅ Loaded .env file from: {envPath}");
+}
+else
+{
+    Console.WriteLine($"⚠️ .env file not found at: {envPath}");
+}
 
 // Only for production (EC2)
-if (!builder.Environment.IsDevelopment())
-{
-    try
-    {
-        var secretsClient = new AmazonSecretsManagerClient(); // Uses EC2 IAM role automatically
-        var secretRequest = new GetSecretValueRequest
-        {
-            SecretId = "brewpost/prod/app-config-secrets" // Replace with your secret name
-        };
-        var secretResponse = await secretsClient.GetSecretValueAsync(secretRequest);
+// if (!builder.Environment.IsDevelopment())
+// {
+//     try
+//     {
+//         var secretsClient = new AmazonSecretsManagerClient(); // Uses EC2 IAM role automatically
+//         var secretRequest = new GetSecretValueRequest
+//         {
+//             SecretId = "brewpost/prod/app-config-secrets" // Replace with your secret name
+//         };
+//         var secretResponse = await secretsClient.GetSecretValueAsync(secretRequest);
 
-        if (!string.IsNullOrEmpty(secretResponse.SecretString))
-        {
-            var secretsDict = JsonSerializer.Deserialize<Dictionary<string, string>>(secretResponse.SecretString);
+//         if (!string.IsNullOrEmpty(secretResponse.SecretString))
+//         {
+//             var secretsDict = JsonSerializer.Deserialize<Dictionary<string, string>>(secretResponse.SecretString);
 
-            foreach (var kvp in secretsDict)
-            {
-                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
-            }
+//             foreach (var kvp in secretsDict)
+//             {
+//                 Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+//             }
 
-            Console.WriteLine("✅ Loaded secrets from AWS Secrets Manager");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ Failed to load secrets from Secrets Manager: {ex.Message}");
-    }
-}
+//             Console.WriteLine("✅ Loaded secrets from AWS Secrets Manager");
+//         }
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"❌ Failed to load secrets from Secrets Manager: {ex.Message}");
+//     }
+// }
 
 // Add environment variables to configuration - this should take precedence
 builder.Configuration.AddEnvironmentVariables();
@@ -86,7 +86,30 @@ if (useInMemory)
 else
 {
     Console.WriteLine("🐘 Using PostgreSQL provider");
-    var dbConn = builder.Configuration["DB_CONNECTION_STRING"] ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    var dbConn = builder.Configuration["DB_CONNECTION_STRING"];
+    if (string.IsNullOrWhiteSpace(dbConn))
+    {
+        var dbHost = builder.Configuration["DB_HOST"];
+        var dbPort = builder.Configuration["DB_PORT"];
+        var dbName = builder.Configuration["DB_NAME"];
+        var dbUser = builder.Configuration["DB_USER"];
+        var dbPass = builder.Configuration["DB_PASSWORD"];
+        var sslMode = builder.Configuration["DB_SSL_MODE"];
+        var trustCert = builder.Configuration["DB_TRUST_SERVER_CERT"];
+
+        if (!string.IsNullOrWhiteSpace(dbHost) && !string.IsNullOrWhiteSpace(dbName) && !string.IsNullOrWhiteSpace(dbUser))
+        {
+            var portPart = string.IsNullOrWhiteSpace(dbPort) ? "" : $"Port={dbPort};";
+            var passPart = string.IsNullOrWhiteSpace(dbPass) ? "" : $"Password={dbPass};";
+            var sslPart = string.IsNullOrWhiteSpace(sslMode) ? "" : $"SSL Mode={sslMode};";
+            var trustPart = string.IsNullOrWhiteSpace(trustCert) ? "" : $"Trust Server Certificate={trustCert};";
+            dbConn = $"Host={dbHost};{portPart}Database={dbName};Username={dbUser};{passPart}{sslPart}{trustPart}";
+        }
+        else
+        {
+            dbConn = builder.Configuration.GetConnectionString("DefaultConnection");
+        }
+    }
     builder.Services.AddDbContext<BrewPostDbContext>(options =>
         options.UseNpgsql(dbConn,
             b => b.MigrationsAssembly("BrewPost.API")));
@@ -94,7 +117,7 @@ else
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = builder.Configuration["JWT_SECRET"] ?? jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["JWT_SECRET"] ?? jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
 var key = Encoding.ASCII.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
@@ -111,9 +134,9 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? jwtSettings["Issuer"],
+        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["JWT_ISSUER"] ?? jwtSettings["Issuer"],
         ValidateAudience = true,
-        ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? jwtSettings["Audience"],
+        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["JWT_AUDIENCE"] ?? jwtSettings["Audience"],
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
