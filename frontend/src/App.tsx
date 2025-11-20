@@ -66,7 +66,7 @@ const App = () => (
                 <Route path="/test-twitter" element={<TestTwitterPage />} />
                 <Route path="/x-callback" element={<XCallbackPage />} />
                 <Route path="/test-linkedin" element={<TestLinkedInPage />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
+                <Route path="payment-success" element={<PaymentSuccess />} />
                 <Route
                   path="/settings/connections/callback/:provider"
                   element={<SocialCallback />}

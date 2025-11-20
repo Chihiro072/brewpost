@@ -102,12 +102,12 @@ const SettingsSidebar: React.FC<{
   const { t } = useLanguage();
 
   const sections: SidebarItem[] = [
-    { id: 'account', label: 'My Account', icon: <User className="w-4 h-4" /> },
-    { id: 'connections', label: 'Connections' },
+    { id: 'account', label: t('settings.my_account'), icon: <User className="w-4 h-4" /> },
+    { id: 'connections', label: t('settings.connections') },
   ];
 
   const billingSections: SidebarItem[] = [
-    { id: 'subscriptions', label: 'Subscriptions' },
+    { id: 'subscriptions', label: t('subscriptions.title') },
   ];
 
   const appSections: SidebarItem[] = [];
@@ -164,7 +164,7 @@ const SettingsSidebar: React.FC<{
   );
 
   return (
-    <div className="w-64 bg-[rgba(3,34,33,0.95)] p-4 h-full overflow-y-auto backdrop-blur-xl border border-[#03624C]/50 rounded-2xl shadow-2xl">
+    <div className="w-64 bg-card p-4 h-full overflow-y-auto border border-border rounded-2xl shadow-2xl">
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -179,11 +179,11 @@ const SettingsSidebar: React.FC<{
       </div>
 
       <SidebarSection
-        title="User Settings"
+        title={t('settings.user_settings')}
         items={filteredSections(sections)}
       />
       <SidebarSection
-        title="Billing Settings"
+        title={t('settings.billing_settings')}
         items={filteredSections(billingSections)}
       />
     </div>
@@ -363,11 +363,11 @@ const SettingsContent: React.FC<{
         : Math.min(100, Math.round((used / planInfo.limit) * 100));
 
     return (
-      <Card className="p-6 bg-[rgba(3,34,33,0.92)] backdrop-blur-2xl rounded-2xl shadow-[0_0_30px_rgba(44,194,149,0.08)] border border-[#03624C]/50 hover:border-[#2CC295]/60 transition-all">
+      <Card className="p-6 bg-card rounded-2xl shadow-sm border border-border transition-all">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-xl font-semibold text-white">
+              <h3 className="text-xl font-semibold text-foreground">
                 {planInfo.name}
               </h3>
               {planInfo.popular && (
@@ -379,7 +379,7 @@ const SettingsContent: React.FC<{
             <p className="text-gray-300 text-sm">{planInfo.description}</p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold text-foreground">
               ${planInfo.price}/mo
             </div>
             <div className="text-gray-400 text-xs">
@@ -436,8 +436,8 @@ const SettingsContent: React.FC<{
   // Subscriptions Section
   const Subscriptions = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Subscriptions</h2>
-      <Card className="p-6 bg-[rgba(3,34,33,0.95)] backdrop-blur-xl rounded-2xl shadow-2xl border border-[#03624C]/50">
+      <h2 className="text-2xl font-bold text-foreground">{t('subscriptions.title')}</h2>
+      <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
         <p className="text-gray-300 text-sm">
           Choose a plan that fits your message usage. Billing handled securely
           by Stripe.
@@ -575,12 +575,12 @@ const SettingsContent: React.FC<{
       </div>
 
       {/* Information Card */}
-      <Card className="p-6 bg-[rgba(3,34,33,0.85)] backdrop-blur-2xl backdrop-saturate-150 rounded-2xl border border-[#03624C]/50 shadow-[0_0_30px_rgba(44,194,149,0.15)] transition-shadow duration-300 hover:shadow-[0_0_40px_rgba(44,194,149,0.25)] hover:border-[#2CC295]/60">
+      <Card className="p-6 bg-card rounded-2xl border border-border shadow-sm">
         <div className="space-y-6 divide-y divide-[#2CC295]/10">
           {/* Nickname Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">Display Name</label>
+              <label className="text-sm text-gray-400">{t('account.display_name')}</label>
               {editingField === 'displayName' ? (
                 <div className="flex space-x-2 mt-1">
                   <Input
@@ -589,10 +589,10 @@ const SettingsContent: React.FC<{
                     className="bg-card/30 border-[#03624C]/40 text-foreground focus:ring-2 focus:ring-[#2CC295] focus:border-[#2CC295]"
                   />
                   <Button size="sm" onClick={() => handleSave('displayName')}>
-                    Save
+                    {t('common.save')}
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleCancel}>
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </div>
               ) : (
@@ -613,7 +613,7 @@ const SettingsContent: React.FC<{
                       )
                     }
                   >
-                    Edit
+                    {t('common.edit')}
                   </Button>
                 </div>
               )}
@@ -623,7 +623,7 @@ const SettingsContent: React.FC<{
           {/* Full Name Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">Full Name</label>
+              <label className="text-sm text-gray-400">{t('account.full_name')}</label>
               {editingField === 'fullName' ? (
                 <div className="flex items-center gap-2 mt-1">
                   <Input
@@ -639,15 +639,15 @@ const SettingsContent: React.FC<{
                     className="bg-card/30 border-[#03624C]/40 text-foreground"
                   />
                   <Button size="sm" onClick={() => handleSave('fullName')}>
-                    Save
+                    {t('common.save')}
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleCancel}>
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <p className="text-white text-lg">
+                  <p className="text-foreground text-lg">
                     {[userProfile?.firstName, userProfile?.lastName]
                       .filter(Boolean)
                       .join(' ') ||
@@ -660,7 +660,7 @@ const SettingsContent: React.FC<{
                     className="border-[#2CC295]/40 text-[#2CC295] hover:bg-[#03624C]/30 hover:border-[#2CC295]/70 transition-all duration-200 hover:translate-y-[0.5px] active:translate-y-[1px]"
                     onClick={() => handleEdit('fullName', '')}
                   >
-                    Edit
+                    {t('common.edit')}
                   </Button>
                 </div>
               )}
@@ -670,7 +670,7 @@ const SettingsContent: React.FC<{
           {/* Email Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">Email</label>
+              <label className="text-sm text-gray-400">{t('account.email')}</label>
               <div className="flex items-center space-x-2 mt-1">
                 <p className="text-lg bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
                   {showEmail
@@ -681,7 +681,7 @@ const SettingsContent: React.FC<{
                   onClick={() => setShowEmail(!showEmail)}
                   className="text-[#2CC295] hover:text-[#00DF81] text-sm"
                 >
-                  {showEmail ? 'Hide' : 'Show'}
+                  {showEmail ? t('common.hide') : t('common.show')}
                 </button>
               </div>
               <Button
@@ -690,7 +690,7 @@ const SettingsContent: React.FC<{
                 className="mt-2 border-[#2CC295]/40 text-[#2CC295] hover:bg-[#03624C]/30 hover:border-[#2CC295]/70 transition-all duration-200 hover:translate-y-[0.5px] active:translate-y-[1px]"
                 onClick={() => handleEdit('email', userProfile?.email || '')}
               >
-                Edit
+                {t('common.edit')}
               </Button>
             </div>
           </div>
@@ -699,7 +699,7 @@ const SettingsContent: React.FC<{
 
       {/* Password Section */}
       <div className="mt-8">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <h3 className="text-lg font-semibold text-foreground mb-4">
           Password & Authentication
         </h3>
         <Button
@@ -716,9 +716,9 @@ const SettingsContent: React.FC<{
   const SecurityCenter = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-        Security Center
+        {t('settings.security_center')}
       </h2>
-      <Card className="p-6 bg-[rgba(3,34,33,0.95)] backdrop-blur-xl rounded-2xl shadow-2xl border border-[#03624C]/50">
+      <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
         <p className="text-gray-300">Security settings will appear here</p>
       </Card>
     </div>
@@ -756,9 +756,9 @@ const SettingsContent: React.FC<{
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-          Connections
+          {t('settings.connections')}
         </h2>
-        <Card className="p-6 bg-[rgba(3,34,33,0.95)] backdrop-blur-xl rounded-2xl shadow-2xl border border-[#03624C]/50">
+        <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
           <div className="space-y-4">
             {platforms.map(({ key, label, icon }) => {
               const connected = socialConnections[key];
@@ -819,11 +819,11 @@ const SettingsContent: React.FC<{
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-              Settings
+              {t('settings.title')}
             </h2>
-            <Card className="p-6 bg-[rgba(3,34,33,0.95)] backdrop-blur-xl rounded-2xl shadow-2xl border border-[#03624C]/50">
+            <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
               <p className="text-gray-300">
-                Settings for this section will appear here
+                {t('settings.title')} for this section will appear here
               </p>
             </Card>
           </div>
@@ -843,8 +843,8 @@ const SettingsContent: React.FC<{
           </div>
         </header>
         <div className="flex space-x-8 border-b border-[#03624C]/50">
-          <button className="pb-4 text-white font-medium border-b-2 border-[#2CC295]">
-            Security Center
+          <button className="pb-4 text-foreground font-medium border-b-2 border-[#2CC295]">
+            {t('settings.security_center')}
           </button>
         </div>
       </div>
@@ -1038,7 +1038,7 @@ const Settings: React.FC = () => {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center bg-background text-white"
+        className="min-h-screen flex items-center justify-center bg-background text-foreground"
         style={{
           background:
             'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
@@ -1057,7 +1057,7 @@ const Settings: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center bg-background text-white"
+        className="min-h-screen flex items-center justify-center bg-background text-foreground"
         style={{
           background:
             'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
@@ -1084,7 +1084,7 @@ const Settings: React.FC = () => {
   return (
     <SettingsErrorBoundary>
       <div
-        className="min-h-screen bg-background text-white"
+        className="min-h-screen bg-background text-foreground"
         style={{
           background:
             'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
@@ -1092,6 +1092,32 @@ const Settings: React.FC = () => {
           backgroundColor: 'rgba(0, 15, 49, 0.05)',
         }}
       >
+        <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl relative z-50">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.svg"
+                alt="BrewPost"
+                className="w-10 h-10 dark:filter dark:invert dark:brightness-0 dark:saturate-0"
+              />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">BrewPost</h1>
+                <p className="text-xs text-muted-foreground">AI Content Generator</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="ESC"
+                onClick={() => navigate('/app')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                ESC
+              </Button>
+            </div>
+          </div>
+        </header>
         <div className="flex h-screen">
           {/* Sidebar */}
           <SettingsSidebar

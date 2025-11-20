@@ -74,14 +74,19 @@ namespace BrewPost.API.Controllers
                     ?? "http://localhost:5173";
 
                 var service = new SessionService();
+                var baseUrl = (frontendBase ?? "http://localhost:5173").TrimEnd('/');
+                var baseWithSlash = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
+                var successUrl = new System.Uri(new System.Uri(baseWithSlash), $"payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}").ToString();
+                var cancelUrl = new System.Uri(new System.Uri(baseWithSlash), "settings?checkout=cancel").ToString();
                 var options = new SessionCreateOptions
                 {
                     Mode = "subscription",
                     UiMode = "hosted", // ensure hosted checkout returns session.url
+                    Locale = "en",
                     PaymentMethodTypes = new List<string> { "card" },
                     LineItems = new List<SessionLineItemOptions>(),
-                    SuccessUrl = $"{frontendBase}/payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}",
-                    CancelUrl = $"{frontendBase}/settings?checkout=cancel",
+                    SuccessUrl = successUrl,
+                    CancelUrl = cancelUrl,
                 };
 
                 if (!string.IsNullOrWhiteSpace(priceId))
