@@ -99,6 +99,16 @@ export const incrementQuota = (): boolean => {
   return true;
 };
 
+// Atomically consume a message and report whether it was free or paid
+export const consumeMessage = (): 'free' | 'paid' | 'blocked' => {
+  if (isQuotaExceeded()) return 'blocked';
+  const data = resetQuotaIfNeeded();
+  const wasFree = data.usedMessages < QUOTA_CONSTANTS.FREE_MESSAGES_PER_DAY;
+  data.usedMessages += 1;
+  saveQuotaData(data);
+  return wasFree ? 'free' : 'paid';
+};
+
 // Add paid messages to quota
 export const addPaidMessages = (messages: number): void => {
   const data = resetQuotaIfNeeded();

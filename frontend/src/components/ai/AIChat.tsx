@@ -33,7 +33,6 @@ import {
 import {
   getRemainingMessages,
   isQuotaExceeded,
-  incrementQuota,
   formatTimeUntilReset,
   addPaidMessages,
   getQuotaBreakdown,
@@ -41,6 +40,7 @@ import {
   getPlanMonthlyLimit,
   getMonthlyQuotaBreakdown,
   incrementMonthlyUsage,
+  consumeMessage,
 } from "@/utils/quotaUtils";
 import { PaymentModal } from "./PaymentModal";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -569,7 +569,8 @@ Please try again or refine your request. For a quick start, tell me what topic y
     try {
       const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.\n\nUser prompt: "${input.trim()}"\n\nGuidelines:\n- Make it clear, specific and actionable for content creation.\n- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).\n- Keep the original intent and tone.`;
 
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
       const resp = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -623,7 +624,8 @@ Return only the refined prompt, nothing else.`,
         },
       ];
 
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
 
       const resp = await fetch(apiUrl, {
         method: "POST",
@@ -707,7 +709,8 @@ Return only the refined prompt, nothing else.`,
     setIsGenerating(true);
 
     try {
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
 
       // Convert messages to a single prompt string for the backend
       const prompt = messagesForBackend
@@ -809,10 +812,13 @@ User question: ${userMessage.content}`;
         const infoData: GenerateResponse = await infoResp.json();
         console.log("Backend response:", infoData);
 
-        incrementQuota();
+        const preBD1 = getQuotaBreakdown();
+        const consumption1 = consumeMessage();
         {
           const planLimit = getPlanMonthlyLimit(plan);
-          incrementMonthlyUsage(planLimit);
+          if (consumption1 === 'paid' && preBD1.freeRemaining === 0) {
+            incrementMonthlyUsage(planLimit);
+          }
           setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
         }
         setRemainingMessages(getRemainingMessages());
@@ -876,10 +882,13 @@ User message: ${userMessage.content}`;
         const casualData: GenerateResponse = await casualResp.json();
         console.log("Backend response:", casualData);
 
-        incrementQuota();
+        const preBD2 = getQuotaBreakdown();
+        const consumption2 = consumeMessage();
         {
           const planLimit = getPlanMonthlyLimit(plan);
-          incrementMonthlyUsage(planLimit);
+          if (consumption2 === 'paid' && preBD2.freeRemaining === 0) {
+            incrementMonthlyUsage(planLimit);
+          }
           setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
         }
         setRemainingMessages(getRemainingMessages());
@@ -929,11 +938,14 @@ User message: ${userMessage.content}`;
       console.log("Backend response:", data);
 
       // Increment quota after successful API call
-      incrementQuota();
-      // Also increment monthly usage for current plan
+      const preBD3 = getQuotaBreakdown();
+      const consumption3 = consumeMessage();
+      // Also increment monthly usage for current plan only when no free left before this send
       {
         const planLimit = getPlanMonthlyLimit(plan);
-        incrementMonthlyUsage(planLimit);
+        if (consumption3 === 'paid' && preBD3.freeRemaining === 0) {
+          incrementMonthlyUsage(planLimit);
+        }
         setMonthlyBreakdown(getMonthlyQuotaBreakdown(planLimit));
       }
       // Update quota state

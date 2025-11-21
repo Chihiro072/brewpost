@@ -172,6 +172,50 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  /* White theme override (applied when 'white-theme' class is present on <html>) */
+  .white-theme {
+    --background: 0 0% 100%;
+    --foreground: 222 15% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 15% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 15% 10%;
+
+    --primary: 222 15% 10%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 16% 93%;
+    --secondary-foreground: 222 15% 10%;
+
+    --muted: 210 16% 93%;
+    --muted-foreground: 222 15% 40%;
+
+    --accent: 210 16% 93%;
+    --accent-foreground: 222 15% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 222 15% 20%;
+
+    /* Sidebar vars aligned to white surfaces */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 15% 10%;
+    --sidebar-primary: 222 15% 10%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 16% 93%;
+    --sidebar-accent-foreground: 222 15% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 222 15% 20%;
+  }
 }
 
 @layer base {

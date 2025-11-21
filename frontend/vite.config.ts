@@ -7,11 +7,11 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   // Determine backend URL based on environment
   const isDevelopment = mode === 'development';
-  // Development backend port should match the API project's launchSettings.json (http://localhost:5044)
-  // If you prefer a different port, update the API launchSettings or this value.
+  // In production, use VITE_API_BASE_URL from .env.production
+  // In development, use localhost:5044
   const backendTarget = isDevelopment 
     ? 'http://localhost:5044' 
-    : 'https://brewpost.duckdns.org';
+    : (process.env.VITE_API_BASE_URL || 'http://98.93.201.217:5044');
 
   return {
     server: {

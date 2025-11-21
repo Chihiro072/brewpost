@@ -144,11 +144,12 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
     try {
       console.log("Loading analysis for node:", selectedNode.id);
 
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+
       // Send node data directly to the new analyze-node endpoint
       const nodeAnalysisResponse = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:5044"
-        }/api/analysis/analyze-node`,
+        `${API_BASE_URL}/api/analysis/analyze-node`,
         {
           method: "POST",
           headers: {

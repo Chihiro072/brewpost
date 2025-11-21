@@ -145,7 +145,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingPrompt(true);
     try {
       const BACKEND_URL =
-        (import.meta.env.VITE_API_BASE_URL as string) ??
+        import.meta.env.VITE_API_BASE_URL ||
         "http://localhost:5044";
 
       const response = await fetch(
@@ -199,7 +199,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingImage(true);
     try {
       const BACKEND_URL =
-        (import.meta.env.VITE_API_BASE_URL as string) ??
+        import.meta.env.VITE_API_BASE_URL ||
         "http://localhost:5044";
 
       // Enhance prompt with template settings and stronger color emphasis

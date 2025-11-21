@@ -548,7 +548,7 @@ export const PlanningPanel = React.forwardRef<
 
     // Ensure frontend has a usable backend URL at runtime
     const BACKEND_URL =
-      (import.meta.env.VITE_API_BASE_URL as string) ?? "http://localhost:5044";
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
 
     // Open the schedule confirmation modal
     const handleScheduleAll = () => {

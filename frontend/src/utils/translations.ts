@@ -9,6 +9,9 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       save: "Save",
       cancel: "Cancel",
       search: "Search",
+      edit: "Edit",
+      show: "Show",
+      hide: "Hide",
     },
     settings: {
       title: "Settings",
@@ -19,6 +22,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       notifications_desc: "Enable message and system alerts",
       language: "Language",
       select_language: "Select language",
+      user_settings: "User Settings",
+      connections: "Connections",
+      billing_settings: "Billing Settings",
+      my_account: "My Account",
+      security_center: "Security Center",
     },
     subscriptions: {
       title: "Subscriptions",
@@ -34,6 +42,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       ai: "AI",
       system: "System",
     },
+    account: {
+      display_name: "Display Name",
+      full_name: "Full Name",
+      email: "Email",
+    },
   },
   ms: {
     common: {
@@ -41,6 +54,9 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       save: "Simpan",
       cancel: "Batal",
       search: "Cari",
+      edit: "Edit",
+      show: "Tunjuk",
+      hide: "Sembunyi",
     },
     settings: {
       title: "Tetapan",
@@ -51,6 +67,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       notifications_desc: "Aktifkan amaran mesej dan sistem",
       language: "Bahasa",
       select_language: "Pilih bahasa",
+      user_settings: "Tetapan Pengguna",
+      connections: "Sambungan",
+      billing_settings: "Tetapan Bil",
+      my_account: "Akaun Saya",
+      security_center: "Pusat Keselamatan",
     },
     subscriptions: {
       title: "Langganan",
@@ -66,6 +87,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       ai: "AI",
       system: "Sistem",
     },
+    account: {
+      display_name: "Nama Paparan",
+      full_name: "Nama Penuh",
+      email: "Emel",
+    },
   },
   zh: {
     common: {
@@ -73,6 +99,9 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       save: "保存",
       cancel: "取消",
       search: "搜索",
+      edit: "编辑",
+      show: "显示",
+      hide: "隐藏",
     },
     settings: {
       title: "设置",
@@ -83,6 +112,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       notifications_desc: "启用消息和系统提醒",
       language: "语言",
       select_language: "选择语言",
+      user_settings: "用户设置",
+      connections: "连接",
+      billing_settings: "账单设置",
+      my_account: "我的账户",
+      security_center: "安全中心",
     },
     subscriptions: {
       title: "订阅",
@@ -97,6 +131,11 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       you: "你",
       ai: "AI",
       system: "系统",
+    },
+    account: {
+      display_name: "显示名称",
+      full_name: "全名",
+      email: "电子邮件",
     },
   },
 };
