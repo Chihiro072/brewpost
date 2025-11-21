@@ -569,7 +569,8 @@ Please try again or refine your request. For a quick start, tell me what topic y
     try {
       const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.\n\nUser prompt: "${input.trim()}"\n\nGuidelines:\n- Make it clear, specific and actionable for content creation.\n- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).\n- Keep the original intent and tone.`;
 
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
       const resp = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -623,7 +624,8 @@ Return only the refined prompt, nothing else.`,
         },
       ];
 
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
 
       const resp = await fetch(apiUrl, {
         method: "POST",
@@ -707,7 +709,8 @@ Return only the refined prompt, nothing else.`,
     setIsGenerating(true);
 
     try {
-      const apiUrl = "/generate";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const apiUrl = `${API_BASE_URL}/api/generate`;
 
       // Convert messages to a single prompt string for the backend
       const prompt = messagesForBackend

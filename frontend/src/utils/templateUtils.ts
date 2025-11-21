@@ -253,7 +253,8 @@ export const convertToProxyUrl = (imageUrl: string): string => {
     const isBrewpostAssets = host.includes('brewpost-assets') || imageUrl.includes('brewpost-assets');
     if (isBrewpostS3Host || isBrewpostAssets) {
       const s3Key = url.pathname.replace(/^\//, '');
-      const proxyUrl = `http://localhost:5044/api/assets/proxy/${s3Key}`;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044';
+      const proxyUrl = `${API_BASE_URL}/api/assets/proxy/${s3Key}`;
       return proxyUrl;
     }
   } catch (error) {
