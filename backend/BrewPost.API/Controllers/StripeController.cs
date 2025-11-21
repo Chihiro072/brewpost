@@ -75,9 +75,8 @@ namespace BrewPost.API.Controllers
 
                 var service = new SessionService();
                 var baseUrl = (frontendBase ?? "http://localhost:5173").TrimEnd('/');
-                var baseWithSlash = baseUrl.EndsWith("/") ? baseUrl : baseUrl + "/";
-                var successUrl = new System.Uri(new System.Uri(baseWithSlash), $"payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}").ToString();
-                var cancelUrl = new System.Uri(new System.Uri(baseWithSlash), "settings?checkout=cancel").ToString();
+                var successUrl = $"{baseUrl}/payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}";
+                var cancelUrl = $"{baseUrl}/settings?checkout=cancel";
                 var options = new SessionCreateOptions
                 {
                     Mode = "subscription",
