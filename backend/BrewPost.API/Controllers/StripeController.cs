@@ -77,6 +77,11 @@ namespace BrewPost.API.Controllers
                 var baseUrl = (frontendBase ?? "http://localhost:5173").TrimEnd('/');
                 var successUrl = $"{baseUrl}/payment-success?plan={planKey}&session_id={{CHECKOUT_SESSION_ID}}";
                 var cancelUrl = $"{baseUrl}/settings?checkout=cancel";
+                // Debug logging - check what URLs are sent to Stripe
+                System.Console.WriteLine($"[Stripe DEBUG] FRONTEND_BASE_URL (raw): '{frontendBase}'");
+                System.Console.WriteLine($"[Stripe DEBUG] baseUrl (after TrimEnd): '{baseUrl}'");
+                System.Console.WriteLine($"[Stripe DEBUG] successUrl: '{successUrl}'");
+                System.Console.WriteLine($"[Stripe DEBUG] cancelUrl: '{cancelUrl}'");
                 var options = new SessionCreateOptions
                 {
                     Mode = "subscription",

@@ -15,48 +15,66 @@ using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
+var env = builder.Environment;
 
-// Load .env file from backend directory (go up 1 level from BrewPost.API)
-var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
-if (System.IO.File.Exists(envPath))
+//
+// DEVELOPMENT (LOCAL) MODE → Load .env
+//
+if (env.IsDevelopment())
 {
-    Env.Load(envPath);
-    Console.WriteLine($"✅ Loaded .env file from: {envPath}");
+    var envPath = Path.Combine(Directory.GetCurrentDirectory(), "..", ".env");
+
+    if (System.IO.File.Exists(envPath))
+    {
+        Env.Load(envPath);
+        Console.WriteLine($"🟢 DEVELOPMENT: Loaded .env file from: {envPath}");
+    }
+    else
+    {
+        Console.WriteLine($"⚠️ DEVELOPMENT: .env not found at {envPath}");
+    }
 }
-else
+
+//
+// PRODUCTION (EC2) MODE → Load AWS Secrets Manager
+//
+if (env.IsProduction())
 {
-    Console.WriteLine($"⚠️ .env file not found at: {envPath}");
+    Console.WriteLine("🔵 PRODUCTION: Loading AWS Secrets Manager...");
+
+    try
+    {
+        var secretsClient = new AmazonSecretsManagerClient(); // Uses EC2 IAM role automatically
+
+        var secretRequest = new GetSecretValueRequest
+        {
+            SecretId = "brewpost/prod/app-config-secrets"   // your secret name
+        };
+
+        var secretResponse = await secretsClient.GetSecretValueAsync(secretRequest);
+
+        if (!string.IsNullOrEmpty(secretResponse.SecretString))
+        {
+            var secretsDict =
+                JsonSerializer.Deserialize<Dictionary<string, string>>(secretResponse.SecretString);
+
+            foreach (var kvp in secretsDict)
+            {
+                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+            }
+
+            Console.WriteLine("✅ PRODUCTION: Secrets loaded from AWS Secrets Manager");
+        }
+        else
+        {
+            Console.WriteLine("⚠️ PRODUCTION: SecretString is empty.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ PRODUCTION: Failed to load secrets: {ex.Message}");
+    }
 }
-
-// Only for production (EC2)
-// if (!builder.Environment.IsDevelopment())
-// {
-//     try
-//     {
-//         var secretsClient = new AmazonSecretsManagerClient(); // Uses EC2 IAM role automatically
-//         var secretRequest = new GetSecretValueRequest
-//         {
-//             SecretId = "brewpost/prod/app-config-secrets" // Replace with your secret name
-//         };
-//         var secretResponse = await secretsClient.GetSecretValueAsync(secretRequest);
-
-//         if (!string.IsNullOrEmpty(secretResponse.SecretString))
-//         {
-//             var secretsDict = JsonSerializer.Deserialize<Dictionary<string, string>>(secretResponse.SecretString);
-
-//             foreach (var kvp in secretsDict)
-//             {
-//                 Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
-//             }
-
-//             Console.WriteLine("✅ Loaded secrets from AWS Secrets Manager");
-//         }
-//     }
-//     catch (Exception ex)
-//     {
-//         Console.WriteLine($"❌ Failed to load secrets from Secrets Manager: {ex.Message}");
-//     }
-// }
 
 // Add environment variables to configuration - this should take precedence
 builder.Configuration.AddEnvironmentVariables();
@@ -249,7 +267,8 @@ builder.Services.AddCors(options =>
             "http://localhost:3002",
             "http://localhost:5173",
             "http://localhost:8080",
-            "http://localhost:8081"
+            "http://localhost:8081",
+            "http://98.93.201.217"
         ) // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
