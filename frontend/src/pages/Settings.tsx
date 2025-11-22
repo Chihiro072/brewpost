@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   User,
@@ -15,25 +15,27 @@ import {
   Twitter,
   Facebook,
   Instagram,
+  Github,
   Star,
   AlertCircle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { usersAPI } from '@/services/apiService';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import CustomModal from '@/components/custom-modal';
-import { useSubscription } from '@/contexts/SubscriptionContext';
+  Pin,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { usersAPI } from "@/services/apiService";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import CustomModal from "@/components/custom-modal";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from '@/components/ui/tooltip';
-import { QuickSettingsModal } from '@/components/modals/QuickSettingsModal';
-import { useLanguage } from '@/contexts/LanguageContext';
+} from "@/components/ui/tooltip";
+import { QuickSettingsModal } from "@/components/modals/QuickSettingsModal";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Error boundary wrapper for Settings
 class SettingsErrorBoundary extends React.Component<
@@ -48,7 +50,7 @@ class SettingsErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[Settings] Error boundary caught:', error, info);
+    console.error("[Settings] Error boundary caught:", error, info);
   }
   render() {
     if (this.state.hasError) {
@@ -57,15 +59,15 @@ class SettingsErrorBoundary extends React.Component<
           className="min-h-screen flex items-center justify-center bg-background text-white"
           style={{
             background:
-              'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
-            backgroundColor: 'rgba(0, 15, 49, 0.05)',
+              "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+            backgroundColor: "rgba(0, 15, 49, 0.05)",
           }}
         >
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Settings crashed</h1>
             <p className="text-gray-300">
-              {String(this.state.error?.message || 'Unknown error')}
+              {String(this.state.error?.message || "Unknown error")}
             </p>
           </div>
         </div>
@@ -98,16 +100,20 @@ const SettingsSidebar: React.FC<{
   activeSection: string;
   onSectionChange: (section: string) => void;
 }> = ({ activeSection, onSectionChange }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const { t } = useLanguage();
 
   const sections: SidebarItem[] = [
-    { id: 'account', label: t('settings.my_account'), icon: <User className="w-4 h-4" /> },
-    { id: 'connections', label: t('settings.connections') },
+    {
+      id: "account",
+      label: t("settings.my_account"),
+      icon: <User className="w-4 h-4" />,
+    },
+    { id: "connections", label: t("settings.connections") },
   ];
 
   const billingSections: SidebarItem[] = [
-    { id: 'subscriptions', label: t('subscriptions.title') },
+    { id: "subscriptions", label: t("subscriptions.title") },
   ];
 
   const appSections: SidebarItem[] = [];
@@ -133,15 +139,15 @@ const SettingsSidebar: React.FC<{
             tabIndex={0}
             onClick={() => onSectionChange(item.id)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 onSectionChange(item.id);
               }
             }}
-            aria-current={activeSection === item.id ? 'page' : undefined}
+            aria-current={activeSection === item.id ? "page" : undefined}
             className={`w-full flex cursor-pointer items-center justify-between px-3 py-2 text-sm font-medium rounded-xl transition-colors ${
               activeSection === item.id
-                ? 'bg-[#03624C]/30 text-white border border-[#2CC295]/40'
-                : 'text-muted-foreground hover:bg-[#03624C]/20 hover:text-white'
+                ? "bg-[#03624C]/30 text-white border border-[#2CC295]/40"
+                : "text-muted-foreground hover:bg-[#03624C]/20 hover:text-white"
             }`}
           >
             <div className="flex items-center space-x-3">
@@ -151,7 +157,7 @@ const SettingsSidebar: React.FC<{
             {item.badge && (
               <Badge
                 className={`text-xs px-1.5 py-0.5 ${
-                  item.badgeColor || 'bg-red-500'
+                  item.badgeColor || "bg-red-500"
                 }`}
               >
                 {item.badge}
@@ -170,7 +176,7 @@ const SettingsSidebar: React.FC<{
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
             type="text"
-            placeholder={t('common.search')}
+            placeholder={t("common.search")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-card/30 border-[#03624C]/40 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-[#2CC295] focus:border-[#2CC295] rounded-xl"
@@ -179,11 +185,11 @@ const SettingsSidebar: React.FC<{
       </div>
 
       <SidebarSection
-        title={t('settings.user_settings')}
+        title={t("settings.user_settings")}
         items={filteredSections(sections)}
       />
       <SidebarSection
-        title={t('settings.billing_settings')}
+        title={t("settings.billing_settings")}
         items={filteredSections(billingSections)}
       />
     </div>
@@ -199,11 +205,18 @@ const SettingsContent: React.FC<{
   const [showEmail, setShowEmail] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [editFirstName, setEditFirstName] = useState('');
-  const [editLastName, setEditLastName] = useState('');
+  const [editValue, setEditValue] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   // Social connections state
-  type PlatformKey = 'linkedin' | 'x' | 'facebook' | 'instagram';
+  type PlatformKey =
+    | "linkedin"
+    | "x"
+    | "facebook"
+    | "instagram"
+    | "github"
+    | "pinterest"
+    | "reddit";
   const [socialConnections, setSocialConnections] = useState<
     Record<PlatformKey, boolean>
   >({
@@ -211,17 +224,20 @@ const SettingsContent: React.FC<{
     x: false,
     facebook: false,
     instagram: false,
+    github: false,
+    pinterest: false,
+    reddit: false,
   });
 
   // Subscription state
-  type PlanKey = 'basic' | 'pro' | 'unlimited';
+  type PlanKey = "basic" | "pro" | "unlimited";
   const { plan } = useSubscription();
   const [messageUsage, setMessageUsage] = useState({ used: 0, limit: 0 });
   // Change Password modal state
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [cpLoading, setCpLoading] = useState(false);
   const [cpError, setCpError] = useState<string | null>(null);
   const [cpSuccess, setCpSuccess] = useState<string | null>(null);
@@ -231,9 +247,9 @@ const SettingsContent: React.FC<{
   const [quickSettingsOpen, setQuickSettingsOpen] = useState(false);
   const openChangePassword = () => {
     setIsChangePasswordOpen(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     setCpError(null);
     setCpSuccess(null);
   };
@@ -242,30 +258,30 @@ const SettingsContent: React.FC<{
     setCpError(null);
     setCpSuccess(null);
     if (!currentPassword || !newPassword) {
-      setCpError('Please fill in all fields.');
+      setCpError("Please fill in all fields.");
       return;
     }
     if (newPassword !== confirmPassword) {
-      setCpError('New passwords do not match.');
+      setCpError("New passwords do not match.");
       return;
     }
     if (newPassword.length < 8) {
-      setCpError('New password must be at least 8 characters.');
+      setCpError("New password must be at least 8 characters.");
       return;
     }
     try {
       setCpLoading(true);
       const resp = await fetch(
         `${
-          import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044'
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5044"
         }/api/users/password`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem("authToken") || ""}`,
+            "Content-Type": "application/json",
           },
-          credentials: 'include',
+          credentials: "include",
           body: JSON.stringify({ currentPassword, newPassword }),
         }
       );
@@ -273,10 +289,10 @@ const SettingsContent: React.FC<{
         const errorText = await resp.text();
         throw new Error(errorText || `Request failed: ${resp.status}`);
       }
-      setCpSuccess('Password changed successfully.');
+      setCpSuccess("Password changed successfully.");
       setTimeout(() => setIsChangePasswordOpen(false), 1200);
     } catch (err: any) {
-      setCpError(err?.message || 'Failed to change password.');
+      setCpError(err?.message || "Failed to change password.");
     } finally {
       setCpLoading(false);
     }
@@ -294,23 +310,23 @@ const SettingsContent: React.FC<{
     }
   > = {
     basic: {
-      name: 'Basic',
+      name: "Basic",
       price: 9,
       limit: 100,
-      description: 'For light usage',
+      description: "For light usage",
     },
     pro: {
-      name: 'Pro',
+      name: "Pro",
       price: 19,
       limit: 200,
-      description: 'Great for regular use',
+      description: "Great for regular use",
       popular: true,
     },
     unlimited: {
-      name: 'Unlimited',
+      name: "Unlimited",
       price: 29,
       limit: Infinity,
-      description: 'Best for heavy usage',
+      description: "Best for heavy usage",
     },
   };
 
@@ -318,21 +334,87 @@ const SettingsContent: React.FC<{
     setMessageUsage({ used: 0, limit: 0 });
   }, []);
 
-  const toggleConnection = (platform: PlatformKey) => {
-    setSocialConnections((prev) => ({ ...prev, [platform]: !prev[platform] }));
+  useEffect(() => {
+    const fetchLinked = async () => {
+      const token = localStorage.getItem("authToken") || "";
+      const apiBase =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+      try {
+        const resp = await fetch(`${apiBase}/api/social/linked`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) throw new Error("Failed to fetch linked accounts");
+        const linked: { provider: string }[] = await resp.json();
+        setSocialConnections({
+          linkedin: linked.some((l) => l.provider === "linkedin"),
+          x: linked.some((l) => l.provider === "x"),
+          facebook: linked.some((l) => l.provider === "facebook"),
+          instagram: linked.some((l) => l.provider === "instagram"),
+          github: linked.some((l) => l.provider === "github"),
+          pinterest: linked.some((l) => l.provider === "pinterest"),
+          reddit: linked.some((l) => l.provider === "reddit"),
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchLinked();
+  }, []);
+
+  const toggleConnection = async (platform: PlatformKey) => {
+    const token = localStorage.getItem("authToken") || "";
+    const apiBase =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+
+    try {
+      if (!socialConnections[platform]) {
+        // CONNECT social account
+        // Step 1: Get authorization URL
+        // New
+        const redirectUri = `${window.location.origin}/settings/connections/callback/${platform}`;
+        const authResp = await fetch(
+          `${apiBase}/api/social/authorize/${platform}?redirectUri=${encodeURIComponent(
+            redirectUri
+          )}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!authResp.ok) throw new Error("Failed to get auth URL");
+        const { url } = await authResp.json();
+
+        // Step 2: Redirect user to provider login
+        window.location.href = url;
+        return;
+      } else {
+        // DISCONNECT social account
+        const unlinkResp = await fetch(
+          `${apiBase}/api/social/unlink/${platform}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!unlinkResp.ok) throw new Error("Failed to unlink social account");
+
+        setSocialConnections((prev) => ({ ...prev, [platform]: false }));
+      }
+    } catch (err: any) {
+      console.error("Social connection error", err);
+      alert(err.message || "Something went wrong");
+    }
   };
 
   const startCheckout = async (plan: PlanKey) => {
     try {
       const resp = await fetch(
         `${
-          import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044'
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5044"
         }/api/stripe/create-checkout-session`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan }),
-          credentials: 'include',
+          credentials: "include",
         }
       );
       if (!resp.ok) {
@@ -340,15 +422,15 @@ const SettingsContent: React.FC<{
         throw new Error(`Failed to create session: ${text}`);
       }
       const data = await resp.json();
-      const url = data && data.url ? String(data.url) : '';
+      const url = data && data.url ? String(data.url) : "";
       if (url) {
         window.location.assign(url);
         return;
       }
-      throw new Error('Checkout session created without a URL.');
+      throw new Error("Checkout session created without a URL.");
     } catch (e: any) {
-      setStripeError(e?.message || 'Checkout error');
-      console.error('Checkout error', e);
+      setStripeError(e?.message || "Checkout error");
+      console.error("Checkout error", e);
     }
   };
 
@@ -384,7 +466,7 @@ const SettingsContent: React.FC<{
             </div>
             <div className="text-gray-400 text-xs">
               {planInfo.limit === Infinity
-                ? 'Unlimited messages'
+                ? "Unlimited messages"
                 : `${planInfo.limit} messages/month`}
             </div>
           </div>
@@ -394,13 +476,13 @@ const SettingsContent: React.FC<{
             <span>Usage</span>
             <span>
               {used}
-              {planInfo.limit === Infinity ? '' : ` / ${planInfo.limit}`}
+              {planInfo.limit === Infinity ? "" : ` / ${planInfo.limit}`}
             </span>
           </div>
           <div className="w-full h-2 bg-gray-700 rounded mt-2">
             <div
               className={`h-2 rounded ${
-                planInfo.limit === Infinity ? 'bg-green-600 w-0' : 'bg-blue-600'
+                planInfo.limit === Infinity ? "bg-green-600 w-0" : "bg-blue-600"
               }`}
               style={{ width: `${percent}%` }}
             ></div>
@@ -421,7 +503,7 @@ const SettingsContent: React.FC<{
             <ul className="list-disc pl-5">
               <li>
                 {planInfo.limit === Infinity
-                  ? 'Unlimited monthly messages'
+                  ? "Unlimited monthly messages"
                   : `${planInfo.limit} messages per month`}
               </li>
               <li>Priority support</li>
@@ -436,7 +518,9 @@ const SettingsContent: React.FC<{
   // Subscriptions Section
   const Subscriptions = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">{t('subscriptions.title')}</h2>
+      <h2 className="text-2xl font-bold text-foreground">
+        {t("subscriptions.title")}
+      </h2>
       <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
         <p className="text-gray-300 text-sm">
           Choose a plan that fits your message usage. Billing handled securely
@@ -458,9 +542,9 @@ const SettingsContent: React.FC<{
 
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field);
-    if (field === 'fullName') {
-      setEditFirstName(userProfile?.firstName || '');
-      setEditLastName(userProfile?.lastName || '');
+    if (field === "fullName") {
+      setEditFirstName(userProfile?.firstName || "");
+      setEditLastName(userProfile?.lastName || "");
       return;
     }
     setEditValue(currentValue);
@@ -468,7 +552,7 @@ const SettingsContent: React.FC<{
 
   const handleSave = (field: string) => {
     if (userProfile) {
-      if (field === 'fullName') {
+      if (field === "fullName") {
         const updatedProfile = {
           ...userProfile,
           firstName: editFirstName,
@@ -486,24 +570,24 @@ const SettingsContent: React.FC<{
 
   const handleCancel = () => {
     setEditingField(null);
-    setEditValue('');
-    setEditFirstName('');
-    setEditLastName('');
+    setEditValue("");
+    setEditFirstName("");
+    setEditLastName("");
   };
 
   const maskEmail = (email: string) => {
-    const [username, domain] = email.split('@');
+    const [username, domain] = email.split("@");
     const maskedUsername =
       username.length > 4
-        ? username.slice(0, 2) + '*'.repeat(username.length - 2)
-        : '*'.repeat(username.length);
+        ? username.slice(0, 2) + "*".repeat(username.length - 2)
+        : "*".repeat(username.length);
     return `${maskedUsername}@${domain}`;
   };
 
   const maskPhone = (phone: string) => {
     return phone.length > 4
-      ? '*'.repeat(phone.length - 4) + phone.slice(-4)
-      : '*'.repeat(phone.length);
+      ? "*".repeat(phone.length - 4) + phone.slice(-4)
+      : "*".repeat(phone.length);
   };
 
   const AccountSettings = () => (
@@ -518,7 +602,7 @@ const SettingsContent: React.FC<{
         </div>
         <div>
           <h1 className="text-2xl font-extrabold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent tracking-tight">
-            {userProfile?.displayName || userProfile?.firstName || 'ZeRoZz'}
+            {userProfile?.displayName || userProfile?.firstName || "ZeRoZz"}
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <Tooltip>
@@ -530,10 +614,10 @@ const SettingsContent: React.FC<{
                   onClick={async () => {
                     const id =
                       userProfile?.id ||
-                      (typeof window !== 'undefined'
-                        ? window.localStorage.getItem('userId')
-                        : '') ||
-                      '';
+                      (typeof window !== "undefined"
+                        ? window.localStorage.getItem("userId")
+                        : "") ||
+                      "";
                     try {
                       await navigator.clipboard.writeText(id);
                       setCopied(true);
@@ -548,7 +632,7 @@ const SettingsContent: React.FC<{
                 side="top"
                 className="bg-card/80 border border-[#03624C]/40"
               >
-                {copied ? 'Copied!' : 'User ID'}
+                {copied ? "Copied!" : "User ID"}
               </TooltipContent>
             </Tooltip>
 
@@ -580,19 +664,21 @@ const SettingsContent: React.FC<{
           {/* Nickname Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">{t('account.display_name')}</label>
-              {editingField === 'displayName' ? (
+              <label className="text-sm text-gray-400">
+                {t("account.display_name")}
+              </label>
+              {editingField === "displayName" ? (
                 <div className="flex space-x-2 mt-1">
                   <Input
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     className="bg-card/30 border-[#03624C]/40 text-foreground focus:ring-2 focus:ring-[#2CC295] focus:border-[#2CC295]"
                   />
-                  <Button size="sm" onClick={() => handleSave('displayName')}>
-                    {t('common.save')}
+                  <Button size="sm" onClick={() => handleSave("displayName")}>
+                    {t("common.save")}
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleCancel}>
-                    {t('common.cancel')}
+                    {t("common.cancel")}
                   </Button>
                 </div>
               ) : (
@@ -600,7 +686,7 @@ const SettingsContent: React.FC<{
                   <p className="text-lg bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
                     {userProfile?.displayName ||
                       userProfile?.firstName ||
-                      'ZeRoZz'}
+                      "ZeRoZz"}
                   </p>
                   <Button
                     size="sm"
@@ -608,12 +694,12 @@ const SettingsContent: React.FC<{
                     className="border-[#2CC295]/40 text-[#2CC295] hover:bg-[#03624C]/30 hover:border-[#2CC295]/70 transition-all duration-200 hover:translate-y-[0.5px] active:translate-y-[1px]"
                     onClick={() =>
                       handleEdit(
-                        'displayName',
-                        userProfile?.displayName || userProfile?.firstName || ''
+                        "displayName",
+                        userProfile?.displayName || userProfile?.firstName || ""
                       )
                     }
                   >
-                    {t('common.edit')}
+                    {t("common.edit")}
                   </Button>
                 </div>
               )}
@@ -623,8 +709,10 @@ const SettingsContent: React.FC<{
           {/* Full Name Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">{t('account.full_name')}</label>
-              {editingField === 'fullName' ? (
+              <label className="text-sm text-gray-400">
+                {t("account.full_name")}
+              </label>
+              {editingField === "fullName" ? (
                 <div className="flex items-center gap-2 mt-1">
                   <Input
                     value={editFirstName}
@@ -638,11 +726,11 @@ const SettingsContent: React.FC<{
                     onChange={(e) => setEditLastName(e.target.value)}
                     className="bg-card/30 border-[#03624C]/40 text-foreground"
                   />
-                  <Button size="sm" onClick={() => handleSave('fullName')}>
-                    {t('common.save')}
+                  <Button size="sm" onClick={() => handleSave("fullName")}>
+                    {t("common.save")}
                   </Button>
                   <Button size="sm" variant="outline" onClick={handleCancel}>
-                    {t('common.cancel')}
+                    {t("common.cancel")}
                   </Button>
                 </div>
               ) : (
@@ -650,17 +738,17 @@ const SettingsContent: React.FC<{
                   <p className="text-foreground text-lg">
                     {[userProfile?.firstName, userProfile?.lastName]
                       .filter(Boolean)
-                      .join(' ') ||
+                      .join(" ") ||
                       userProfile?.displayName ||
-                      '—'}
+                      "—"}
                   </p>
                   <Button
                     size="sm"
                     variant="outline"
                     className="border-[#2CC295]/40 text-[#2CC295] hover:bg-[#03624C]/30 hover:border-[#2CC295]/70 transition-all duration-200 hover:translate-y-[0.5px] active:translate-y-[1px]"
-                    onClick={() => handleEdit('fullName', '')}
+                    onClick={() => handleEdit("fullName", "")}
                   >
-                    {t('common.edit')}
+                    {t("common.edit")}
                   </Button>
                 </div>
               )}
@@ -670,27 +758,29 @@ const SettingsContent: React.FC<{
           {/* Email Field */}
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-sm text-gray-400">{t('account.email')}</label>
+              <label className="text-sm text-gray-400">
+                {t("account.email")}
+              </label>
               <div className="flex items-center space-x-2 mt-1">
                 <p className="text-lg bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
                   {showEmail
                     ? userProfile?.email
-                    : maskEmail(userProfile?.email || 'user@example.com')}
+                    : maskEmail(userProfile?.email || "user@example.com")}
                 </p>
                 <button
                   onClick={() => setShowEmail(!showEmail)}
                   className="text-[#2CC295] hover:text-[#00DF81] text-sm"
                 >
-                  {showEmail ? t('common.hide') : t('common.show')}
+                  {showEmail ? t("common.hide") : t("common.show")}
                 </button>
               </div>
               <Button
                 size="sm"
                 variant="outline"
                 className="mt-2 border-[#2CC295]/40 text-[#2CC295] hover:bg-[#03624C]/30 hover:border-[#2CC295]/70 transition-all duration-200 hover:translate-y-[0.5px] active:translate-y-[1px]"
-                onClick={() => handleEdit('email', userProfile?.email || '')}
+                onClick={() => handleEdit("email", userProfile?.email || "")}
               >
-                {t('common.edit')}
+                {t("common.edit")}
               </Button>
             </div>
           </div>
@@ -699,7 +789,7 @@ const SettingsContent: React.FC<{
 
       {/* Password Section */}
       <div className="mt-8">
-      <h3 className="text-lg font-semibold text-foreground mb-4">
+        <h3 className="text-lg font-semibold text-foreground mb-4">
           Password & Authentication
         </h3>
         <Button
@@ -716,7 +806,7 @@ const SettingsContent: React.FC<{
   const SecurityCenter = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-        {t('settings.security_center')}
+        {t("settings.security_center")}
       </h2>
       <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
         <p className="text-gray-300">Security settings will appear here</p>
@@ -732,31 +822,46 @@ const SettingsContent: React.FC<{
       icon: React.ReactNode;
     }[] = [
       {
-        key: 'linkedin',
-        label: 'LinkedIn',
+        key: "linkedin",
+        label: "LinkedIn",
         icon: <Linkedin className="w-5 h-5 text-blue-500" />,
       },
       {
-        key: 'x',
-        label: 'X',
+        key: "x",
+        label: "X",
         icon: <Twitter className="w-5 h-5 text-blue-400" />,
       },
       {
-        key: 'facebook',
-        label: 'Facebook',
+        key: "facebook",
+        label: "Facebook",
         icon: <Facebook className="w-5 h-5 text-blue-600" />,
       },
       {
-        key: 'instagram',
-        label: 'Instagram',
+        key: "instagram",
+        label: "Instagram",
         icon: <Instagram className="w-5 h-5 text-pink-500" />,
+      },
+      {
+        key: "github",
+        label: "GitHub",
+        icon: <Github className="w-5 h-5 text-gray-400" />,
+      },
+      {
+        key: "pinterest",
+        label: "Pinterest",
+        icon: <Pin className="w-5 h-5 text-red-600" />,
+      },
+      {
+        key: "reddit",
+        label: "Reddit",
+        icon: <span className="text-orange-600 font-bold text-lg">🔥</span>,
       },
     ];
 
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-          {t('settings.connections')}
+          {t("settings.connections")}
         </h2>
         <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
           <div className="space-y-4">
@@ -777,23 +882,23 @@ const SettingsContent: React.FC<{
                     <Badge
                       className={
                         connected
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-700 text-gray-300'
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-700 text-gray-300"
                       }
                     >
-                      {connected ? 'Connected' : 'Not Connected'}
+                      {connected ? "Connected" : "Not Connected"}
                     </Badge>
                     <Button
                       size="sm"
-                      variant={connected ? 'outline' : 'default'}
+                      variant={connected ? "outline" : "default"}
                       onClick={() => toggleConnection(key)}
                       className={
                         connected
-                          ? 'border-gray-500 text-gray-200'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          ? "border-gray-500 text-gray-200"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
                       }
                     >
-                      {connected ? 'Disconnect' : 'Connect'}
+                      {connected ? "Disconnect" : "Connect"}
                     </Button>
                   </div>
                 </div>
@@ -807,23 +912,23 @@ const SettingsContent: React.FC<{
 
   const renderContent = () => {
     switch (activeSection) {
-      case 'account':
+      case "account":
         return <AccountSettings />;
-      case 'security':
+      case "security":
         return <SecurityCenter />;
-      case 'connections':
+      case "connections":
         return <Connections />;
-      case 'subscriptions':
+      case "subscriptions":
         return <Subscriptions />;
       default:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-              {t('settings.title')}
+              {t("settings.title")}
             </h2>
             <Card className="p-6 bg-card rounded-2xl shadow-2xl border border-border">
               <p className="text-gray-300">
-                {t('settings.title')} for this section will appear here
+                {t("settings.title")} for this section will appear here
               </p>
             </Card>
           </div>
@@ -838,13 +943,13 @@ const SettingsContent: React.FC<{
         <header className="w-full border-b border-border/50 bg-card/50 backdrop-blur-xl">
           <div className="px-6 py-4 flex items-center justify-between">
             <h1 className="text-xl font-semibold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">
-              {t('settings.title')}
+              {t("settings.title")}
             </h1>
           </div>
         </header>
         <div className="flex space-x-8 border-b border-[#03624C]/50">
           <button className="pb-4 text-foreground font-medium border-b-2 border-[#2CC295]">
-            {t('settings.security_center')}
+            {t("settings.security_center")}
           </button>
         </div>
       </div>
@@ -925,7 +1030,7 @@ const SettingsContent: React.FC<{
               disabled={cpLoading}
               className="bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] text-white hover:opacity-90"
             >
-              {cpLoading ? 'Changing…' : 'Change Password'}
+              {cpLoading ? "Changing…" : "Change Password"}
             </Button>
           </div>
         </form>
@@ -939,7 +1044,11 @@ const SettingsContent: React.FC<{
 };
 
 const Settings: React.FC = () => {
-  const [activeSection, setActiveSection] = useState('account');
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const initialSection = query.get("tab") || "account";
+
+  const [activeSection, setActiveSection] = useState(initialSection);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { user, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -948,18 +1057,18 @@ const Settings: React.FC = () => {
 
   useEffect(() => {
     console.log(
-      '[Settings] Mounted. user=',
+      "[Settings] Mounted. user=",
       user,
-      'loading=',
+      "loading=",
       loading,
-      'isAuthenticated=',
+      "isAuthenticated=",
       isAuthenticated
     );
 
     const fetchUserProfile = async () => {
       // prevent duplicate fetches that could hang
       if (hasFetchedRef.current) {
-        console.log('[Settings] skipping duplicate profile fetch');
+        console.log("[Settings] skipping duplicate profile fetch");
         return;
       }
       hasFetchedRef.current = true;
@@ -968,36 +1077,36 @@ const Settings: React.FC = () => {
       const timeoutMs = 5000;
       const timeoutId = setTimeout(() => {
         console.warn(
-          '[Settings] profile request timed out after',
+          "[Settings] profile request timed out after",
           timeoutMs,
-          'ms'
+          "ms"
         );
         controller.abort();
         // still show UI with mock
         setUserProfile({
-          id: 'mock',
-          firstName: 'ZeRoZz',
-          lastName: '',
-          username: 'ckai17',
-          email: 'user@gmail.com',
-          phoneNumber: '1234567890',
-          displayName: 'ZeRoZz',
+          id: "mock",
+          firstName: "ZeRoZz",
+          lastName: "",
+          username: "ckai17",
+          email: "user@gmail.com",
+          phoneNumber: "1234567890",
+          displayName: "ZeRoZz",
         });
       }, timeoutMs);
 
       try {
         const resp = await fetch(
           `${
-            import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044'
+            import.meta.env.VITE_API_BASE_URL || "http://localhost:5044"
           }/api/users/profile`,
           {
             headers: {
               Authorization: `Bearer ${
-                localStorage.getItem('authToken') || ''
+                localStorage.getItem("authToken") || ""
               }`,
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-            credentials: 'include',
+            credentials: "include",
             signal: controller.signal,
           }
         );
@@ -1006,16 +1115,16 @@ const Settings: React.FC = () => {
         const profile = await resp.json();
         setUserProfile(profile);
       } catch (error) {
-        console.error('[Settings] Failed to fetch user profile:', error);
+        console.error("[Settings] Failed to fetch user profile:", error);
         // Use mock data for demo to avoid blank screen
         setUserProfile({
-          id: 'mock',
-          firstName: 'ZeRoZz',
-          lastName: '',
-          username: 'ckai17',
-          email: 'user@gmail.com',
-          phoneNumber: '1234567890',
-          displayName: 'ZeRoZz',
+          id: "mock",
+          firstName: "ZeRoZz",
+          lastName: "",
+          username: "ckai17",
+          email: "user@gmail.com",
+          phoneNumber: "1234567890",
+          displayName: "ZeRoZz",
         });
       }
     };
@@ -1028,11 +1137,11 @@ const Settings: React.FC = () => {
   const handleUpdateProfile = (updatedProfile: UserProfile) => {
     setUserProfile(updatedProfile);
     // Here you would typically call an API to update the profile
-    console.log('Profile updated:', updatedProfile);
+    console.log("Profile updated:", updatedProfile);
   };
 
   const handleClose = () => {
-    navigate('/app');
+    navigate("/app");
   };
 
   if (loading) {
@@ -1041,9 +1150,9 @@ const Settings: React.FC = () => {
         className="min-h-screen flex items-center justify-center bg-background text-foreground"
         style={{
           background:
-            'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          backgroundColor: 'rgba(0, 15, 49, 0.05)',
+            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+          backgroundColor: "rgba(0, 15, 49, 0.05)",
         }}
       >
         <div className="text-center">
@@ -1060,9 +1169,9 @@ const Settings: React.FC = () => {
         className="min-h-screen flex items-center justify-center bg-background text-foreground"
         style={{
           background:
-            'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          backgroundColor: 'rgba(0, 15, 49, 0.05)',
+            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+          backgroundColor: "rgba(0, 15, 49, 0.05)",
         }}
       >
         <div className="text-center">
@@ -1072,7 +1181,7 @@ const Settings: React.FC = () => {
           </p>
           <Button
             className="bg-primary text-white"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate("/login")}
           >
             Go to Login
           </Button>
@@ -1087,9 +1196,9 @@ const Settings: React.FC = () => {
         className="min-h-screen bg-background text-foreground"
         style={{
           background:
-            'radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          backgroundColor: 'rgba(0, 15, 49, 0.05)',
+            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+          backgroundColor: "rgba(0, 15, 49, 0.05)",
         }}
       >
         <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl relative z-50">
@@ -1101,8 +1210,12 @@ const Settings: React.FC = () => {
                 className="w-10 h-10 dark:filter dark:invert dark:brightness-0 dark:saturate-0"
               />
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">BrewPost</h1>
-                <p className="text-xs text-muted-foreground">AI Content Generator</p>
+                <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  BrewPost
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  AI Content Generator
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1110,7 +1223,7 @@ const Settings: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 aria-label="ESC"
-                onClick={() => navigate('/app')}
+                onClick={() => navigate("/app")}
                 className="text-muted-foreground hover:text-foreground"
               >
                 ESC

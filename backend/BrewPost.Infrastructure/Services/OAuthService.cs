@@ -112,20 +112,38 @@ public class OAuthService : IOAuthService
         }
 
         var responseContent = await response.Content.ReadAsStringAsync();
-        var tokenData = JsonSerializer.Deserialize<JsonElement>(responseContent);
+        string accessToken = null;
+        string? refreshToken = null;
+        int expiresIn = 3600;
+        string tokenType = "Bearer";
 
-        var accessToken = tokenData.GetProperty("access_token").GetString() ?? throw new InvalidOperationException("No access token received");
-        var refreshToken = tokenData.TryGetProperty("refresh_token", out var refreshProp) ? refreshProp.GetString() : null;
-        var expiresIn = tokenData.TryGetProperty("expires_in", out var expiresProp) ? expiresProp.GetInt32() : 3600;
+        if (socialProvider.ToLower() == "github")
+        {
+            // GitHub returns application/x-www-form-urlencoded
+            var query = System.Web.HttpUtility.ParseQueryString(responseContent);
+            accessToken = query["access_token"];
+            tokenType = query["token_type"] ?? "bearer";
+        }
+        else
+        {
+            // Standard JSON response for other providers
+            var tokenData = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            accessToken = tokenData.GetProperty("access_token").GetString() 
+                        ?? throw new InvalidOperationException("No access token received");
+            refreshToken = tokenData.TryGetProperty("refresh_token", out var refreshProp) ? refreshProp.GetString() : null;
+            expiresIn = tokenData.TryGetProperty("expires_in", out var expiresProp) ? expiresProp.GetInt32() : 3600;
+            tokenType = tokenData.TryGetProperty("token_type", out var typeProp) ? typeProp.GetString() ?? "Bearer" : "Bearer";
+        }
 
         return new OAuthTokenResponse
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn),
-            TokenType = tokenData.TryGetProperty("token_type", out var typeProp) ? typeProp.GetString() ?? "Bearer" : "Bearer"
+            TokenType = tokenType
         };
     }
+
 
     /// <summary>
     /// Fetches the user's profile from the social provider using the access token.
@@ -135,10 +153,33 @@ public class OAuthService : IOAuthService
         if (!_providers.TryGetValue(socialProvider.ToLower(), out var providerConfig))
             throw new ArgumentException($"Unsupported OAuth provider: {socialProvider}");
 
-        _httpClient.DefaultRequestHeaders.Clear();
-        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+        var request = new HttpRequestMessage(HttpMethod.Get, providerConfig.UserInfoEndpoint);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-        var response = await _httpClient.GetAsync(providerConfig.UserInfoEndpoint);
+        // Provider-specific headers
+        if (socialProvider.ToLower() == "github")
+        {
+            // GitHub requires a User-Agent header and recommends the vnd.github+json accept header
+            request.Headers.UserAgent.ParseAdd("BrewPostApp/1.0 (https://brewpost.app)");
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        }
+        else if (socialProvider.ToLower() == "reddit")
+        {
+            // Reddit requires a User-Agent header
+            request.Headers.UserAgent.ParseAdd("BrewPostApp/1.0 (https://brewpost.app)");
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        }
+        else if (socialProvider.ToLower() == "pinterest")
+        {
+            // Pinterest requires User-Agent and specific Accept header
+            request.Headers.UserAgent.ParseAdd("BrewPostApp/1.0 (https://brewpost.app)");
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        }
+
+        var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
@@ -153,6 +194,9 @@ public class OAuthService : IOAuthService
             "instagram" => ParseInstagramProfile(userData),
             "facebook" => ParseFacebookProfile(userData),
             "linkedin" => ParseLinkedInProfile(userData),
+            "github" => ParseGitHubProfile(userData),
+            "pinterest" => ParsePinterestProfile(userData),
+            "reddit" => ParseRedditProfile(userData),
             _ => throw new ArgumentException($"Unsupported provider: {socialProvider}")
         };
     }
@@ -205,20 +249,23 @@ public class OAuthService : IOAuthService
 
     private Dictionary<string, OAuthProvider> InitializeProviders()
     {
+        // Helper to get configuration from multiple sources
         string GetValue(params string[] keys)
         {
-            foreach (var k in keys)
+            foreach (var key in keys)
             {
-                var v = _configuration[k];
-                if (!string.IsNullOrWhiteSpace(v)) return v;
+                var value = _configuration[key]; // picks up env vars or AWS secrets if configured
+                if (!string.IsNullOrWhiteSpace(value))
+                    return value;
             }
             return string.Empty;
         }
 
         var providers = new Dictionary<string, OAuthProvider>();
 
-        var igClientId = GetValue("OAuth:Instagram:ClientId", "INSTAGRAM_CLIENT_ID");
-        var igClientSecret = GetValue("OAuth:Instagram:ClientSecret", "INSTAGRAM_CLIENT_SECRET");
+        // Instagram
+        var igClientId = GetValue("INSTAGRAM_CLIENT_ID", "OAuth:Instagram:ClientId");
+        var igClientSecret = GetValue("INSTAGRAM_CLIENT_SECRET", "OAuth:Instagram:ClientSecret");
         if (!string.IsNullOrWhiteSpace(igClientId) && !string.IsNullOrWhiteSpace(igClientSecret))
         {
             providers["instagram"] = new OAuthProvider
@@ -232,8 +279,9 @@ public class OAuthService : IOAuthService
             };
         }
 
-        var fbClientId = GetValue("OAuth:Facebook:ClientId", "FACEBOOK_CLIENT_ID");
-        var fbClientSecret = GetValue("OAuth:Facebook:ClientSecret", "FACEBOOK_CLIENT_SECRET");
+        // Facebook
+        var fbClientId = GetValue("FACEBOOK_CLIENT_ID", "OAuth:Facebook:ClientId");
+        var fbClientSecret = GetValue("FACEBOOK_CLIENT_SECRET", "OAuth:Facebook:ClientSecret");
         if (!string.IsNullOrWhiteSpace(fbClientId) && !string.IsNullOrWhiteSpace(fbClientSecret))
         {
             providers["facebook"] = new OAuthProvider
@@ -247,8 +295,9 @@ public class OAuthService : IOAuthService
             };
         }
 
-        var liClientId = GetValue("OAuth:LinkedIn:ClientId", "LINKEDIN_CLIENT_ID");
-        var liClientSecret = GetValue("OAuth:LinkedIn:ClientSecret", "LINKEDIN_CLIENT_SECRET");
+        // LinkedIn
+        var liClientId = GetValue("LINKEDIN_CLIENT_ID", "OAuth:LinkedIn:ClientId");
+        var liClientSecret = GetValue("LINKEDIN_CLIENT_SECRET", "OAuth:LinkedIn:ClientSecret");
         if (!string.IsNullOrWhiteSpace(liClientId) && !string.IsNullOrWhiteSpace(liClientSecret))
         {
             providers["linkedin"] = new OAuthProvider
@@ -259,6 +308,70 @@ public class OAuthService : IOAuthService
                 TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
                 UserInfoEndpoint = "https://api.linkedin.com/v2/people/~?projection=(id,firstName,lastName,emailAddress,profilePicture(displayImage~:playableStreams))",
                 Scope = "r_liteprofile r_emailaddress w_member_social"
+            };
+        }
+
+        // X (Twitter)
+        var xClientId = GetValue("X_CLIENT_ID", "OAuth:X:ClientId");
+        var xClientSecret = GetValue("X_CLIENT_SECRET", "OAuth:X:ClientSecret");
+        if (!string.IsNullOrWhiteSpace(xClientId) && !string.IsNullOrWhiteSpace(xClientSecret))
+        {
+            providers["x"] = new OAuthProvider
+            {
+                ClientId = xClientId,
+                ClientSecret = xClientSecret,
+                AuthorizationEndpoint = "https://twitter.com/i/oauth2/authorize",
+                TokenEndpoint = "https://api.twitter.com/2/oauth2/token",
+                UserInfoEndpoint = "https://api.twitter.com/2/users/me",
+                Scope = "tweet.read users.read offline.access"
+            };
+        }
+
+        // GitHub
+        var ghClientId = GetValue("OAuth:GitHub:ClientId", "GITHUB_CLIENT_ID");
+        var ghClientSecret = GetValue("OAuth:GitHub:ClientSecret", "GITHUB_CLIENT_SECRET");
+        if (!string.IsNullOrWhiteSpace(ghClientId) && !string.IsNullOrWhiteSpace(ghClientSecret))
+        {
+            providers["github"] = new OAuthProvider
+            {
+                ClientId = ghClientId,
+                ClientSecret = ghClientSecret,
+                AuthorizationEndpoint = "https://github.com/login/oauth/authorize",
+                TokenEndpoint = "https://github.com/login/oauth/access_token",
+                UserInfoEndpoint = "https://api.github.com/user",
+                Scope = "read:user user:email"
+            };
+        }
+
+        // Pinterest
+        var pinterestClientId = GetValue("PINTEREST_CLIENT_ID", "OAuth:Pinterest:ClientId");
+        var pinterestClientSecret = GetValue("PINTEREST_CLIENT_SECRET", "OAuth:Pinterest:ClientSecret");
+        if (!string.IsNullOrWhiteSpace(pinterestClientId) && !string.IsNullOrWhiteSpace(pinterestClientSecret))
+        {
+            providers["pinterest"] = new OAuthProvider
+            {
+                ClientId = pinterestClientId,
+                ClientSecret = pinterestClientSecret,
+                AuthorizationEndpoint = "https://api.pinterest.com/v5/oauth/authorize",
+                TokenEndpoint = "https://api.pinterest.com/v5/oauth/token",
+                UserInfoEndpoint = "https://api.pinterest.com/v5/user_account",
+                Scope = "user_accounts:read,boards:read,pins:read"
+            };
+        }
+
+        // Reddit
+        var redditClientId = GetValue("REDDIT_CLIENT_ID", "OAuth:Reddit:ClientId");
+        var redditClientSecret = GetValue("REDDIT_CLIENT_SECRET", "OAuth:Reddit:ClientSecret");
+        if (!string.IsNullOrWhiteSpace(redditClientId) && !string.IsNullOrWhiteSpace(redditClientSecret))
+        {
+            providers["reddit"] = new OAuthProvider
+            {
+                ClientId = redditClientId,
+                ClientSecret = redditClientSecret,
+                AuthorizationEndpoint = "https://www.reddit.com/api/v1/authorize",
+                TokenEndpoint = "https://www.reddit.com/api/v1/access_token",
+                UserInfoEndpoint = "https://oauth.reddit.com/api/v1/me",
+                Scope = "identity mysubreddits"
             };
         }
 
@@ -311,6 +424,73 @@ public class OAuthService : IOAuthService
                 ["linkedin_id"] = userData.GetProperty("id").GetString() ?? string.Empty,
                 ["first_name"] = firstName,
                 ["last_name"] = lastName
+            }
+        };
+    }
+
+    private static SocialUserProfile ParseGitHubProfile(JsonElement userData)
+    {
+        string providerId = string.Empty;
+        if (userData.TryGetProperty("id", out var idProp))
+        {
+            providerId = idProp.ValueKind == JsonValueKind.Number ? idProp.GetInt64().ToString() : idProp.GetString() ?? string.Empty;
+        }
+
+        var login = userData.TryGetProperty("login", out var loginProp) ? loginProp.GetString() ?? string.Empty : string.Empty;
+        var name = userData.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? login : login;
+        var email = userData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
+        var avatar = userData.TryGetProperty("avatar_url", out var avProp) ? avProp.GetString() : null;
+
+        return new SocialUserProfile
+        {
+            ProviderId = providerId,
+            Name = name,
+            Email = email,
+            AvatarUrl = avatar,
+            AdditionalData = new Dictionary<string, object>
+            {
+                ["login"] = login,
+                ["github_id"] = providerId
+            }
+        };
+    }
+
+    private static SocialUserProfile ParsePinterestProfile(JsonElement userData)
+    {
+        // Pinterest /user_account endpoint returns data in a "data" wrapper
+        var data = userData.TryGetProperty("data", out var dataProp) ? dataProp : userData;
+
+        string providerId = data.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
+        var username = data.TryGetProperty("username", out var usernameProp) ? usernameProp.GetString() ?? string.Empty : string.Empty;
+        var email = data.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
+
+        return new SocialUserProfile
+        {
+            ProviderId = providerId,
+            Name = username,
+            Email = email,
+            AdditionalData = new Dictionary<string, object>
+            {
+                ["username"] = username,
+                ["pinterest_id"] = providerId
+            }
+        };
+    }
+
+    private static SocialUserProfile ParseRedditProfile(JsonElement userData)
+    {
+        string providerId = userData.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
+        var name = userData.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? string.Empty : string.Empty;
+
+        return new SocialUserProfile
+        {
+            ProviderId = providerId,
+            Name = name,
+            Email = string.Empty, // Reddit does not provide email via OAuth
+            AdditionalData = new Dictionary<string, object>
+            {
+                ["reddit_name"] = name,
+                ["reddit_id"] = providerId
             }
         };
     }

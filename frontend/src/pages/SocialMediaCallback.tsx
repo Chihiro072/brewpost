@@ -25,7 +25,7 @@ const SocialCallback: React.FC = () => {
       return;
     }
 
-    const redirectUri = `${window.location.origin}/settings/connections/callback/${provider}`;
+    const redirectUri = `${window.location.origin}/settings/connections/callback/`;
 
     const linkAccount = async () => {
       try {
@@ -55,8 +55,8 @@ const SocialCallback: React.FC = () => {
         setStatus("success");
         setMessage(data.message || `Connected to ${provider} successfully.`);
 
-        // Redirect back to Connections page after short delay
-        setTimeout(() => navigate("/settings/connections"), 1500);
+        // Redirect back to Settings page (connections tab) after short delay
+        setTimeout(() => navigate("/settings?tab=connections"), 1500);
       } catch (err: any) {
         setStatus("error");
         setMessage(err?.message || "Failed to link social account.");
@@ -79,7 +79,7 @@ const SocialCallback: React.FC = () => {
         )}
         {status !== "loading" && (
           <div className="mt-4">
-            <Button onClick={() => navigate("/settings/connections")}>
+            <Button onClick={() => navigate("/settings?tab=connections")}>
               Back to Connections
             </Button>
           </div>
