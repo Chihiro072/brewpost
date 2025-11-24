@@ -71,6 +71,11 @@ const App = () => (
                   path="/settings/connections/callback/:provider"
                   element={<SocialCallback />}
                 />
+                {/* Accept callback without provider in the path (provider may be passed via query param) */}
+                <Route
+                  path="/settings/connections/callback"
+                  element={<SocialCallback />}
+                />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

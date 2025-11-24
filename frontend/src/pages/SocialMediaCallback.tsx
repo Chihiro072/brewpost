@@ -8,7 +8,12 @@ import { AlertCircle } from "lucide-react";
 const SocialCallback: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { provider } = useParams<{ provider: string }>();
+  const params = useParams<{ provider?: string }>();
+  const { provider: providerParam } = params;
+  const provider =
+    providerParam ||
+    new URLSearchParams(location.search).get("provider") ||
+    undefined;
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -18,6 +23,7 @@ const SocialCallback: React.FC = () => {
     const query = new URLSearchParams(location.search);
     const code = query.get("code");
     const state = query.get("state"); // optional if you use CSRF/state
+    const provider = providerParam || query.get("provider") || undefined;
 
     if (!provider || !code) {
       setStatus("error");
@@ -64,7 +70,7 @@ const SocialCallback: React.FC = () => {
     };
 
     linkAccount();
-  }, [location.search, provider, navigate]);
+  }, [location.search, providerParam, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background text-white">

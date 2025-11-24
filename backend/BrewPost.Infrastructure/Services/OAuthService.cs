@@ -300,14 +300,20 @@ public class OAuthService : IOAuthService
         var liClientSecret = GetValue("LINKEDIN_CLIENT_SECRET", "OAuth:LinkedIn:ClientSecret");
         if (!string.IsNullOrWhiteSpace(liClientId) && !string.IsNullOrWhiteSpace(liClientSecret))
         {
+            // Allow overriding LinkedIn scopes via configuration (useful if app hasn't been approved for certain scopes)
+            // Default to v2 API scopes (v1 scopes like r_liteprofile are deprecated)
+            var liScope = GetValue("OAuth:LinkedIn:Scope", "LINKEDIN_SCOPE");
+            if (string.IsNullOrWhiteSpace(liScope)) liScope = "openid profile email";
+
             providers["linkedin"] = new OAuthProvider
             {
                 ClientId = liClientId,
                 ClientSecret = liClientSecret,
                 AuthorizationEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
                 TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
-                UserInfoEndpoint = "https://api.linkedin.com/v2/people/~?projection=(id,firstName,lastName,emailAddress,profilePicture(displayImage~:playableStreams))",
-                Scope = "r_liteprofile r_emailaddress w_member_social"
+                // Using v2 API userinfo endpoint
+                UserInfoEndpoint = "https://api.linkedin.com/v2/userinfo",
+                Scope = liScope
             };
         }
 
@@ -406,24 +412,26 @@ public class OAuthService : IOAuthService
 
     private static SocialUserProfile ParseLinkedInProfile(JsonElement userData)
     {
-        var firstName = userData.TryGetProperty("firstName", out var firstNameProp) &&
-                        firstNameProp.TryGetProperty("localized", out var firstLocalizedProp) &&
-                        firstLocalizedProp.TryGetProperty("en_US", out var firstEnProp) ? firstEnProp.GetString() ?? string.Empty : string.Empty;
-
-        var lastName = userData.TryGetProperty("lastName", out var lastNameProp) &&
-                       lastNameProp.TryGetProperty("localized", out var lastLocalizedProp) &&
-                       lastLocalizedProp.TryGetProperty("en_US", out var lastEnProp) ? lastEnProp.GetString() ?? string.Empty : string.Empty;
+        // LinkedIn v2 API returns a simpler structure compared to v1
+        // Response format: { "sub": "...", "email_verified": true, "name": "...", "preferred_username": "...", "given_name": "...", "family_name": "...", "email": "..." }
+        
+        var sub = userData.TryGetProperty("sub", out var subProp) ? subProp.GetString() ?? string.Empty : string.Empty;
+        var name = userData.TryGetProperty("name", out var nameProp) ? nameProp.GetString() ?? string.Empty : string.Empty;
+        var givenName = userData.TryGetProperty("given_name", out var givenProp) ? givenProp.GetString() ?? string.Empty : string.Empty;
+        var familyName = userData.TryGetProperty("family_name", out var familyProp) ? familyProp.GetString() ?? string.Empty : string.Empty;
+        var email = userData.TryGetProperty("email", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty;
 
         return new SocialUserProfile
         {
-            ProviderId = userData.GetProperty("id").GetString() ?? string.Empty,
-            Name = $"{firstName} {lastName}".Trim(),
-            Email = userData.TryGetProperty("emailAddress", out var emailProp) ? emailProp.GetString() ?? string.Empty : string.Empty,
+            ProviderId = sub,
+            Name = name,
+            Email = email,
             AdditionalData = new Dictionary<string, object>
             {
-                ["linkedin_id"] = userData.GetProperty("id").GetString() ?? string.Empty,
-                ["first_name"] = firstName,
-                ["last_name"] = lastName
+                ["linkedin_id"] = sub,
+                ["given_name"] = givenName,
+                ["family_name"] = familyName,
+                ["email_verified"] = userData.TryGetProperty("email_verified", out var verifiedProp) ? verifiedProp.GetBoolean() : false
             }
         };
     }

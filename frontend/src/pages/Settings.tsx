@@ -370,8 +370,8 @@ const SettingsContent: React.FC<{
       if (!socialConnections[platform]) {
         // CONNECT social account
         // Step 1: Get authorization URL
-        // New
-        const redirectUri = `${window.location.origin}/settings/connections/callback/${platform}`;
+        // Use a consistent redirect URI (no platform suffix) so it matches the callback handler
+        const redirectUri = `${window.location.origin}/settings/connections/callback/`;
         const authResp = await fetch(
           `${apiBase}/api/social/authorize/${platform}?redirectUri=${encodeURIComponent(
             redirectUri

@@ -268,7 +268,8 @@ builder.Services.AddCors(options =>
             "http://localhost:5173",
             "http://localhost:8080",
             "http://localhost:8081",
-            "http://98.93.201.217"
+            "http://98.93.201.217",
+            "http://brewpostapp.duckdns.org"
         ) // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -285,8 +286,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseHttpsRedirection();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
