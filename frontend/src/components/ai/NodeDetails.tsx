@@ -145,8 +145,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingPrompt(true);
     try {
       const BACKEND_URL =
-        import.meta.env.VITE_API_BASE_URL ||
-        "http://localhost:5044";
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
 
       const response = await fetch(
         `${BACKEND_URL}/api/generate-enhanced-prompt`,
@@ -199,8 +198,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingImage(true);
     try {
       const BACKEND_URL =
-        import.meta.env.VITE_API_BASE_URL ||
-        "http://localhost:5044";
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
 
       // Enhance prompt with template settings and stronger color emphasis
       let enhancedPrompt = enhanceImagePromptWithTemplate(
@@ -884,6 +882,32 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                     </Button>
                   </div>
                 </div>
+                <div className="pt-2">
+                  <label className="text-sm font-medium block">
+                    Custom Time
+                  </label>
+                  <input
+                    type="time"
+                    value={selectedTime}
+                    onChange={(e) => {
+                      const value = e.target.value; // "HH:MM"
+                      setSelectedTime(value);
+
+                      if (editedNode?.scheduledDate) {
+                        const [h, m] = value.split(":").map(Number);
+                        const newDate = new Date(editedNode.scheduledDate);
+                        newDate.setHours(h, m, 0, 0);
+
+                        setEditedNode((prev) =>
+                          prev ? { ...prev, scheduledDate: newDate } : null
+                        );
+                      }
+                    }}
+                    className="w-full border rounded-md p-2 text-sm bg-black text-white"
+                    style={{ colorScheme: "dark" }} // ensures the time picker icon stays white
+                  />
+                </div>
+
                 <div className="flex gap-2 border-t pt-3">
                   <Button
                     variant="outline"
