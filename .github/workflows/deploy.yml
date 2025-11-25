@@ -15,9 +15,9 @@ jobs:
       - name: Copy files to EC2 and deploy
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: 98.93.201.217
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: id_ed25519
           script: |
             cd /home/ubuntu/brewpost
 
