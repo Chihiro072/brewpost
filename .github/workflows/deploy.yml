@@ -1,0 +1,39 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy files to EC2 and deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/brewpost
+
+            echo "Pulling latest code..."
+            git pull
+
+            echo "Building backend..."
+            cd backend/brewpost.api
+            dotnet publish -c Release -o ./publish
+
+            echo "Building frontend..."
+            cd ../../frontend
+            npm install
+            npm run build0
+
+            echo "Restarting services..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart brewpost
+            sudo systemctl restart nginx

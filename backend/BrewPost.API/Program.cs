@@ -269,7 +269,8 @@ builder.Services.AddCors(options =>
             "http://localhost:8080",
             "http://localhost:8081",
             "http://98.93.201.217",
-            "http://brewpostapp.duckdns.org"
+            "http://brewpostapp.duckdns.org",
+            "https://brewpostapp.duckdns.org"
         ) // React dev servers
               .AllowAnyHeader()
               .AllowAnyMethod()
