@@ -9,6 +9,7 @@ import { enhanceImagePromptWithTemplate, applyTemplateToImage, applyComponentsTo
 import { useState, useRef, useEffect } from 'react'
 import { nodeService } from '@/services/nodeService'
 import { toast } from 'sonner'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface SelectedComponent {
   id: string
@@ -71,6 +72,7 @@ export function CircleCanvas({
   selectedNode,
   onSaveNode = () => {},
 }: CircleCanvasProps) {
+  const { t } = useLanguage()
   // Use props instead of local state for selectedComponents
   const selectedComponents = propSelectedComponents;
 
@@ -262,7 +264,7 @@ export function CircleCanvas({
     
     if (!selectedComponents.length) {
       console.warn('[CircleCanvas] No components selected for image generation');
-      toast.error('Please select at least one component to generate an image');
+      toast.error(t('canvas.select_component_warning'));
       return;
     }
 
@@ -301,7 +303,7 @@ export function CircleCanvas({
           if (isTemporaryId) {
             console.warn('[CircleCanvas] ⚠️ Cannot update node with temporary ID:', selectedNode.id);
             console.warn('[CircleCanvas] This node needs to be created in the backend first');
-            toast.warning('Node needs to be saved to backend before updating with generated image');
+            toast.warning(t('canvas.node_save_warning'));
             
             // Still update the local state for UI purposes
             const updatedNode = {
@@ -313,7 +315,7 @@ export function CircleCanvas({
             
             // Call onSaveNode but it won't persist to backend due to temporary ID
             onSaveNode(updatedNode);
-            toast.success('Image generated successfully! (Local update only)');
+            toast.success(t('canvas.local_update_success'));
           } else {
             // This is a proper GUID, safe to update
             const updatedNode = {
@@ -327,13 +329,13 @@ export function CircleCanvas({
             onSaveNode(updatedNode);
             console.log('[CircleCanvas] Node updated successfully with final image');
             
-            toast.success('Image generated and saved successfully!');
+            toast.success(t('canvas.saved_success'));
           }
         }
       }
     } catch (error) {
       console.error('[CircleCanvas] Error in image generation process:', error);
-      toast.error('Failed to generate image. Please try again.');
+      toast.error(t('canvas.failed'));
     } finally {
       setIsGenerating(false);
     }
@@ -557,7 +559,7 @@ export function CircleCanvas({
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
                     <div className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
-                      Click to preview
+                      {t('canvas.preview_click')}
                     </div>
                   </div>
                 </div>
@@ -572,9 +574,9 @@ export function CircleCanvas({
                     ].join(" ")}
                     onClick={() => onForecastAnalysisClick?.()}
                   >
-                    {isGenerating === "GENERATING" ? "Generating..." : 
+                    {isGenerating === "GENERATING" ? t('canvas.generating') : 
                      selectedNode ? selectedNode.title.length > 20 ? selectedNode.title.slice(0, 20) + '...' : selectedNode.title :
-                     selectedComponents.length > 0 ? "Analyze" : "BrewPost Canvas"}
+                     selectedComponents.length > 0 ? t('canvas.analyze') : t('canvas.title')}
                   </h3>
 
                 </>
@@ -695,12 +697,12 @@ export function CircleCanvas({
                 {isGenerating === "GENERATING" ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
-                    Generating...
+                    {t('canvas.generating')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    {selectedNode ? 'Generate Image' : `Generate (${selectedComponents.length})`}
+                    {selectedNode ? t('canvas.generate_image') : t('canvas.generate_n', { n: selectedComponents.length })}
                   </>
                 )}
               </Button>

@@ -1,45 +1,52 @@
-"use client"
+'use client';
 
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import React, { useState, useEffect } from "react"
-import CustomModal from "@/components/custom-modal"
-import { X } from "lucide-react"
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import CustomModal from '@/components/custom-modal';
+import { X } from 'lucide-react';
 
 interface Component {
-  id: string
-  name: string
-  category: string
-  color: string
-  type?: "online_trend" | "campaign_type" | "promotion_type"
+  id: string;
+  name: string;
+  category: string;
+  color: string;
+  type?: 'online_trend' | 'campaign_type' | 'promotion_type';
 }
 
 interface CampaignComponent {
-  id: string
-  type: "online_trend" | "campaign_type" | "promotion_type"
-  title: string
-  description: string
-  data?: unknown
-  relevanceScore: number
-  category: string
-  keywords: string[]
-  impact: "high" | "medium" | "low"
+  id: string;
+  type: 'online_trend' | 'campaign_type' | 'promotion_type';
+  title: string;
+  description: string;
+  data?: unknown;
+  relevanceScore: number;
+  category: string;
+  keywords: string[];
+  impact: 'high' | 'medium' | 'low';
 }
-const CATEGORIES = ["Online trend data", "Campaign Type", "Promotion Type"] as const
-const STORAGE_KEY = "kedai.customComponents.v1"
+const CATEGORIES = [
+  'Online trend data',
+  'Campaign Type',
+  'Promotion Type',
+] as const;
+const STORAGE_KEY = 'kedai.customComponents.v1';
 
 interface ComponentSidebarProps {
-  onAddComponent: (component: Component) => void
-  generatedComponents?: CampaignComponent[]
-  onRemoveFromCanvas?: (id: string) => void
-  isLoadingAi?: boolean
-  generationProgress?: string | boolean
+  onAddComponent: (component: Component) => void;
+  generatedComponents?: CampaignComponent[];
+  onRemoveFromCanvas?: (id: string) => void;
+  isLoadingAi?: boolean;
+  generationProgress?: string | boolean;
 }
 
-function colorByType(t: CampaignComponent["type"]) {
-  if (t === "promotion_type") return "bg-gradient-to-br from-blue-500 via-blue-400 to-blue-600"
-  if (t === "online_trend") return "bg-gradient-to-br from-purple-500 via-purple-400 to-indigo-500"
-  return "bg-gradient-to-br from-pink-500 via-rose-400 to-red-500"
+function colorByType(t: CampaignComponent['type']) {
+  if (t === 'promotion_type')
+    return 'bg-gradient-to-br from-blue-500 via-blue-400 to-blue-600';
+  if (t === 'online_trend')
+    return 'bg-gradient-to-br from-purple-500 via-purple-400 to-indigo-500';
+  return 'bg-gradient-to-br from-pink-500 via-rose-400 to-red-500';
 }
 
 export function ComponentSidebar({
@@ -49,14 +56,15 @@ export function ComponentSidebar({
   isLoadingAi = false,
   generationProgress = false,
 }: ComponentSidebarProps) {
+  const { t } = useLanguage();
   // Only AI-generated components (no mocks)
-  const [allComponents, setAllComponents] = useState<Component[]>([])
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [mounted, setMounted] = useState(false)
-  const [customComponents, setCustomComponents] = useState<Component[]>([])
-  const [showModal, setShowModal] = useState(false)
-  const [newName, setNewName] = useState("")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [allComponents, setAllComponents] = useState<Component[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
+  const [customComponents, setCustomComponents] = useState<Component[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Normalize AI components to same visual spec as the original cards
   useEffect(() => {
@@ -64,84 +72,106 @@ export function ComponentSidebar({
       id: comp.id,
       name: comp.title,
       category:
-        comp.type === "online_trend"
-          ? "Online trend data"
-          : comp.type === "campaign_type"
-          ? "Campaign Type"
-          : comp.type === "promotion_type"
-          ? "Promotion Type"
-          : "Suggested",
+        comp.type === 'online_trend'
+          ? 'Online trend data'
+          : comp.type === 'campaign_type'
+          ? 'Campaign Type'
+          : comp.type === 'promotion_type'
+          ? 'Promotion Type'
+          : 'Suggested',
       color: colorByType(comp.type),
       type: comp.type,
-    }))
+    }));
 
     // uniquify by id (in case backend sends duplicates)
-    const unique = converted.filter((c, i, arr) => i === arr.findIndex((x) => x.id === c.id))
-    setAllComponents(unique)
-  }, [generatedComponents])
-
-  useEffect(() => { setMounted(true) }, [])
+    const unique = converted.filter(
+      (c, i, arr) => i === arr.findIndex((x) => x.id === c.id)
+    );
+    setAllComponents(unique);
+  }, [generatedComponents]);
 
   useEffect(() => {
-    if (!mounted) return
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setCustomComponents(JSON.parse(raw) as Component[])
-    } catch (e) { console.debug('[ComponentSidebar] failed to read custom components', e) }
-  }, [mounted])
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setCustomComponents(JSON.parse(raw) as Component[]);
+    } catch (e) {
+      console.debug('[ComponentSidebar] failed to read custom components', e);
+    }
+  }, [mounted]);
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customComponents))
-    } catch (e) { console.debug('[ComponentSidebar] failed to save custom components', e) }
-  }, [customComponents, mounted])
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customComponents));
+    } catch (e) {
+      console.debug('[ComponentSidebar] failed to save custom components', e);
+    }
+  }, [customComponents, mounted]);
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted) return;
     const onStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
-        try { setCustomComponents(JSON.parse(e.newValue) as Component[]) } catch (err) { console.debug('[ComponentSidebar] failed to parse storage event', err) }
+        try {
+          setCustomComponents(JSON.parse(e.newValue) as Component[]);
+        } catch (err) {
+          console.debug(
+            '[ComponentSidebar] failed to parse storage event',
+            err
+          );
+        }
       }
-    }
-    window.addEventListener("storage", onStorage)
-    return () => window.removeEventListener("storage", onStorage)
-  }, [mounted])
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [mounted]);
 
   function openAddModal() {
-    setNewName("")
-    setShowModal(true)
+    setNewName('');
+    setShowModal(true);
   }
 
   function handleCreateCustom() {
-    const name = newName.trim()
-    if (!name) return
-    const id = `custom-${Date.now()}`
+    const name = newName.trim();
+    if (!name) return;
+    const id = `custom-${Date.now()}`;
     setCustomComponents((s) => [
       ...s,
-      { id, name, category: "Custom", color: "bg-gradient-to-br from-green-500 via-emerald-400 to-green-600" },
-    ])
-    setShowModal(false)
-    setSelectedId(id)
+      {
+        id,
+        name,
+        category: 'Custom',
+        color: 'bg-gradient-to-br from-green-500 via-emerald-400 to-green-600',
+      },
+    ]);
+    setShowModal(false);
+    setSelectedId(id);
   }
 
   function handleClickCustom(component: Component) {
-    setSelectedId(component.id)
-    onAddComponent(component)
+    setSelectedId(component.id);
+    onAddComponent(component);
   }
 
   function handleRemoveCustom(id: string) {
-    setCustomComponents((prev) => prev.filter((c) => c.id !== id))
-    if (selectedId === id) setSelectedId(null)
-    onRemoveFromCanvas?.(id)
+    setCustomComponents((prev) => prev.filter((c) => c.id !== id));
+    if (selectedId === id) setSelectedId(null);
+    onRemoveFromCanvas?.(id);
   }
 
-  if (!mounted) return null
+  if (!mounted) return null;
 
-if (isLoadingAi) {
+  if (isLoadingAi) {
     return (
       <div className="w-full h-56 border-t border-border/50 bg-card/80 backdrop-blur-xl p-3 overflow-y-auto flex items-center justify-center flex-shrink-0">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           @keyframes dot {
             0% { transform: translateY(0) }
             50% { transform: translateY(-4px) }
@@ -151,21 +181,31 @@ if (isLoadingAi) {
           .dot:nth-child(1){ animation: dot 1s infinite 0s }
           .dot:nth-child(2){ animation: dot 1s infinite 0.15s }
           .dot:nth-child(3){ animation: dot 1s infinite 0.3s }
-        `}} />
+        `,
+          }}
+        />
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <div className="text-sm font-medium">
-            {typeof generationProgress === 'string' ? generationProgress : 'Generating components'}
+            {typeof generationProgress === 'string'
+              ? generationProgress
+              : 'Generating components'}
           </div>
-          <div className="flex items-center"><span className="dot" /><span className="dot" /><span className="dot" /></div>
+          <div className="flex items-center">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot" />
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (isLoadingAi) {
     return (
       <div className="w-full h-56 border-t border-border/50 bg-card/80 backdrop-blur-xl p-3 overflow-y-auto flex items-center justify-center flex-shrink-0">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           @keyframes dot {
             0% { transform: translateY(0) }
             50% { transform: translateY(-4px) }
@@ -175,24 +215,33 @@ if (isLoadingAi) {
           .dot:nth-child(1){ animation: dot 1s infinite 0s }
           .dot:nth-child(2){ animation: dot 1s infinite 0.15s }
           .dot:nth-child(3){ animation: dot 1s infinite 0.3s }
-        `}} />
+        `,
+          }}
+        />
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
           <div className="text-sm font-medium">
-            {typeof generationProgress === 'string' ? generationProgress : 'Generating components'}
+            {typeof generationProgress === 'string'
+              ? generationProgress
+              : 'Generating components'}
           </div>
-          <div className="flex items-center"><span className="dot" /><span className="dot" /><span className="dot" /></div>
+          <div className="flex items-center">
+            <span className="dot" />
+            <span className="dot" />
+            <span className="dot" />
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="w-full h-56 border-t border-border/50 bg-card/80 backdrop-blur-xl p-3 overflow-y-auto flex-shrink-0">
       {/** Loading state: when AI is generating components, show a subtle skeleton instead of demo content */}
       {/** If parent passes isLoadingAi, don't render the demo/components list */}
-      
-      <style dangerouslySetInnerHTML={{
-        __html: `
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           .horizontal-scroll-container::-webkit-scrollbar {
             height: 8px;
           }
@@ -206,60 +255,91 @@ if (isLoadingAi) {
           .horizontal-scroll-container::-webkit-scrollbar-thumb:hover {
             background-color: rgb(59 198 255 / 0.7);
           }
-        `
-      }} />
+        `,
+        }}
+      />
       <div className="space-y-2">
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-1">Components</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-1">
+            {t('components.title')}
+          </h2>
           {allComponents.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              AI-generated components ({allComponents.length})
+              {t('components.ai_generated_count', {
+                count: allComponents.length,
+              })}
             </p>
           )}
         </div>
 
         {CATEGORIES.map((category) => {
-          const categoryComponents = allComponents.filter((c) => c.category === category)
+          const categoryComponents = allComponents.filter(
+            (c) => c.category === category
+          );
           // Debug: log AI raw results so you can inspect in browser console
-          console.debug('[ComponentSidebar] generatedComponents', { category, generatedComponents })
+          console.debug('[ComponentSidebar] generatedComponents', {
+            category,
+            generatedComponents,
+          });
 
-          const generatedInCategory = generatedComponents.filter((gc) =>
-            (gc.type === 'online_trend' && category === 'Online trend data') ||
-            (gc.type === 'campaign_type' && category === 'Campaign Type') ||
-            (gc.type === 'promotion_type' && category === 'Promotion Type')
-          )
+          const generatedInCategory = generatedComponents.filter(
+            (gc) =>
+              (gc.type === 'online_trend' &&
+                category === 'Online trend data') ||
+              (gc.type === 'campaign_type' && category === 'Campaign Type') ||
+              (gc.type === 'promotion_type' && category === 'Promotion Type')
+          );
 
-          const isExpanded = !!expanded[category]
-          const visible = isExpanded ? categoryComponents : categoryComponents.slice(0, 4)
-          const hiddenCount = Math.max(0, categoryComponents.length - visible.length)
+          const isExpanded = !!expanded[category];
+          const visible = isExpanded
+            ? categoryComponents
+            : categoryComponents.slice(0, 4);
+          const hiddenCount = Math.max(
+            0,
+            categoryComponents.length - visible.length
+          );
 
-          if (categoryComponents.length === 0) return null
+          if (categoryComponents.length === 0) return null;
 
           return (
             <div key={category} className="space-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    {category}
+                    {category === 'Online trend data'
+                      ? t('components.category_trend')
+                      : category === 'Campaign Type'
+                      ? t('components.category_campaign')
+                      : t('components.category_promotion')}
                   </Badge>
-                  
+
                   {generatedInCategory.length > 0 && (
-                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                      AI Generated ({generatedInCategory.length})
+                    <Badge
+                      variant="secondary"
+                      className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                    >
+                      {t('components.ai_generated_badge', {
+                        count: generatedInCategory.length,
+                      })}
                     </Badge>
                   )}
                 </div>
               </div>
 
               {/* Horizontal scrolling container */}
-              <div className="horizontal-scroll-container flex gap-3 overflow-x-auto overflow-y-hidden pb-2 px-1 scroll-smooth" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgb(120 255 214 / 0.5) transparent',
-                WebkitOverflowScrolling: 'touch'
-              }}>
+              <div
+                className="horizontal-scroll-container flex gap-3 overflow-x-auto overflow-y-hidden pb-2 px-1 scroll-smooth"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'rgb(120 255 214 / 0.5) transparent',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+              >
                 {categoryComponents.map((component) => {
-                  const generatedComp = generatedComponents.find((gc) => gc.id === component.id)
-                  const isGenerated = Boolean(generatedComp)
+                  const generatedComp = generatedComponents.find(
+                    (gc) => gc.id === component.id
+                  );
+                  const isGenerated = Boolean(generatedComp);
 
                   return (
                     <Card
@@ -301,13 +381,12 @@ if (isLoadingAi) {
                               <p className="text-[8px] text-muted-foreground line-clamp-2 leading-tight">
                                 {generatedComp.description}
                               </p>
-                              
                             </>
                           )}
                         </div>
                       </div>
                     </Card>
-                  )
+                  );
                 })}
               </div>
 
@@ -315,40 +394,43 @@ if (isLoadingAi) {
               {categoryComponents.length > 2 && (
                 <div className="flex justify-center -mt-1">
                   <span className="text-[9px] bg-background/50 backdrop-blur-sm border border-border/30 rounded-full px-1.5 py-0.5 text-muted-foreground select-none pointer-events-none">
-                    ← Scroll horizontally for more →
+                    {t('components.scroll_more')}
                   </span>
                 </div>
               )}
             </div>
-          )
+          );
         })}
 
         {/* Custom section */}
         <div className="space-y-1 -mt-1">
           <div className="flex items-center justify-between">
             <Badge variant="outline" className="text-xs">
-              Custom
+              {t('components.custom')}
             </Badge>
           </div>
-          <div className="horizontal-scroll-container flex gap-3 overflow-x-auto overflow-y-hidden pb-3 px-1 scroll-smooth" style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgb(120 255 214 / 0.5) transparent',
-            WebkitOverflowScrolling: 'touch'
-          }}>
+          <div
+            className="horizontal-scroll-container flex gap-3 overflow-x-auto overflow-y-hidden pb-3 px-1 scroll-smooth"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgb(120 255 214 / 0.5) transparent',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
             {customComponents.map((component) => {
-              const isSelected = selectedId === component.id
+              const isSelected = selectedId === component.id;
               const bubbleClass = isSelected
-                ? "w-10 h-10 rounded-full bg-gradient-to-br from-green-400 via-emerald-300 to-green-500 flex items-center justify-center"
-                : `w-10 h-10 rounded-full ${component.color} flex items-center justify-center group-hover:animate-float`
+                ? 'w-10 h-10 rounded-full bg-gradient-to-br from-green-400 via-emerald-300 to-green-500 flex items-center justify-center'
+                : `w-10 h-10 rounded-full ${component.color} flex items-center justify-center group-hover:animate-float`;
 
               return (
                 <div key={component.id} className="relative group">
                   <button
                     aria-label={`Remove ${component.name}`}
                     onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      handleRemoveCustom(component.id)
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemoveCustom(component.id);
                     }}
                     className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500/90 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg z-10"
                   >
@@ -369,7 +451,7 @@ if (isLoadingAi) {
                     </div>
                   </Card>
                 </div>
-              )
+              );
             })}
 
             {/* Add custom button */}
@@ -380,31 +462,43 @@ if (isLoadingAi) {
               <div className="w-8 h-8 rounded-full bg-yellow-300/30 flex items-center justify-center mb-1">
                 <div className="text-sm font-bold text-yellow-700">+</div>
               </div>
-              <p className="text-xs text-center text-card-foreground font-medium leading-tight">Add custom</p>
+              <p className="text-xs text-center text-card-foreground font-medium leading-tight">
+                {t('components.add_custom')}
+              </p>
             </Card>
           </div>
         </div>
       </div>
 
-      <CustomModal open={showModal} title="Create custom component" onClose={() => setShowModal(false)}>
+      <CustomModal
+        open={showModal}
+        title={t('components.create_custom_title')}
+        onClose={() => setShowModal(false)}
+      >
         <input
           className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm mb-3 placeholder:text-muted-foreground"
-          placeholder="Component name"
+          placeholder={t('components.component_name_placeholder')}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") handleCreateCustom()
+            if (e.key === 'Enter') handleCreateCustom();
           }}
         />
         <div className="flex gap-2 justify-end">
-          <button className="px-3 py-1 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors" onClick={() => setShowModal(false)}>
-            Cancel
+          <button
+            className="px-3 py-1 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+            onClick={() => setShowModal(false)}
+          >
+            {t('actions.cancel')}
           </button>
-          <button className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors" onClick={handleCreateCustom}>
-            Create
+          <button
+            className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            onClick={handleCreateCustom}
+          >
+            {t('components.create')}
           </button>
         </div>
       </CustomModal>
     </div>
-  )
+  );
 }

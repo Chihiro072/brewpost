@@ -1,18 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AIChat } from "@/components/ai/AIChat";
-import { NodeDetails } from "@/components/ai/NodeDetails";
-import { DraggableNodeCanvas } from "@/components/planning/DraggableNodeCanvas";
-import { CircleCanvas } from "@/components/canvas/CircleCanvas";
-import { ComponentSidebar } from "@/components/canvas/ComponentSidebar";
-import { TemplatePopup } from "@/components/template/TemplatePopup";
-import { AddNodeModal } from "@/components/modals/AddNodeModal";
-import { ScheduleConfirmationModal } from "@/components/modals/ScheduleConfirmationModal";
-import { CalendarModal } from "@/components/modals/CalendarModal";
-import { AnalysisPanel } from "@/components/analysis/AnalysisPanel";
-import type { GeneratedComponent } from "@/services/aiService";
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AIChat } from '@/components/ai/AIChat';
+import { NodeDetails } from '@/components/ai/NodeDetails';
+import { DraggableNodeCanvas } from '@/components/planning/DraggableNodeCanvas';
+import { CircleCanvas } from '@/components/canvas/CircleCanvas';
+import { ComponentSidebar } from '@/components/canvas/ComponentSidebar';
+import { TemplatePopup } from '@/components/template/TemplatePopup';
+import { AddNodeModal } from '@/components/modals/AddNodeModal';
+import { ScheduleConfirmationModal } from '@/components/modals/ScheduleConfirmationModal';
+import { CalendarModal } from '@/components/modals/CalendarModal';
+import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
+import type { GeneratedComponent } from '@/services/aiService';
 import {
   Sparkles,
   Calendar,
@@ -25,15 +25,16 @@ import {
   Image as ImageIcon,
   FileText,
   Layers,
-} from "lucide-react";
-import type { ContentNode } from "@/components/planning/PlanningPanel";
+} from 'lucide-react';
+import type { ContentNode } from '@/components/planning/PlanningPanel';
 import {
   HoverCard,
   HoverCardTrigger,
   HoverCardContent,
-} from "@/components/ui/hover-card";
-import { usersAPI } from "@/services/apiService";
-import { useSubscription } from "@/contexts/SubscriptionContext";
+} from '@/components/ui/hover-card';
+import { usersAPI } from '@/services/apiService';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RedesignedMainLayoutProps {
   children?: React.ReactNode;
@@ -49,14 +50,14 @@ type SelectedCanvasComponent = {
 
 type CampaignComponentLocal = {
   id: string;
-  type: "online_trend" | "campaign_type" | "promotion_type";
+  type: 'online_trend' | 'campaign_type' | 'promotion_type';
   title: string;
   description: string;
   data?: unknown;
   relevanceScore: number;
   category: string;
   keywords: string[];
-  impact: "high" | "medium" | "low";
+  impact: 'high' | 'medium' | 'low';
   color?: string;
 };
 
@@ -65,6 +66,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
 }) => {
   const navigate = useNavigate();
   const { plan } = useSubscription();
+  const { t } = useLanguage();
   const [nodes, setNodes] = useState<ContentNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<ContentNode | null>(null);
 
@@ -72,8 +74,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(false);
   const [activeRightTab, setActiveRightTab] = useState<
-    "content" | "image" | "analysis"
-  >("content");
+    'content' | 'image' | 'analysis'
+  >('content');
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -96,7 +98,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
   const prevNodeIdRef = useRef<string | null>(null);
-  const [displayName, setDisplayName] = useState<string>("Guest");
+  const [displayName, setDisplayName] = useState<string>('Guest');
 
   useEffect(() => {
     let isMounted = true;
@@ -105,50 +107,50 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         const profile = await usersAPI.getProfile();
         const name =
           (
-            (profile.firstName || "").trim() +
-            " " +
-            (profile.lastName || "").trim()
+            (profile.firstName || '').trim() +
+            ' ' +
+            (profile.lastName || '').trim()
           ).trim() ||
           profile.displayName ||
           profile.username ||
           profile.email ||
-          "Guest";
+          'Guest';
         if (isMounted) setDisplayName(name);
       } catch (err) {
         // Fallback to previous localStorage/JWT logic on error
         try {
           const storedName =
-            typeof window !== "undefined"
-              ? window.localStorage.getItem("userName")
+            typeof window !== 'undefined'
+              ? window.localStorage.getItem('userName')
               : null;
           if (storedName) {
             if (isMounted) setDisplayName(storedName);
             return;
           }
           let name =
-            (typeof window !== "undefined"
-              ? window.localStorage.getItem("userId")
-              : null) || "Guest";
+            (typeof window !== 'undefined'
+              ? window.localStorage.getItem('userId')
+              : null) || 'Guest';
           const authTokens =
-            typeof window !== "undefined"
-              ? window.localStorage.getItem("auth_tokens")
+            typeof window !== 'undefined'
+              ? window.localStorage.getItem('auth_tokens')
               : null;
           if (authTokens) {
             try {
               const toks = JSON.parse(authTokens);
               const idToken = toks?.id_token;
-              if (idToken && typeof idToken === "string") {
-                const parts = idToken.split(".");
+              if (idToken && typeof idToken === 'string') {
+                const parts = idToken.split('.');
                 if (parts.length >= 2) {
-                  const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+                  const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
                   const json = decodeURIComponent(
                     atob(b64)
-                      .split("")
+                      .split('')
                       .map(
                         (c) =>
-                          "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+                          '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
                       )
-                      .join("")
+                      .join('')
                   );
                   const payload = JSON.parse(json);
                   name =
@@ -172,83 +174,83 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   // Demo fallback components
   const DEMO_COMPONENTS = [
     {
-      id: "demo-2",
-      type: "online_trend",
-      title: "Social Media Buzz",
-      description: "Latest social media trends and engagement",
+      id: 'demo-2',
+      type: 'online_trend',
+      title: 'Social Media Buzz',
+      description: 'Latest social media trends and engagement',
       relevanceScore: 92,
-      category: "Online trend data",
-      keywords: ["social", "engagement", "viral"],
-      impact: "high",
-      color: "#0EA5E9",
+      category: 'Online trend data',
+      keywords: ['social', 'engagement', 'viral'],
+      impact: 'high',
+      color: '#0EA5E9',
     },
     {
-      id: "demo-1",
-      type: "promotion_type",
-      title: "Buy 1 Get 1",
-      description: "Classic BOGO promotion for limited time",
+      id: 'demo-1',
+      type: 'promotion_type',
+      title: 'Buy 1 Get 1',
+      description: 'Classic BOGO promotion for limited time',
       relevanceScore: 85,
-      category: "Promotion Type",
-      keywords: ["bogo", "buy one get one", "promotion"],
-      impact: "high",
-      color: "#D97706",
+      category: 'Promotion Type',
+      keywords: ['bogo', 'buy one get one', 'promotion'],
+      impact: 'high',
+      color: '#D97706',
     },
     {
-      id: "demo-3",
-      type: "campaign_type",
-      title: "Seasonal Campaign",
-      description: "Autumn-themed promotional campaign",
+      id: 'demo-3',
+      type: 'campaign_type',
+      title: 'Seasonal Campaign',
+      description: 'Autumn-themed promotional campaign',
       relevanceScore: 78,
-      category: "Campaign Type",
-      keywords: ["autumn", "seasonal", "promotion"],
-      impact: "medium",
-      color: "#FB7185",
+      category: 'Campaign Type',
+      keywords: ['autumn', 'seasonal', 'promotion'],
+      impact: 'medium',
+      color: '#FB7185',
     },
   ];
 
   const PROMOTION_DEMOS = [
     {
-      id: "promo-demo-1",
-      type: "promotion_type",
-      title: "Buy 1 Get 1",
-      description: "BOGO — buy one get one free for same item",
+      id: 'promo-demo-1',
+      type: 'promotion_type',
+      title: 'Buy 1 Get 1',
+      description: 'BOGO — buy one get one free for same item',
       relevanceScore: 88,
-      category: "Promotion Type",
-      keywords: ["bogo", "buy one get one"],
-      impact: "high",
-      color: "#06B6D4",
+      category: 'Promotion Type',
+      keywords: ['bogo', 'buy one get one'],
+      impact: 'high',
+      color: '#06B6D4',
     },
     {
-      id: "promo-demo-2",
-      type: "promotion_type",
-      title: "20% Off",
-      description: "Flat 20% off the entire purchase",
+      id: 'promo-demo-2',
+      type: 'promotion_type',
+      title: '20% Off',
+      description: 'Flat 20% off the entire purchase',
       relevanceScore: 82,
-      category: "Promotion Type",
-      keywords: ["20% off", "discount"],
-      impact: "medium",
-      color: "#F59E0B",
+      category: 'Promotion Type',
+      keywords: ['20% off', 'discount'],
+      impact: 'medium',
+      color: '#F59E0B',
     },
     {
-      id: "promo-demo-3",
-      type: "promotion_type",
-      title: "50% Off Second Item",
-      description: "Buy one, get 50% off the second item",
+      id: 'promo-demo-3',
+      type: 'promotion_type',
+      title: '50% Off Second Item',
+      description: 'Buy one, get 50% off the second item',
       relevanceScore: 86,
-      category: "Promotion Type",
-      keywords: ["50% off", "second item", "discount"],
-      impact: "high",
-      color: "#10B981",
+      category: 'Promotion Type',
+      keywords: ['50% off', 'second item', 'discount'],
+      impact: 'high',
+      color: '#10B981',
     },
   ];
 
   // Resolve per-user storage key for planner nodes
   const getPlannerStorageKey = (): string => {
     try {
-      const userId = window.localStorage.getItem("userId");
-      return `bp_planner_${userId || "guest"}`;
+      const userId = window.localStorage.getItem('userId');
+      return `bp_planner_${userId || 'guest'}`;
     } catch {
-      return "bp_planner_guest";
+      return 'bp_planner_guest';
     }
   };
 
@@ -271,52 +273,52 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
           setNodes(revived);
         }
       } catch (e) {
-        console.warn("Planner: failed to load local nodes, continuing:", e);
+        console.warn('Planner: failed to load local nodes, continuing:', e);
       }
 
       // Then: fetch latest from AppSync and merge over local
       try {
-        const { NodeAPI } = await import("@/services/nodeService");
-        const apiNodes = await NodeAPI.list("demo-project-123");
+        const { NodeAPI } = await import('@/services/nodeService');
+        const apiNodes = await NodeAPI.list('demo-project-123');
 
         const detectPostType = (
           title: string,
           content: string
-        ): "engaging" | "promotional" | "branding" => {
+        ): 'engaging' | 'promotional' | 'branding' => {
           const text = `${title} ${content}`.toLowerCase();
           if (
             text.match(
               /\b(shop|order|buy|get yours|discount|available now|limited|offer|sale|use code|sign up|join|link in bio|free shipping|diy|recipe|create|make|try|get|start)\b/
             )
           ) {
-            return "promotional";
+            return 'promotional';
           }
           if (
             text.match(
               /\b(crafted|behind the scenes|heritage|tradition|quality|meet|farmer|team|values|trust|story of|our process|secret|day in the life|art of|history|unveiling|science|grading|special)\b/
             )
           ) {
-            return "branding";
+            return 'branding';
           }
-          return "engaging";
+          return 'engaging';
         };
 
-        const normalizeType = (t: unknown): "post" | "image" | "story" => {
-          if (!t) return "post";
+        const normalizeType = (t: unknown): 'post' | 'image' | 'story' => {
+          if (!t) return 'post';
           const s = String(t).toLowerCase();
-          if (s === "image") return "image";
-          if (s === "story") return "story";
-          return "post";
+          if (s === 'image') return 'image';
+          if (s === 'story') return 'story';
+          return 'post';
         };
 
         const normalizeStatus = (
           s: unknown
-        ): "draft" | "scheduled" | "published" => {
-          if (!s) return "draft";
+        ): 'draft' | 'scheduled' | 'published' => {
+          if (!s) return 'draft';
           const v = String(s).toLowerCase();
-          if (v === "published") return "published";
-          if (v === "scheduled") return "scheduled";
-          return "draft";
+          if (v === 'published') return 'published';
+          if (v === 'scheduled') return 'scheduled';
+          return 'draft';
         };
 
         const transformedNodes = apiNodes.map((x) => {
@@ -339,12 +341,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             scheduledDate: x.scheduledDate
               ? new Date(x.scheduledDate)
               : undefined,
-            content: x.description ?? "",
+            content: x.description ?? '',
             imageUrl: x.imageUrl ?? undefined,
             imageUrls: imageUrls,
             imagePrompt: x.imagePrompt ?? undefined,
             day: x.day ?? undefined,
-            postType: detectPostType(x.title, x.description ?? ""),
+            postType: detectPostType(x.title, x.description ?? ''),
             connections: Array.isArray((x as any).connections)
               ? (x as any).connections
               : [],
@@ -356,8 +358,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
 
         // Load edges and populate connections
         try {
-          const { NodeAPI: EdgeAPI } = await import("@/services/nodeService");
-          const edges = await EdgeAPI.listEdges("demo-project-123");
+          const { NodeAPI: EdgeAPI } = await import('@/services/nodeService');
+          const edges = await EdgeAPI.listEdges('demo-project-123');
 
           const nodesWithConnections = transformedNodes.map((node) => ({
             ...node,
@@ -388,12 +390,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             return merged;
           });
         } catch (edgeError) {
-          console.warn("Failed to load edges:", edgeError);
+          console.warn('Failed to load edges:', edgeError);
           setNodes(transformedNodes);
         }
       } catch (error) {
         console.warn(
-          "Failed to load from AppSync, starting with local only:",
+          'Failed to load from AppSync, starting with local only:',
           error
         );
         setNodes((prev) => (Array.isArray(prev) ? prev : []));
@@ -415,7 +417,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       }));
       window.localStorage.setItem(key, JSON.stringify(toSave));
     } catch (e) {
-      console.warn("Planner: failed to persist nodes:", e);
+      console.warn('Planner: failed to persist nodes:', e);
     }
   }, [nodes]);
 
@@ -430,8 +432,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
     }
 
     try {
-      const { NodeAPI } = await import("@/services/nodeService");
-      const { assetsAPI } = await import("@/services/apiService");
+      const { NodeAPI } = await import('@/services/nodeService');
+      const { assetsAPI } = await import('@/services/apiService');
 
       // Handle multiple images - prefer selectedImageUrl, then imageUrl, then latest from imageUrls
       let imageUrlToStore =
@@ -444,21 +446,21 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         imageUrlToStore =
           updatedNode.imageUrls[updatedNode.imageUrls.length - 1];
         console.log(
-          "handleSaveNode: storing latest image from imageUrls:",
+          'handleSaveNode: storing latest image from imageUrls:',
           updatedNode.imageUrls.length
         );
       }
 
       // If the image is a data URL, upload it to assets and use the returned URL
       const needsUpload =
-        imageUrlToStore && imageUrlToStore.startsWith("data:");
+        imageUrlToStore && imageUrlToStore.startsWith('data:');
       if (needsUpload) {
         try {
-          console.log("[handleSaveNode] Uploading data URL to assets");
+          console.log('[handleSaveNode] Uploading data URL to assets');
           const dataUrl = imageUrlToStore as string;
-          const [header, base64] = dataUrl.split(",");
+          const [header, base64] = dataUrl.split(',');
           const mimeMatch = header.match(/data:(.*?);base64/);
-          const mimeType = mimeMatch ? mimeMatch[1] : "image/png";
+          const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
           const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
           const blob = new Blob([bytes], { type: mimeType });
           const filename = `node-${updatedNode.id}-${Date.now()}.png`;
@@ -485,7 +487,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
           }
         } catch (e) {
           console.warn(
-            "[handleSaveNode] Failed to upload data URL, proceeding with original",
+            '[handleSaveNode] Failed to upload data URL, proceeding with original',
             e
           );
         }
@@ -495,11 +497,11 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       const isGuid = /^[0-9a-fA-F-]{36}$/.test(updatedNode.id);
       if (!isGuid) {
         console.warn(
-          "[handleSaveNode] Detected temporary ID, creating node before update:",
+          '[handleSaveNode] Detected temporary ID, creating node before update:',
           updatedNode.id
         );
         const createData = {
-          projectId: "demo-project-123",
+          projectId: 'demo-project-123',
           title: updatedNode.title,
           description: updatedNode.content,
           status: updatedNode.status,
@@ -515,11 +517,11 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             ? { scheduledDate: updatedNode.scheduledDate.toISOString() }
             : {}),
         };
-        console.log("[handleSaveNode] Creating node with payload:", createData);
+        console.log('[handleSaveNode] Creating node with payload:', createData);
         const created = await NodeAPI.create(createData as any);
         if (created) {
           console.log(
-            "[handleSaveNode] Node created. Replacing temporary ID with GUID:",
+            '[handleSaveNode] Node created. Replacing temporary ID with GUID:',
             created.id
           );
           setNodes((prev) =>
@@ -535,7 +537,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       }
 
       const updateData = {
-        projectId: "demo-project-123",
+        projectId: 'demo-project-123',
         nodeId: updatedNode.id,
         title: updatedNode.title,
         description: updatedNode.content,
@@ -556,15 +558,15 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       };
 
       await NodeAPI.update(updateData as any);
-      console.log("Node updated successfully");
+      console.log('Node updated successfully');
     } catch (error) {
-      console.error("Failed to update node:", error);
+      console.error('Failed to update node:', error);
     }
   };
 
   // Handle node posting
   const handlePostNode = (node: ContentNode) => {
-    if (node.status === "published") {
+    if (node.status === 'published') {
       const updatedNode = {
         ...node,
         postedAt: new Date(),
@@ -587,7 +589,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       const isGuid = (id: string) => /^[0-9a-fA-F-]{36}$/.test(id);
       if (!isGuid(from) || !isGuid(to)) {
         console.warn(
-          "[createOrDeleteEdge] Skipping persistence for temporary IDs:",
+          '[createOrDeleteEdge] Skipping persistence for temporary IDs:',
           { from, to }
         );
         // Optimistically update UI only
@@ -622,16 +624,16 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         })
       );
 
-      const { NodeAPI } = await import("@/services/nodeService");
+      const { NodeAPI } = await import('@/services/nodeService');
       if (exists) {
-        await NodeAPI.deleteEdge("demo-project-123", `${from}->${to}`);
-        console.log("[createOrDeleteEdge] Edge deleted:", `${from}->${to}`);
+        await NodeAPI.deleteEdge('demo-project-123', `${from}->${to}`);
+        console.log('[createOrDeleteEdge] Edge deleted:', `${from}->${to}`);
       } else {
-        await NodeAPI.createEdge("demo-project-123", from, to);
-        console.log("[createOrDeleteEdge] Edge created:", `${from}->${to}`);
+        await NodeAPI.createEdge('demo-project-123', from, to);
+        console.log('[createOrDeleteEdge] Edge created:', `${from}->${to}`);
       }
     } catch (error) {
-      console.error("[createOrDeleteEdge] Failed to toggle edge:", error);
+      console.error('[createOrDeleteEdge] Failed to toggle edge:', error);
     }
   };
 
@@ -645,10 +647,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   const handleAddNode = async (nodeData: Partial<ContentNode>) => {
     const newNode: ContentNode = {
       id: `node-${Date.now()}`,
-      title: nodeData.title || "New Node",
-      type: nodeData.type || "post",
-      status: nodeData.status || "draft",
-      content: nodeData.content || "",
+      title: nodeData.title || 'New Node',
+      type: nodeData.type || 'post',
+      status: nodeData.status || 'draft',
+      content: nodeData.content || '',
       connections: [],
       position: nodeData.position || {
         x: Math.random() * 300 + 50,
@@ -658,7 +660,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       imageUrl: nodeData.imageUrl,
       imageUrls: nodeData.imageUrls || [],
       imagePrompt: nodeData.imagePrompt,
-      postType: nodeData.postType || "engaging",
+      postType: nodeData.postType || 'engaging',
       selectedImageUrl: nodeData.selectedImageUrl || nodeData.imageUrl,
     };
 
@@ -666,7 +668,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
     setNodes((prev) => [...prev, newNode]);
 
     try {
-      const { NodeAPI } = await import("@/services/nodeService");
+      const { NodeAPI } = await import('@/services/nodeService');
 
       // Handle multiple images for new node - prefer selectedImageUrl
       let imageUrlToStore = newNode.selectedImageUrl || newNode.imageUrl;
@@ -679,7 +681,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       }
 
       const createRequest = {
-        projectId: "demo-project-123",
+        projectId: 'demo-project-123',
         nodeId: newNode.id,
         title: newNode.title,
         description: newNode.content,
@@ -697,9 +699,9 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
           : {}),
       };
 
-      console.log("Creating node with data:", createRequest);
+      console.log('Creating node with data:', createRequest);
       const createdNode = await NodeAPI.create(createRequest);
-      console.log("Node created successfully:", createdNode);
+      console.log('Node created successfully:', createdNode);
 
       // Update the node with any data returned from the server
       if (createdNode) {
@@ -710,16 +712,16 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         );
       }
     } catch (error) {
-      console.error("Failed to create node:", error);
+      console.error('Failed to create node:', error);
       // Keep optimistic node so you can still see it and edit/move it
       // Mark it as draft and unsynced; user can retry later from UI
       setNodes((prev) =>
         prev.map((node) =>
-          node.id === newNode.id ? { ...node, status: "draft" } : node
+          node.id === newNode.id ? { ...node, status: 'draft' } : node
         )
       );
       alert(
-        "Network error creating node. The node is kept locally; you can continue editing and retry later."
+        'Network error creating node. The node is kept locally; you can continue editing and retry later.'
       );
     }
 
@@ -734,10 +736,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   // Handle confirm schedule
   const handleConfirmSchedule = async (scheduledNodes?: ContentNode[]) => {
     try {
-      const { scheduleService } = await import("@/services/scheduleService");
+      const { scheduleService } = await import('@/services/scheduleService');
       const nodesToSchedule =
         scheduledNodes ||
-        nodes.filter((n) => n.scheduledDate && n.status !== "published");
+        nodes.filter((n) => n.scheduledDate && n.status !== 'published');
 
       // Convert ContentNode[] to Partial<NodeDTO>[] format expected by scheduleService
       const dtoNodes = nodesToSchedule.map((n) => ({
@@ -752,21 +754,21 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       const result = await scheduleService.createSchedules(dtoNodes);
       // Notify user of result
       try {
-        const { toast } = await import("@/hooks/use-toast");
+        const { toast } = await import('@/hooks/use-toast');
         const count = Array.isArray(result)
           ? result.length
-          : typeof result === "number"
+          : typeof result === 'number'
           ? result
           : undefined;
         if (count && count > 0) {
           toast({
-            title: "Scheduled",
+            title: 'Scheduled',
             description: `Scheduled ${count} nodes`,
           });
         } else {
           toast({
-            title: "Scheduled",
-            description: "Scheduled nodes successfully",
+            title: 'Scheduled',
+            description: 'Scheduled nodes successfully',
           });
         }
       } catch (e) {
@@ -780,14 +782,14 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             (sn) => sn.id === node.id
           );
           return scheduledNode
-            ? { ...node, status: "scheduled" as const }
+            ? { ...node, status: 'scheduled' as const }
             : node;
         })
       );
 
       setShowScheduleConfirmation(false);
     } catch (error) {
-      console.error("Failed to schedule nodes:", error);
+      console.error('Failed to schedule nodes:', error);
     }
   };
 
@@ -814,7 +816,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       );
 
       try {
-        const svc = await import("@/services/aiService");
+        const svc = await import('@/services/aiService');
         if (prevNodeIdRef.current !== selectedNode.id) {
           svc.clearComponentCache(selectedNode.id);
         }
@@ -846,7 +848,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
           setIsGenerating(false);
         }
       } catch (err) {
-        console.warn("Failed to load AI components", err);
+        console.warn('Failed to load AI components', err);
         if (!canceled) {
           setAiComponents([]);
           setIsGenerating(false);
@@ -867,13 +869,13 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   // Handle tab styling for active states
   useEffect(() => {
     const updateTabStyles = () => {
-      const tabs = document.querySelectorAll("[data-active-style]");
+      const tabs = document.querySelectorAll('[data-active-style]');
       tabs.forEach((tab) => {
-        const isActive = tab.getAttribute("data-state") === "active";
+        const isActive = tab.getAttribute('data-state') === 'active';
         if (isActive) {
-          (tab as HTMLElement).style.backgroundColor = "#03624C";
+          (tab as HTMLElement).style.backgroundColor = '#03624C';
         } else {
-          (tab as HTMLElement).style.backgroundColor = "transparent";
+          (tab as HTMLElement).style.backgroundColor = 'transparent';
         }
       });
     };
@@ -896,22 +898,22 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
     (c: GeneratedComponent | (typeof DEMO_COMPONENTS)[number]) => ({
       id: c.id,
       type:
-        c.type === "online_trend" ||
-        c.type === "campaign_type" ||
-        c.type === "promotion_type"
+        c.type === 'online_trend' ||
+        c.type === 'campaign_type' ||
+        c.type === 'promotion_type'
           ? c.type
-          : "campaign_type",
+          : 'campaign_type',
       title: c.title ?? c.id,
-      description: c.description ?? "",
+      description: c.description ?? '',
       relevanceScore: c.relevanceScore ?? 50,
-      category: c.category ?? "Suggested",
+      category: c.category ?? 'Suggested',
       keywords: c.keywords ?? [],
-      impact: (c.impact as "low" | "medium" | "high") ?? "medium",
+      impact: (c.impact as 'low' | 'medium' | 'high') ?? 'medium',
     })
   );
 
   const hasPromotion = activeGeneratedComponents.some(
-    (c) => c.type === "promotion_type"
+    (c) => c.type === 'promotion_type'
   );
   const finalGeneratedComponents = hasPromotion
     ? activeGeneratedComponents
@@ -920,16 +922,16 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
 
   const handleLogout = () => {
     try {
-      const userId = window.localStorage.getItem("userId") || "guest";
+      const userId = window.localStorage.getItem('userId') || 'guest';
       window.localStorage.removeItem(`bp_chat_${userId}`);
       window.localStorage.removeItem(`bp_planner_${userId}`);
-      window.localStorage.removeItem("auth_tokens");
+      window.localStorage.removeItem('auth_tokens');
     } catch {}
-    navigate("/");
+    navigate('/');
   };
 
   const handleCalendarPage = () => {
-    navigate("/calendar");
+    navigate('/calendar');
   };
 
   return (
@@ -984,7 +986,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                     <Button
                       variant="ghost"
                       className="justify-start"
-                      onClick={() => navigate("/settings")}
+                      onClick={() => navigate('/settings')}
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
@@ -1010,28 +1012,28 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         {showLeftSidebar && (
           <div
             className="absolute left-4 top-4 bottom-4 w-96 backdrop-blur-xl rounded-2xl shadow-2xl z-40 transition-all duration-300 ease-in-out border border-[#03624C]/50"
-            style={{ backgroundColor: "rgba(3, 34, 33, 0.95)" }}
+            style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
           >
             <div className="h-full flex flex-col rounded-2xl overflow-hidden">
               <div
                 className="flex items-center justify-between px-4 py-2 border-b border-[#03624C]/50"
-                style={{ borderBottomColor: "rgba(3, 98, 76, 0.5)" }}
+                style={{ borderBottomColor: 'rgba(3, 98, 76, 0.5)' }}
               >
                 <h3 className="font-semibold text-base text-white">
-                  All the details
+                  {t('details.all')}
                 </h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowLeftSidebar(false)}
                   className="hover:text-[#2CC295] text-[#00DF81]/70"
-                  style={{ backgroundColor: "transparent" }}
+                  style={{ backgroundColor: 'transparent' }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor =
-                      "rgba(3, 98, 76, 0.3)")
+                      'rgba(3, 98, 76, 0.3)')
                   }
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "transparent")
+                    (e.currentTarget.style.backgroundColor = 'transparent')
                   }
                 >
                   <X className="w-4 h-4" />
@@ -1056,8 +1058,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             background: `
               radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)
             `,
-            backgroundSize: "20px 20px",
-            backgroundColor: "rgba(0, 15, 49, 0.05)",
+            backgroundSize: '20px 20px',
+            backgroundColor: 'rgba(0, 15, 49, 0.05)',
           }}
         >
           <DraggableNodeCanvas
@@ -1071,10 +1073,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             onAddNode={() => {
               const newNode = {
                 id: Date.now().toString(),
-                title: "New Post",
-                type: "post" as const,
-                status: "draft" as const,
-                content: "Enter your content here...",
+                title: 'New Post',
+                type: 'post' as const,
+                status: 'draft' as const,
+                content: 'Enter your content here...',
                 connections: [],
                 position: {
                   x: Math.random() * 400 + 100,
@@ -1103,7 +1105,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
               }
 
               try {
-                const { NodeAPI } = await import("@/services/nodeService");
+                const { NodeAPI } = await import('@/services/nodeService');
 
                 // Persist: remove edges pointing to the deleted node
                 const nodesWithConn = nodes.filter(
@@ -1118,17 +1120,17 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                       /^[0-9a-fA-F-]{36}$/.test(nodeId);
                     if (isGuid) {
                       const edgeId = `${n.id}->${nodeId}`;
-                      await NodeAPI.deleteEdge("demo-project-123", edgeId);
+                      await NodeAPI.deleteEdge('demo-project-123', edgeId);
                     }
                   })
                 );
 
                 // Finally, remove the node itself from database
-                await NodeAPI.remove("demo-project-123", nodeId);
-                console.log("Node deleted and connections cleaned up");
+                await NodeAPI.remove('demo-project-123', nodeId);
+                console.log('Node deleted and connections cleaned up');
               } catch (error) {
                 console.error(
-                  "Failed to delete node or clean up connections:",
+                  'Failed to delete node or clean up connections:',
                   error
                 );
               }
@@ -1141,38 +1143,38 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30">
             <div
               className="flex items-center gap-4 backdrop-blur-xl border border-[#03624C]/50 rounded-2xl px-6 py-3 shadow-2xl"
-              style={{ backgroundColor: "rgba(3, 34, 33, 0.95)" }}
+              style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
             >
               <Button
                 onClick={handleScheduleAll}
                 className="text-white shadow-lg transition-colors hover:opacity-90"
-                style={{ backgroundColor: "#03624C" }}
+                style={{ backgroundColor: '#03624C' }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#2CC295")
+                  (e.currentTarget.style.backgroundColor = '#2CC295')
                 }
                 onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#03624C")
+                  (e.currentTarget.style.backgroundColor = '#03624C')
                 }
                 disabled={nodes.length === 0}
               >
                 <Clock className="w-4 h-4 mr-2" />
-                Schedule all
+                {t('actions.schedule_all')}
               </Button>
 
               <Button
                 variant="outline"
                 onClick={() => setShowCalendarModal(true)}
                 className="border-[#03624C]/50 text-[#00DF81] transition-colors"
-                style={{ backgroundColor: "rgba(0, 15, 49, 0.5)" }}
+                style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    "rgba(3, 98, 76, 0.3)";
-                  e.currentTarget.style.borderColor = "rgba(44, 194, 149, 0.7)";
+                    'rgba(3, 98, 76, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(44, 194, 149, 0.7)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    "rgba(0, 15, 49, 0.5)";
-                  e.currentTarget.style.borderColor = "rgba(3, 98, 76, 0.5)";
+                    'rgba(0, 15, 49, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(3, 98, 76, 0.5)';
                 }}
               >
                 <Calendar className="w-4 h-4" />
@@ -1182,16 +1184,16 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                 variant="outline"
                 onClick={() => setShowAddModal(true)}
                 className="border-[#03624C]/50 rounded-full w-10 h-10 p-0 text-[#00DF81] transition-colors"
-                style={{ backgroundColor: "rgba(0, 15, 49, 0.5)" }}
+                style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    "rgba(3, 98, 76, 0.3)";
-                  e.currentTarget.style.borderColor = "rgba(44, 194, 149, 0.7)";
+                    'rgba(3, 98, 76, 0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(44, 194, 149, 0.7)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor =
-                    "rgba(0, 15, 49, 0.5)";
-                  e.currentTarget.style.borderColor = "rgba(3, 98, 76, 0.5)";
+                    'rgba(0, 15, 49, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(3, 98, 76, 0.5)';
                 }}
               >
                 <Plus className="w-4 h-4" />
@@ -1204,108 +1206,108 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         {showRightSidebar && (
           <div
             className="absolute right-4 top-4 bottom-4 w-96 backdrop-blur-xl rounded-2xl shadow-2xl z-40 transition-all duration-300 ease-in-out border border-[#03624C]/50"
-            style={{ backgroundColor: "rgba(3, 34, 33, 0.95)" }}
+            style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
           >
             <div className="h-full flex flex-col rounded-2xl overflow-hidden">
               <div
                 className="flex items-center justify-between px-4 py-2 border-b border-[#03624C]/50"
-                style={{ borderBottomColor: "rgba(3, 98, 76, 0.5)" }}
+                style={{ borderBottomColor: 'rgba(3, 98, 76, 0.5)' }}
               >
                 <Tabs
                   value={activeRightTab}
                   onValueChange={(value) =>
-                    setActiveRightTab(value as "content" | "image" | "analysis")
+                    setActiveRightTab(value as 'content' | 'image' | 'analysis')
                   }
                   className="flex-1"
                 >
                   <div className="flex items-center justify-between">
                     <TabsList
                       className="grid w-full grid-cols-3 max-w-[300px] border border-[#03624C]/30"
-                      style={{ backgroundColor: "rgba(0, 15, 49, 0.5)" }}
+                      style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
                     >
                       <TabsTrigger
                         value="content"
                         className="text-sm text-[#00DF81]/70 data-[state=active]:text-white transition-colors"
-                        style={{ "--tw-bg-opacity": "1" }}
+                        style={{ '--tw-bg-opacity': '1' }}
                         onMouseEnter={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "rgba(3, 98, 76, 0.3)";
+                              'rgba(3, 98, 76, 0.3)';
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "transparent";
+                              'transparent';
                           }
                         }}
-                        data-active-style={{ backgroundColor: "#03624C" }}
+                        data-active-style={{ backgroundColor: '#03624C' }}
                       >
-                        Content
+                        {t('tabs.content')}
                       </TabsTrigger>
                       <TabsTrigger
                         value="image"
                         className="text-sm text-[#00DF81]/70 data-[state=active]:text-white transition-colors"
-                        style={{ "--tw-bg-opacity": "1" }}
+                        style={{ '--tw-bg-opacity': '1' }}
                         onMouseEnter={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "rgba(3, 98, 76, 0.3)";
+                              'rgba(3, 98, 76, 0.3)';
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "transparent";
+                              'transparent';
                           }
                         }}
-                        data-active-style={{ backgroundColor: "#03624C" }}
+                        data-active-style={{ backgroundColor: '#03624C' }}
                       >
-                        Image
+                        {t('tabs.image')}
                       </TabsTrigger>
                       <TabsTrigger
                         value="analysis"
                         className="text-sm text-[#00DF81]/70 data-[state=active]:text-white transition-colors"
-                        style={{ "--tw-bg-opacity": "1" }}
+                        style={{ '--tw-bg-opacity': '1' }}
                         onMouseEnter={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "rgba(3, 98, 76, 0.3)";
+                              'rgba(3, 98, 76, 0.3)';
                           }
                         }}
                         onMouseLeave={(e) => {
                           if (
                             !e.currentTarget
-                              .getAttribute("data-state")
-                              ?.includes("active")
+                              .getAttribute('data-state')
+                              ?.includes('active')
                           ) {
                             e.currentTarget.style.backgroundColor =
-                              "transparent";
+                              'transparent';
                           }
                         }}
-                        data-active-style={{ backgroundColor: "#03624C" }}
+                        data-active-style={{ backgroundColor: '#03624C' }}
                       >
-                        Analysis
+                        {t('tabs.analysis')}
                       </TabsTrigger>
                     </TabsList>
                     <Button
@@ -1313,13 +1315,13 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                       size="sm"
                       onClick={() => setShowRightSidebar(false)}
                       className="hover:text-[#2CC295] text-[#00DF81]/70 ml-2"
-                      style={{ backgroundColor: "transparent" }}
+                      style={{ backgroundColor: 'transparent' }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.backgroundColor =
-                          "rgba(3, 98, 76, 0.3)")
+                          'rgba(3, 98, 76, 0.3)')
                       }
                       onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor = "transparent")
+                        (e.currentTarget.style.backgroundColor = 'transparent')
                       }
                     >
                       <X className="w-4 h-4" />
@@ -1345,12 +1347,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                         onSaveNode={handleSaveNode}
                         onGenerate={(status) => {
                           // Handle preview mode
-                          if (status.startsWith("PREVIEW:")) {
-                            const imageUrl = status.replace("PREVIEW:", "");
+                          if (status.startsWith('PREVIEW:')) {
+                            const imageUrl = status.replace('PREVIEW:', '');
                             // Show image preview modal
-                            const modal = document.createElement("div");
+                            const modal = document.createElement('div');
                             modal.className =
-                              "fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm";
+                              'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
                             modal.innerHTML = `
                               <div class="relative max-w-4xl max-h-[90vh] p-4">
                                 <img src="${imageUrl}" alt="Generated Image Preview" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
@@ -1371,8 +1373,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                           const newComponent: SelectedCanvasComponent = {
                             id: component.id,
                             name: (component.name ?? component.id) as string,
-                            category: component.category ?? "Suggested",
-                            color: component.color ?? "#60A5FA",
+                            category: component.category ?? 'Suggested',
+                            color: component.color ?? '#60A5FA',
                             position: { x: 0, y: 0 },
                           };
                           setSelectedCanvasComponents((prev) => {
@@ -1397,17 +1399,17 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                         <Button
                           onClick={() => setIsTemplatePopupOpen(true)}
                           className="shadow-lg text-white transition-colors"
-                          style={{ backgroundColor: "#03624C" }}
+                          style={{ backgroundColor: '#03624C' }}
                           onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#2CC295")
+                            (e.currentTarget.style.backgroundColor = '#2CC295')
                           }
                           onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#03624C")
+                            (e.currentTarget.style.backgroundColor = '#03624C')
                           }
                           size="sm"
                         >
                           <Layers className="w-4 h-4 mr-2" />
-                          Template
+                          {t('actions.template')}
                         </Button>
                       </div>
 
@@ -1461,12 +1463,12 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
             <Button
               onClick={() => setShowRightSidebar(true)}
               className="shadow-2xl rounded-full w-16 h-16 p-0 transition-colors"
-              style={{ backgroundColor: "#03624C" }}
+              style={{ backgroundColor: '#03624C' }}
               onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#2CC295")
+                (e.currentTarget.style.backgroundColor = '#2CC295')
               }
               onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#03624C")
+                (e.currentTarget.style.backgroundColor = '#03624C')
               }
             >
               <Sparkles className="w-12 h-12 text-white" />
@@ -1487,7 +1489,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         onOpenChange={setShowScheduleConfirmation}
         nodes={nodes.filter(
           (node) =>
-            node.scheduledDate && node.status !== "published" && !node.postedAt
+            node.scheduledDate && node.status !== 'published' && !node.postedAt
         )}
         onConfirm={handleConfirmSchedule}
       />
@@ -1495,7 +1497,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
       <CalendarModal
         open={showCalendarModal}
         onOpenChange={setShowCalendarModal}
-        scheduledNodes={nodes.filter((node) => node.status === "scheduled")}
+        scheduledNodes={nodes.filter((node) => node.status === 'scheduled')}
         editable={true}
         onEditNode={handleSaveNode}
         onDeleteNode={(nodeId) => {

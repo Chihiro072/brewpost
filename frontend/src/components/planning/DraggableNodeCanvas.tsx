@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, memo } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -66,6 +67,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
   createOrDeleteEdge,
   onCanvasClick
 }) => {
+  const { t } = useLanguage()
   const [draggedNode, setDraggedNode] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [dragStartZoom, setDragStartZoom] = useState(1)
@@ -1212,7 +1214,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
             <div className='flex items-center gap-2'>
               <Sparkles className='w-4 h-4 text-primary' />
               <p className='text-sm font-medium text-foreground'>
-                Content Canvas
+                {t('canvas.content_canvas')}
               </p>
             </div>
             <button
@@ -1222,7 +1224,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
                 setHelpVisible(false)
               }}
               className='p-1 rounded hover:bg-destructive/20 text-destructive transition'
-              title='Hide instructions'
+              title={t('canvas.hide_instructions')}
             >
               <X className='w-4 h-4' />
             </button>
@@ -1230,13 +1232,13 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
 
           <div className='space-y-1 text-xs text-muted-foreground'>
             <p>
-              • <strong>Drag</strong> to move nodes
+              • <strong>{t('canvas.help.drag_action')}</strong> {t('canvas.help.drag_tail')}
             </p>
             <p>
-              • <strong>Double-click</strong> to open details
+              • <strong>{t('canvas.help.double_action')}</strong> {t('canvas.help.double_tail')}
             </p>
             <p>
-              • <strong>Link icon</strong> to connect nodes
+              • <strong>{t('canvas.help.link_action')}</strong> {t('canvas.help.link_tail')}
             </p>
           </div>
         </div>

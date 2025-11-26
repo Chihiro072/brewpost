@@ -1,28 +1,29 @@
-import React, { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import React, { useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Calendar,
   Clock,
@@ -34,17 +35,17 @@ import {
   Sparkles,
   X,
   RefreshCw,
-} from "lucide-react";
-import { format } from "date-fns";
-import type { ContentNode } from "@/components/planning/PlanningPanel";
+} from 'lucide-react';
+import { format } from 'date-fns';
+import type { ContentNode } from '@/components/planning/PlanningPanel';
 import {
   enhanceImagePromptWithTemplate,
   applyTemplateToImage,
   getTemplateSettings,
-} from "@/utils/templateUtils";
-import { scheduleNodeService } from "@/services/nodeService";
-import { toast } from "@/hooks/use-toast";
-import { convertToProxyUrl } from "@/utils/templateUtils";
+} from '@/utils/templateUtils';
+import { scheduleNodeService } from '@/services/nodeService';
+import { toast } from '@/hooks/use-toast';
+import { convertToProxyUrl } from '@/utils/templateUtils';
 
 interface NodeDetailsProps {
   node: ContentNode | null;
@@ -59,18 +60,19 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
   onSaveNode,
   onPostNode,
 }) => {
-  console.log("NodeDetails rendering with node:", node?.title);
+  const { t } = useLanguage();
+  console.log('NodeDetails rendering with node:', node?.title);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedNode, setEditedNode] = useState<ContentNode | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState("09:00");
+  const [selectedTime, setSelectedTime] = useState('09:00');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   React.useEffect(() => {
     if (node) {
-      console.log("NodeDetails: node prop changed, updating editedNode:", node);
+      console.log('NodeDetails: node prop changed, updating editedNode:', node);
       // Normalize scheduledDate to a Date object so the calendar selection highlights correctly
       const normalized = node.scheduledDate
         ? new Date(node.scheduledDate)
@@ -79,7 +81,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
       // Sync selectedTime to the node's scheduled time if present
       if (normalized) {
         try {
-          const hhmm = format(normalized, "HH:mm");
+          const hhmm = format(normalized, 'HH:mm');
           setSelectedTime(hhmm);
         } catch (e) {
           // ignore formatting errors
@@ -96,9 +98,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     return (
       <div className="flex flex-col h-full bg-gradient-subtle">
         <div className="p-6 border-b border-border/20">
-          <h2 className="text-xl font-semibold">Node Details</h2>
+          <h2 className="text-xl font-semibold">{t('details.all')}</h2>
           <p className="text-sm text-muted-foreground">
-            Select a node to view its details
+            {t('node.not_specified')}
           </p>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -111,26 +113,26 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     );
   }
 
-  const getStatusColor = (status: ContentNode["status"]) => {
+  const getStatusColor = (status: ContentNode['status']) => {
     switch (status) {
-      case "published":
-        return "bg-success text-success-foreground";
-      case "scheduled":
-        return "bg-primary text-primary-foreground";
-      case "draft":
-        return "bg-muted text-muted-foreground";
+      case 'published':
+        return 'bg-success text-success-foreground';
+      case 'scheduled':
+        return 'bg-primary text-primary-foreground';
+      case 'draft':
+        return 'bg-muted text-muted-foreground';
       default:
-        return "bg-muted text-muted-foreground";
+        return 'bg-muted text-muted-foreground';
     }
   };
 
-  const getTypeIcon = (type: ContentNode["type"]) => {
+  const getTypeIcon = (type: ContentNode['type']) => {
     switch (type) {
-      case "post":
+      case 'post':
         return Target;
-      case "image":
+      case 'image':
         return Eye;
-      case "story":
+      case 'story':
         return Zap;
       default:
         return Target;
@@ -145,19 +147,20 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingPrompt(true);
     try {
       const BACKEND_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+        (import.meta.env.VITE_API_BASE_URL as string) ??
+        'http://localhost:5044';
 
       const response = await fetch(
         `${BACKEND_URL}/api/generate-enhanced-prompt`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             title: node.title,
             content: node.content,
-            postType: node.postType || "promotional",
+            postType: node.postType || 'promotional',
           }),
         }
       );
@@ -165,7 +168,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate enhanced prompt");
+        throw new Error(data.error || 'Failed to generate enhanced prompt');
       }
 
       if (data.ok && data.enhancedPrompt) {
@@ -182,11 +185,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         // Update local state immediately for UI feedback
         setEditedNode(updatedNode);
 
-        console.log("Enhanced prompt generated:", data.enhancedPrompt);
+        console.log('Enhanced prompt generated:', data.enhancedPrompt);
       }
     } catch (error) {
-      console.error("Error generating enhanced prompt:", error);
-      alert("Failed to generate enhanced prompt: " + error.message);
+      console.error('Error generating enhanced prompt:', error);
+      alert('Failed to generate enhanced prompt: ' + error.message);
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -198,25 +201,26 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
     setIsGeneratingImage(true);
     try {
       const BACKEND_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+        (import.meta.env.VITE_API_BASE_URL as string) ??
+        'http://localhost:5044';
 
       // Enhance prompt with template settings and stronger color emphasis
       let enhancedPrompt = enhanceImagePromptWithTemplate(
-        node.imagePrompt || node.title || node.content || ""
+        node.imagePrompt || node.title || node.content || ''
       );
 
       // Add stronger color emphasis for node generation
       const template = getTemplateSettings();
-      if (template?.selectedColor && template.selectedColor !== "transparent") {
+      if (template?.selectedColor && template.selectedColor !== 'transparent') {
         enhancedPrompt += ` Make sure to prominently feature ${template.selectedColor} color throughout the entire image composition, use it for backgrounds, accents, and key visual elements. The ${template.selectedColor} should be the dominant color theme.`;
       }
 
       const response = await fetch(
         `${BACKEND_URL}/api/canvas-generate-from-node`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             nodeId: node.id,
@@ -230,62 +234,62 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate image");
+        throw new Error(data.error || 'Failed to generate image');
       }
 
       if (data.ok && data.imageUrl) {
         console.log(
-          "🎯 [NodeDetails] Image generation successful, starting template processing..."
+          '🎯 [NodeDetails] Image generation successful, starting template processing...'
         );
-        console.log("🎯 [NodeDetails] Original image URL:", data.imageUrl);
+        console.log('🎯 [NodeDetails] Original image URL:', data.imageUrl);
 
         // Check if template processing is actually needed
         const template = getTemplateSettings();
-        console.log("🎯 [NodeDetails] Template settings retrieved:", template);
+        console.log('🎯 [NodeDetails] Template settings retrieved:', template);
 
         const needsProcessing =
           template && (template.logoPreview || template.companyText);
         console.log(
-          "🎯 [NodeDetails] Template processing needed?",
+          '🎯 [NodeDetails] Template processing needed?',
           needsProcessing,
           {
             hasTemplate: !!template,
             hasLogo: !!template?.logoPreview,
             hasCompanyText: !!template?.companyText,
             logoPreview: template?.logoPreview
-              ? template.logoPreview.substring(0, 50) + "..."
-              : "none",
-            companyText: template?.companyText || "none",
+              ? template.logoPreview.substring(0, 50) + '...'
+              : 'none',
+            companyText: template?.companyText || 'none',
           }
         );
 
         // Only apply template processing if there's a logo or text to add
         let processedImageUrl = data.imageUrl;
         if (needsProcessing) {
-          console.log("🎯 [NodeDetails] Calling applyTemplateToImage...");
+          console.log('🎯 [NodeDetails] Calling applyTemplateToImage...');
           try {
             processedImageUrl = await applyTemplateToImage(data.imageUrl);
             console.log(
-              "🎯 [NodeDetails] Template processing completed successfully"
+              '🎯 [NodeDetails] Template processing completed successfully'
             );
           } catch (templateError) {
             console.error(
-              "🎯 [NodeDetails] Template processing failed:",
+              '🎯 [NodeDetails] Template processing failed:',
               templateError
             );
             processedImageUrl = data.imageUrl; // Fallback to original
           }
         } else {
           console.log(
-            "🎯 [NodeDetails] Skipping template processing - no logo or company text configured"
+            '🎯 [NodeDetails] Skipping template processing - no logo or company text configured'
           );
         }
 
-        console.log("🎯 [NodeDetails] Image processing result:", {
+        console.log('🎯 [NodeDetails] Image processing result:', {
           original: data.imageUrl,
-          processed: processedImageUrl.substring(0, 100) + "...",
+          processed: processedImageUrl.substring(0, 100) + '...',
           needsProcessing,
-          isDataUrl: processedImageUrl.startsWith("data:"),
+          isDataUrl: processedImageUrl.startsWith('data:'),
           templateApplied:
             needsProcessing && processedImageUrl !== data.imageUrl,
         });
@@ -299,7 +303,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
           selectedImageUrl: processedImageUrl,
         };
 
-        console.log("🎯 [NodeDetails] Saving updated node with new image...");
+        console.log('🎯 [NodeDetails] Saving updated node with new image...');
         if (onSaveNode) {
           onSaveNode(updatedNode);
         }
@@ -308,17 +312,17 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         setEditedNode(updatedNode);
 
         console.log(
-          "🎯 [NodeDetails] Image generated successfully:",
-          processedImageUrl.substring(0, 100) + "..."
+          '🎯 [NodeDetails] Image generated successfully:',
+          processedImageUrl.substring(0, 100) + '...'
         );
         console.log(
-          "🎯 [NodeDetails] Total images:",
+          '🎯 [NodeDetails] Total images:',
           updatedNode.imageUrls.length
         );
       }
     } catch (error) {
-      console.error("Error generating image:", error);
-      alert("Failed to generate image: " + error.message);
+      console.error('Error generating image:', error);
+      alert('Failed to generate image: ' + error.message);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -356,22 +360,22 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
           <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
             <Eye className="w-4 h-4" />
-            Content
+            {t('node.content')}
           </h3>
           {isEditing ? (
             <Textarea
-              value={editedNode?.content || ""}
+              value={editedNode?.content || ''}
               onChange={(e) =>
                 setEditedNode((prev) =>
                   prev ? { ...prev, content: e.target.value } : null
                 )
               }
               className="min-h-[120px] text-sm"
-              placeholder="Enter content..."
+              placeholder={t('node.enter_content')}
             />
           ) : (
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-              {node.content || "No content available"}
+              {node.content || t('node.no_content')}
             </div>
           )}
         </Card>
@@ -381,15 +385,21 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
             <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
               <Zap className="w-4 h-4" />
-              Posted
+              {t('node.posted')}
             </h3>
             <div className="text-sm text-muted-foreground space-y-2">
               <div>
-                Posted on: {node.postedAt.toLocaleDateString()} at{" "}
+                {t('node.posted_on')}: {node.postedAt.toLocaleDateString()} at{' '}
                 {node.postedAt.toLocaleTimeString()}
               </div>
-              <div>Platforms: {node.postedTo.join(", ")}</div>
-              {node.tweetId && <div>Tweet ID: {node.tweetId}</div>}
+              <div>
+                {t('node.platforms')}: {node.postedTo.join(', ')}
+              </div>
+              {node.tweetId && (
+                <div>
+                  {t('node.tweet_id')}: {node.tweetId}
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -397,11 +407,13 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         {/* Connections */}
         {node.connections && node.connections.length > 0 && (
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-            <h3 className="text-sm font-medium mb-2">Connected Nodes</h3>
+            <h3 className="text-sm font-medium mb-2">
+              {t('node.connected_nodes')}
+            </h3>
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
                 {node.connections.length} connection
-                {node.connections.length !== 1 ? "s" : ""}
+                {node.connections.length !== 1 ? 's' : ''}
               </div>
               <div className="space-y-2">
                 {node.connections.map((connectedId, index) => {
@@ -415,7 +427,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       <div className="w-2 h-2 bg-primary rounded-full"></div>
                       <div className="flex-1">
                         <div className="font-medium text-foreground">
-                          {connectedNode?.title || "Unknown Node"}
+                          {connectedNode?.title || 'Unknown Node'}
                         </div>
                         <div className="text-muted-foreground font-mono text-xs">
                           {connectedId}
@@ -436,16 +448,16 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
 
         {/* Title */}
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-          <h3 className="text-sm font-medium mb-2">Title</h3>
+          <h3 className="text-sm font-medium mb-2">{t('node.title')}</h3>
           {isEditing ? (
             <Input
-              value={editedNode?.title || ""}
+              value={editedNode?.title || ''}
               onChange={(e) =>
                 setEditedNode((prev) =>
                   prev ? { ...prev, title: e.target.value } : null
                 )
               }
-              placeholder="Enter title..."
+              placeholder={t('node.enter_title')}
             />
           ) : (
             <div className="text-sm text-muted-foreground">{node.title}</div>
@@ -455,11 +467,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         {/* Status and Type */}
         <div className="grid grid-cols-2 gap-2">
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-            <h3 className="text-sm font-medium mb-2">Status</h3>
+            <h3 className="text-sm font-medium mb-2">{t('node.status')}</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.status || "draft"}
-                onValueChange={(value: "draft" | "scheduled" | "published") =>
+                value={editedNode?.status || 'draft'}
+                onValueChange={(value: 'draft' | 'scheduled' | 'published') =>
                   setEditedNode((prev) =>
                     prev ? { ...prev, status: value } : null
                   )
@@ -482,11 +494,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
           </Card>
 
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-            <h3 className="text-sm font-medium mb-2">Type</h3>
+            <h3 className="text-sm font-medium mb-2">{t('node.type')}</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.type || "post"}
-                onValueChange={(value: "post" | "image" | "story") =>
+                value={editedNode?.type || 'post'}
+                onValueChange={(value: 'post' | 'image' | 'story') =>
                   setEditedNode((prev) =>
                     prev ? { ...prev, type: value } : null
                   )
@@ -512,10 +524,10 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         {/* Day and Post Type */}
         <div className="grid grid-cols-2 gap-2">
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-            <h3 className="text-sm font-medium mb-2">Day</h3>
+            <h3 className="text-sm font-medium mb-2">{t('node.day')}</h3>
             {isEditing ? (
               <Input
-                value={editedNode?.day || ""}
+                value={editedNode?.day || ''}
                 onChange={(e) =>
                   setEditedNode((prev) =>
                     prev ? { ...prev, day: e.target.value } : null
@@ -525,18 +537,18 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
               />
             ) : (
               <div className="text-sm text-muted-foreground">
-                {node.day || "No day specified"}
+                {node.day || 'No day specified'}
               </div>
             )}
           </Card>
 
           <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-            <h3 className="text-sm font-medium mb-2">Post Type</h3>
+            <h3 className="text-sm font-medium mb-2">{t('node.post_type')}</h3>
             {isEditing ? (
               <Select
-                value={editedNode?.postType || "branding"}
+                value={editedNode?.postType || 'branding'}
                 onValueChange={(
-                  value: "engaging" | "promotional" | "branding"
+                  value: 'engaging' | 'promotional' | 'branding'
                 ) =>
                   setEditedNode((prev) =>
                     prev ? { ...prev, postType: value } : null
@@ -554,10 +566,10 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
               </Select>
             ) : (
               <div className="text-sm text-muted-foreground capitalize">
-                {node.postType === "engaging" && "🟢 Engaging"}
-                {node.postType === "promotional" && "🔵 Promotional"}
-                {node.postType === "branding" && "🟡 Branding"}
-                {!node.postType && "Not specified"}
+                {node.postType === 'engaging' && '🟢 Engaging'}
+                {node.postType === 'promotional' && '🔵 Promotional'}
+                {node.postType === 'branding' && '🟡 Branding'}
+                {!node.postType && 'Not specified'}
               </div>
             )}
           </Card>
@@ -565,7 +577,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
 
         {/* Template Color Palette */}
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
-          <h3 className="text-sm font-medium mb-2">Template Color</h3>
+          <h3 className="text-sm font-medium mb-2">
+            {t('node.template_color')}
+          </h3>
           <div className="text-xs text-muted-foreground mb-2">
             Current template color for image generation:
           </div>
@@ -573,7 +587,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
             const template = getTemplateSettings();
             const color = template?.selectedColor;
 
-            if (!color || color === "transparent") {
+            if (!color || color === 'transparent') {
               return (
                 <div className="text-sm text-muted-foreground">
                   No color selected
@@ -593,7 +607,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         {/* Image URL */}
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Image URL</h3>
+            <h3 className="text-sm font-medium">{t('node.image_url')}</h3>
             {!isEditing && (node.imagePrompt || node.title || node.content) && (
               <Button
                 size="sm"
@@ -605,12 +619,12 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 {isGeneratingImage ? (
                   <>
                     <div className="w-3 h-3 border border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
-                    Generating...
+                    {t('actions.generating')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-3 h-3 mr-1" />
-                    Generate
+                    {t('actions.generate')}
                   </>
                 )}
               </Button>
@@ -618,7 +632,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
           </div>
           {isEditing ? (
             <Input
-              value={editedNode?.imageUrl || ""}
+              value={editedNode?.imageUrl || ''}
               onChange={(e) =>
                 setEditedNode((prev) =>
                   prev ? { ...prev, imageUrl: e.target.value } : null
@@ -646,7 +660,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       </div>
                       <div
                         className={`${
-                          allImages.length > 3 ? "max-h-96 overflow-y-auto" : ""
+                          allImages.length > 3 ? 'max-h-96 overflow-y-auto' : ''
                         }`}
                       >
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
@@ -656,8 +670,8 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                                 className={`relative group cursor-pointer flex-shrink-0 ${
                                   (editedNode?.imageUrl || node.imageUrl) ===
                                   imageUrl
-                                    ? "ring-2 ring-primary"
-                                    : ""
+                                    ? 'ring-2 ring-primary'
+                                    : ''
                                 }`}
                                 onClick={() => {
                                   const updatedNode = {
@@ -676,7 +690,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                                   alt={`Generated content ${index + 1}`}
                                   className="w-32 h-32 object-cover rounded border border-border/20 hover:opacity-80 transition-opacity shadow-sm"
                                   onError={(e) => {
-                                    e.currentTarget.style.display = "none";
+                                    e.currentTarget.style.display = 'none';
                                   }}
                                 />
                                 <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
@@ -701,7 +715,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                               </div>
                               <DialogContent className="max-w-4xl w-full p-0 bg-black/90">
                                 <DialogTitle className="sr-only">
-                                  Full Size Image View
+                                  {t('node.full_image_view')}
                                 </DialogTitle>
                                 <div className="relative">
                                   <img
@@ -722,7 +736,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 })()
               ) : (
                 <div className="text-sm text-muted-foreground">
-                  No images generated
+                  {t('node.no_images')}
                 </div>
               )}
             </div>
@@ -732,7 +746,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
         {/* Image Prompt */}
         <Card className="p-3 bg-card/50 backdrop-blur-sm border-border/50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium">Image Prompt</h3>
+            <h3 className="text-sm font-medium">{t('node.image_prompt')}</h3>
             {!isEditing && (node.title || node.content) && (
               <Button
                 size="sm"
@@ -744,12 +758,12 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 {isGeneratingPrompt ? (
                   <>
                     <div className="w-3 h-3 border border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
-                    Enhancing...
+                    {t('actions.enhancing')}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="w-3 h-3 mr-1" />
-                    Enhance
+                    {t('actions.enhance')}
                   </>
                 )}
               </Button>
@@ -757,25 +771,27 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
           </div>
           {isEditing ? (
             <Textarea
-              value={editedNode?.imagePrompt || ""}
+              value={editedNode?.imagePrompt || ''}
               onChange={(e) =>
                 setEditedNode((prev) =>
                   prev ? { ...prev, imagePrompt: e.target.value } : null
                 )
               }
               className="min-h-[80px] text-sm"
-              placeholder="Enter image prompt..."
+              placeholder={t('node.enter_image_prompt')}
             />
           ) : (
             <div className="text-sm text-muted-foreground">
-              {editedNode?.imagePrompt || node.imagePrompt || "No image prompt"}
+              {editedNode?.imagePrompt ||
+                node.imagePrompt ||
+                t('node.no_image_prompt')}
             </div>
           )}
         </Card>
 
         {/* Scheduled Date */}
         <Card className="p-4 bg-card/50 backdrop-blur-sm border-border/50">
-          <h3 className="font-medium mb-3">Scheduled Date</h3>
+          <h3 className="font-medium mb-3">{t('node.scheduled_date')}</h3>
           {isEditing ? (
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -787,7 +803,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                   {editedNode?.scheduledDate ? (
                     format(editedNode.scheduledDate, "PPP 'at' p")
                   ) : (
-                    <span>Pick a date and time</span>
+                    <span>{t('node.pick_date_time')}</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -798,11 +814,11 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                     selected={editedNode?.scheduledDate}
                     onSelect={(date) => {
                       if (date) {
-                        const [hours, minutes] = selectedTime.split(":");
+                        const [hours, minutes] = selectedTime.split(':');
                         const newDate = new Date(date);
                         newDate.setHours(
-                          parseInt(hours || "0"),
-                          parseInt(minutes || "0"),
+                          parseInt(hours || '0'),
+                          parseInt(minutes || '0'),
                           0,
                           0
                         );
@@ -815,13 +831,15 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                   />
                 </div>
                 <div className="border-t pt-3 space-y-2">
-                  <label className="text-sm font-medium block">Time</label>
+                  <label className="text-sm font-medium block">
+                    {t('node.time')}
+                  </label>
                   <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedTime("09:00");
+                        setSelectedTime('09:00');
                         if (editedNode?.scheduledDate) {
                           const newDate = new Date(editedNode.scheduledDate);
                           newDate.setHours(9, 0, 0, 0);
@@ -831,9 +849,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                         }
                       }}
                       className={
-                        selectedTime === "09:00"
-                          ? "bg-primary text-primary-foreground"
-                          : ""
+                        selectedTime === '09:00'
+                          ? 'bg-primary text-primary-foreground'
+                          : ''
                       }
                     >
                       9:00 AM
@@ -842,7 +860,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedTime("12:00");
+                        setSelectedTime('12:00');
                         if (editedNode?.scheduledDate) {
                           const newDate = new Date(editedNode.scheduledDate);
                           newDate.setHours(12, 0, 0, 0);
@@ -852,9 +870,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                         }
                       }}
                       className={
-                        selectedTime === "12:00"
-                          ? "bg-primary text-primary-foreground"
-                          : ""
+                        selectedTime === '12:00'
+                          ? 'bg-primary text-primary-foreground'
+                          : ''
                       }
                     >
                       12:00 PM
@@ -863,7 +881,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedTime("18:00");
+                        setSelectedTime('18:00');
                         if (editedNode?.scheduledDate) {
                           const newDate = new Date(editedNode.scheduledDate);
                           newDate.setHours(18, 0, 0, 0);
@@ -873,9 +891,9 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                         }
                       }}
                       className={
-                        selectedTime === "18:00"
-                          ? "bg-primary text-primary-foreground"
-                          : ""
+                        selectedTime === '18:00'
+                          ? 'bg-primary text-primary-foreground'
+                          : ''
                       }
                     >
                       6:00 PM
@@ -894,7 +912,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       setSelectedTime(value);
 
                       if (editedNode?.scheduledDate) {
-                        const [h, m] = value.split(":").map(Number);
+                        const [h, m] = value.split(':').map(Number);
                         const newDate = new Date(editedNode.scheduledDate);
                         newDate.setHours(h, m, 0, 0);
 
@@ -904,7 +922,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       }
                     }}
                     className="w-full border rounded-md p-2 text-sm bg-black text-white"
-                    style={{ colorScheme: "dark" }} // ensures the time picker icon stays white
+                    style={{ colorScheme: 'dark' }} // ensures the time picker icon stays white
                   />
                 </div>
 
@@ -918,20 +936,20 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       );
                       setCalendarOpen(false);
                       toast({
-                        title: "Cleared date",
-                        description: "Scheduled date removed",
+                        title: t('actions.clear'),
+                        description: t('node.scheduled_date'),
                       });
                     }}
                     className="flex-1"
                   >
-                    Clear
+                    {t('actions.clear')}
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => setCalendarOpen(false)}
                     className="flex-1"
                   >
-                    Done
+                    {t('actions.done')}
                   </Button>
                 </div>
               </PopoverContent>
@@ -940,7 +958,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
             <div className="text-sm text-muted-foreground">
               {node.scheduledDate
                 ? node.scheduledDate.toLocaleString()
-                : "No scheduled date"}
+                : t('node.scheduled_date')}
             </div>
           )}
         </Card>
@@ -954,19 +972,19 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
               <Button
                 onClick={() => {
                   if (editedNode && onSaveNode) {
-                    console.log("=== NODE DETAILS SAVE DEBUG ===");
-                    console.log("NodeDetails: Save Changes clicked");
-                    console.log("Original node:", node);
+                    console.log('=== NODE DETAILS SAVE DEBUG ===');
+                    console.log('NodeDetails: Save Changes clicked');
+                    console.log('Original node:', node);
                     console.log(
-                      "Original node scheduledDate:",
+                      'Original node scheduledDate:',
                       node.scheduledDate
                     );
-                    console.log("Edited node:", editedNode);
+                    console.log('Edited node:', editedNode);
                     console.log(
-                      "Edited node scheduledDate:",
+                      'Edited node scheduledDate:',
                       editedNode.scheduledDate
                     );
-                    console.log("=== END NODE DETAILS SAVE DEBUG ===");
+                    console.log('=== END NODE DETAILS SAVE DEBUG ===');
                     onSaveNode(editedNode);
                     setIsEditing(false);
                   }
@@ -974,7 +992,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 className="bg-gradient-primary hover:opacity-90 flex-1"
               >
                 <Save className="w-4 h-4 mr-2" />
-                Save Changes
+                {t('actions.save_changes')}
               </Button>
               <Button
                 variant="outline"
@@ -984,7 +1002,7 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 }}
                 className="flex-1"
               >
-                Cancel
+                {t('actions.cancel')}
               </Button>
             </>
           ) : (
@@ -994,24 +1012,23 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                 onClick={() => setIsEditing(true)}
                 className="border-primary/20 hover:border-primary/40 flex-1"
               >
-                Edit Node
+                {t('actions.edit_node')}
               </Button>
               {onPostNode && (
                 <Button
                   onClick={async () => {
                     if (!node.scheduledDate) {
                       toast({
-                        title: "No scheduled date",
-                        description:
-                          "Please set a scheduled date first by editing the node.",
-                        variant: "destructive",
+                        title: t('node.scheduled_date'),
+                        description: t('node.scheduled_date'),
+                        variant: 'destructive',
                       });
                       return;
                     }
 
                     try {
                       // Schedule this individual node through AppSync
-                      console.log("Scheduling individual node:", {
+                      console.log('Scheduling individual node:', {
                         id: node.id,
                         title: node.title,
                         scheduledDate: node.scheduledDate?.toISOString(),
@@ -1020,47 +1037,47 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
                       });
 
                       const scheduled = await scheduleNodeService(node.id);
-                      console.log("Schedule result:", scheduled);
+                      console.log('Schedule result:', scheduled);
                       if (scheduled) {
                         const updatedNode = {
                           ...node,
-                          status: "scheduled" as const,
+                          status: 'scheduled' as const,
                           scheduledDate:
                             scheduled.scheduledDate ?? node.scheduledDate,
                         };
                         if (onPostNode) onPostNode(updatedNode);
                         toast({
-                          title: "Scheduled",
-                          description: "Node scheduled successfully",
+                          title: 'Scheduled',
+                          description: 'Node scheduled successfully',
                         });
                       } else {
                         toast({
-                          title: "Schedule failed",
+                          title: 'Schedule failed',
                           description:
-                            "Failed to schedule node. Please try again.",
-                          variant: "destructive",
+                            'Failed to schedule node. Please try again.',
+                          variant: 'destructive',
                         });
                       }
                     } catch (error) {
-                      console.error("Error scheduling node:", error);
+                      console.error('Error scheduling node:', error);
                       toast({
-                        title: "Schedule failed",
+                        title: 'Schedule failed',
                         description: String(error?.message || error),
-                        variant: "destructive",
+                        variant: 'destructive',
                       });
                     }
                   }}
                   className="text-white shadow-lg transition-colors flex-1"
-                  style={{ backgroundColor: "#03624C" }}
+                  style={{ backgroundColor: '#03624C' }}
                   onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#2CC295")
+                    (e.currentTarget.style.backgroundColor = '#2CC295')
                   }
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#03624C")
+                    (e.currentTarget.style.backgroundColor = '#03624C')
                   }
                 >
                   <Clock className="w-4 h-4 mr-2" />
-                  Schedule Now
+                  {t('actions.schedule_now')}
                 </Button>
               )}
             </>
