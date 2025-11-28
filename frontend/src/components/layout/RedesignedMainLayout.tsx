@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -12,6 +13,7 @@ import { AddNodeModal } from '@/components/modals/AddNodeModal';
 import { ScheduleConfirmationModal } from '@/components/modals/ScheduleConfirmationModal';
 import { CalendarModal } from '@/components/modals/CalendarModal';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
+import PlannerSidebar from '@/components/planning/PlannerSidebar';
 import type { GeneratedComponent } from '@/services/aiService';
 import {
   Sparkles,
@@ -22,6 +24,7 @@ import {
   Settings,
   X,
   Clock,
+  Save,
   Image as ImageIcon,
   FileText,
   Layers,
@@ -35,6 +38,8 @@ import {
 import { usersAPI } from '@/services/apiService';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from '@/hooks/use-toast';
+import { plannerService } from '@/services/plannerService';
 
 interface RedesignedMainLayoutProps {
   children?: React.ReactNode;
@@ -69,6 +74,8 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
   const { t } = useLanguage();
   const [nodes, setNodes] = useState<ContentNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<ContentNode | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
   // Sidebar states
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
@@ -934,6 +941,60 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
     navigate('/calendar');
   };
 
+  const queryClient = useQueryClient();
+  const savePlannerMutation = useMutation({
+    mutationKey: ['planner-save'],
+    mutationFn: async ({ plannerData, setClean }: { plannerData: { title?: string; nodes: ContentNode[] }, setClean: () => void }) => {
+      const title = plannerData.title ?? `Draft ${new Date().toLocaleDateString()}`;
+      if (!currentPlanId) {
+        const id = await plannerService.createFromNodes(title, plannerData.nodes);
+        setCurrentPlanId(id);
+        return id;
+      } else {
+        await plannerService.updatePlan(currentPlanId, title);
+        return currentPlanId;
+      }
+    },
+    onMutate: async (variables) => {
+      const tempId = crypto && 'randomUUID' in crypto ? crypto.randomUUID() : `temp-${Date.now()}`;
+      const title = variables?.plannerData?.title ?? `Draft ${new Date().toLocaleDateString()}`;
+      const count = variables?.plannerData?.nodes?.length ?? 0;
+      const previous = queryClient.getQueryData<any>(['planners']);
+      queryClient.setQueryData(['planners'], (old: any) => {
+        const existing = Array.isArray(old) ? old : [];
+        return [
+          { id: tempId, title, createdAt: new Date().toISOString(), postCount: count },
+          ...existing,
+        ];
+      });
+      return { previous, tempId };
+    },
+    onSuccess: (id, variables) => {
+      const usedTitle = variables?.plannerData?.title ?? `Draft ${new Date().toLocaleDateString()}`;
+      queryClient.setQueryData(['planners'], (old: any) => {
+        const existing = Array.isArray(old) ? old : [];
+        const replaced = existing.map((p: any, idx: number) => {
+          if (idx === 0 && p.id && String(p.id).startsWith('temp-')) {
+            return { id: String(id), title: usedTitle, createdAt: new Date().toISOString(), postCount: variables?.plannerData?.nodes?.length ?? 0 };
+          }
+          return p;
+        });
+        if (!replaced.find((p: any) => String(p.id) === String(id))) {
+          return [{ id: String(id), title: usedTitle, createdAt: new Date().toISOString(), postCount: variables?.plannerData?.nodes?.length ?? 0 }, ...existing];
+        }
+        return replaced;
+      });
+      queryClient.invalidateQueries({ queryKey: ['planners'] });
+      variables?.setClean?.();
+      toast({ title: 'Draft saved' });
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['planners'], context.previous);
+      }
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Header */}
@@ -1064,7 +1125,10 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         >
           <DraggableNodeCanvas
             nodes={nodes}
-            onNodeUpdate={setNodes}
+            onNodeUpdate={(updated) => {
+              setNodes(updated);
+              setIsDirty(true);
+            }}
             onNodeClick={handleNodeDoubleClick}
             onNodeDoubleClick={handleNodeDoubleClick}
             selectedNodeIds={selectedNodeIds}
@@ -1084,6 +1148,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                 },
               };
               setNodes([...nodes, newNode]);
+              setIsDirty(true);
             }}
             onDeleteNode={async (nodeId: string) => {
               // Optimistically remove the node and clean up connections in UI
@@ -1097,6 +1162,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                       : [],
                   }))
               );
+              setIsDirty(true);
 
               // If this was the selected node, clear the selection
               if (selectedNode && selectedNode.id === nodeId) {
@@ -1141,17 +1207,18 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
 
           {/* Bottom Action Bar */}
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30">
-            <div
-              className="flex items-center gap-4 backdrop-blur-xl border border-[#03624C]/50 rounded-2xl px-6 py-3 shadow-2xl"
-              style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
-            >
-              <Button
-                onClick={handleScheduleAll}
-                className="text-white shadow-lg transition-colors hover:opacity-90"
-                style={{ backgroundColor: '#03624C' }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = '#2CC295')
-                }
+          <div
+            className="flex items-center gap-4 backdrop-blur-xl border border-[#03624C]/50 rounded-2xl px-6 py-3 shadow-2xl"
+            style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
+          >
+            <PlannerSidebar onLoadPlanner={(nodes) => { setNodes(nodes); setIsDirty(false); }} />
+            <Button
+              onClick={handleScheduleAll}
+              className="text-white shadow-lg transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#03624C' }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = '#2CC295')
+              }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = '#03624C')
                 }
@@ -1159,6 +1226,25 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
               >
                 <Clock className="w-4 h-4 mr-2" />
                 {t('actions.schedule_all')}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (currentPlanId && !isDirty) {
+                    toast({ title: 'The planner has been saved.' });
+                    return;
+                  }
+                  savePlannerMutation.mutate({
+                    plannerData: { nodes },
+                    setClean: () => setIsDirty(false),
+                  });
+                }}
+                className="border-cyan-400 text-cyan-400 hover:bg-cyan-500/10"
+                style={{ backgroundColor: 'transparent' }}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
               </Button>
 
               <Button
@@ -1334,7 +1420,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                 <Tabs value={activeRightTab} className="h-full">
                   <TabsContent value="content" className="h-full m-0">
                     <div className="h-full">
-                      <AIChat setPlanningNodes={setNodes} />
+                      <AIChat setPlanningNodes={(n) => { setNodes(n); setIsDirty(true); }} />
                     </div>
                   </TabsContent>
 
