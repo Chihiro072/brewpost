@@ -92,7 +92,8 @@ export function mapPlannerToNodes(detail: PlannerDetail): ContentNode[] {
   const gridCols = 4;
   const gapX = 220;
   const gapY = 160;
-  return detail.posts.map((p, idx) => {
+  const ordered = [...detail.posts].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  return ordered.map((p, idx) => {
     const col = idx % gridCols;
     const row = Math.floor(idx / gridCols);
     return {
@@ -107,7 +108,7 @@ export function mapPlannerToNodes(detail: PlannerDetail): ContentNode[] {
       imagePrompt: undefined,
       day: undefined,
       postType: "engaging",
-      connections: [],
+      connections: idx < ordered.length - 1 ? [ordered[idx + 1].id] : [],
       position: { x: 80 + col * gapX, y: 80 + row * gapY },
       postedAt: p.publishedAt ? new Date(p.publishedAt) : undefined,
       postedTo: [],
