@@ -294,13 +294,41 @@ export const NodeDetails: React.FC<NodeDetailsProps> = ({
             needsProcessing && processedImageUrl !== data.imageUrl,
         });
 
-        // Add new image to imageUrls array
+        // If processed image is a data URL, upload to S3 to obtain a permanent URL
+        let finalUrl = processedImageUrl;
+        if (processedImageUrl.startsWith('data:')) {
+          try {
+            const token = localStorage.getItem('authToken');
+            const uploadResp = await fetch(`${BACKEND_URL}/api/assets/upload-data-url`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                dataUrl: processedImageUrl,
+                filename: `node-${node.id}-${Date.now()}.png`,
+              }),
+            });
+            const uploadData = await uploadResp.json();
+            if (uploadResp.ok && uploadData?.fileUrl) {
+              finalUrl = uploadData.fileUrl as string;
+              console.log('🎯 [NodeDetails] Uploaded data URL to S3:', finalUrl);
+            } else {
+              console.warn('🎯 [NodeDetails] Upload data URL failed:', uploadData);
+            }
+          } catch (e) {
+            console.warn('🎯 [NodeDetails] Upload data URL error:', e);
+          }
+        }
+
+        // Add new image to imageUrls array using final URL
         const existingImages = node.imageUrls || [];
         const updatedNode = {
           ...node,
-          imageUrls: [...existingImages, processedImageUrl],
-          imageUrl: processedImageUrl, // Keep for backward compatibility
-          selectedImageUrl: processedImageUrl,
+          imageUrls: [...existingImages, finalUrl],
+          imageUrl: finalUrl,
+          selectedImageUrl: finalUrl,
         };
 
         console.log('🎯 [NodeDetails] Saving updated node with new image...');

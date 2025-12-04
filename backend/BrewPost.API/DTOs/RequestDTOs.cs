@@ -117,6 +117,12 @@ public class AttachAssetRequest
     public string UsageType { get; set; } = string.Empty;
 }
 
+public class UploadDataUrlRequest
+{
+    public string DataUrl { get; set; } = string.Empty;
+    public string? Filename { get; set; }
+}
+
 // Analytics Request DTOs
 public class PredictAnalyticsRequest
 {

@@ -12,8 +12,8 @@ namespace BrewPost.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class AssetsController : ControllerBase
-{
+    public class AssetsController : ControllerBase
+    {
     private readonly BrewPostDbContext _context;
     private readonly IS3Service _s3Service;
     private readonly ILogger<AssetsController> _logger;
@@ -26,6 +26,104 @@ public class AssetsController : ControllerBase
         _context = context;
         _s3Service = s3Service;
         _logger = logger;
+    }
+
+    [HttpPost("upload-data-url")]
+    public async Task<IActionResult> UploadDataUrl([FromBody] UploadDataUrlRequest request)
+    {
+        try
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.DataUrl))
+            {
+                return BadRequest(new { message = "DataUrl is required" });
+            }
+
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            // Expected format: data:<mime>;base64,<payload>
+            var commaIdx = request.DataUrl.IndexOf(",");
+            if (commaIdx <= 0)
+            {
+                return BadRequest(new { message = "Invalid data URL format" });
+            }
+
+            var header = request.DataUrl.Substring(0, commaIdx);
+            var payload = request.DataUrl.Substring(commaIdx + 1);
+            var contentType = "image/png";
+            if (header.StartsWith("data:"))
+            {
+                var semiIdx = header.IndexOf(";");
+                if (semiIdx > 5)
+                {
+                    contentType = header.Substring(5, semiIdx - 5);
+                }
+            }
+
+            byte[] bytes;
+            try
+            {
+                bytes = Convert.FromBase64String(payload);
+            }
+            catch
+            {
+                return BadRequest(new { message = "Invalid base64 payload" });
+            }
+
+            if (!_s3Service.IsValidFileSize(bytes.Length, 10 * 1024 * 1024))
+            {
+                return BadRequest(new { message = "File size exceeds 10MB limit" });
+            }
+
+            var ext = contentType switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png" => ".png",
+                "image/webp" => ".webp",
+                "image/gif" => ".gif",
+                _ => ".png"
+            };
+            var filename = string.IsNullOrWhiteSpace(request.Filename)
+                ? $"generated-{Guid.NewGuid()}{ext}"
+                : request.Filename;
+
+            using var stream = new MemoryStream(bytes);
+            var s3Key = await _s3Service.UploadFileAsync(stream, filename, contentType);
+            var fileUrl = _s3Service.GetFileUrl(s3Key);
+
+            var asset = new Asset
+            {
+                UserId = userId.Value,
+                Filename = filename,
+                FileUrl = fileUrl,
+                FileType = contentType,
+                FileSize = bytes.Length,
+                S3Key = s3Key,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Assets.Add(asset);
+            await _context.SaveChangesAsync();
+
+            return Ok(new AssetDto
+            {
+                Id = asset.Id,
+                Filename = asset.Filename,
+                FileUrl = asset.FileUrl,
+                FileType = asset.FileType,
+                FileSize = asset.FileSize,
+                S3Key = asset.S3Key,
+                CreatedAt = asset.CreatedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading data URL asset");
+            return StatusCode(500, new { message = "Internal server error" });
+        }
     }
 
     [HttpGet]
