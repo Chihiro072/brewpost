@@ -33,7 +33,14 @@ export default function Callback() {
         if (isLinkedInCallback) {
           // Handle LinkedIn callback
           setStatus("Processing LinkedIn authorization...");
-          const res = await fetch(`/api/linkedin-callback?code=${code}&state=${state}`);
+          const redirectUri = window.location.origin + '/callback';
+          const token = localStorage.getItem('authToken');
+          const res = await fetch(`/api/linkedin-callback?code=${code}&state=${state}&redirectUri=${encodeURIComponent(redirectUri)}` , {
+            method: 'GET',
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          });
           const data = await res.json();
 
           if (data.success) {

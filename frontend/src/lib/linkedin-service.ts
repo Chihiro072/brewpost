@@ -31,17 +31,23 @@ interface RefreshTokensResponse {
 }
 
 export class LinkedInService {
-  private static readonly BASE_URL = 'https://brewpost.duckdns.org/api';
+  private static readonly BASE_URL = (() => {
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const base = isLocal ? 'http://localhost:5044' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5044');
+    return `${base}/api`;
+  })();
 
   /**
    * Post a text-only LinkedIn post
    */
   static async postToLinkedIn(text: string): Promise<LinkedInServiceResponse> {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`${this.BASE_URL}/post-linkedin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ text })
       });
@@ -75,10 +81,12 @@ export class LinkedInService {
    */
   static async postToLinkedInWithImage({ text, imageUrl }: PostLinkedInWithImageParams): Promise<LinkedInServiceResponse> {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`${this.BASE_URL}/post-linkedin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ 
           text: text || '', // Allow empty text for image-only posts
@@ -113,10 +121,13 @@ export class LinkedInService {
    */
   static async getAuthUrl(): Promise<AuthUrlResponse> {
     try {
-      const response = await fetch(`${this.BASE_URL}/linkedin-auth-url`, {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const redirectParam = typeof window !== 'undefined' ? `?redirectUri=${encodeURIComponent(window.location.origin + '/callback')}` : '';
+      const response = await fetch(`${this.BASE_URL}/linkedin-auth-url${redirectParam}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
 
@@ -143,10 +154,12 @@ export class LinkedInService {
    */
   static async refreshTokens(): Promise<RefreshTokensResponse> {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`${this.BASE_URL}/linkedin-refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
 
@@ -175,10 +188,12 @@ export class LinkedInService {
    */
   static async checkTokens(): Promise<{ valid: boolean; error?: string }> {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
       const response = await fetch(`${this.BASE_URL}/linkedin-token-status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
 
