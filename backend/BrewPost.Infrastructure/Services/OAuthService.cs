@@ -350,10 +350,20 @@ public class OAuthService : IOAuthService
         // LinkedIn
         var liClientId = GetValue("LINKEDIN_CLIENT_ID", "OAuth:LinkedIn:ClientId");
         var liClientSecret = GetValue("LINKEDIN_CLIENT_SECRET", "OAuth:LinkedIn:ClientSecret");
-        if (!string.IsNullOrWhiteSpace(liClientId) && !string.IsNullOrWhiteSpace(liClientSecret))
+        var devMode = (GetValue("OAUTH_DEV_MODE") ?? "").Equals("true", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(liClientId) || string.IsNullOrWhiteSpace(liClientSecret))
         {
-            // Allow overriding LinkedIn scopes via configuration (useful if app hasn't been approved for certain scopes)
-            // Default to v2 API scopes (v1 scopes like r_liteprofile are deprecated)
+            if (devMode)
+            {
+                // In dev mode, skip LinkedIn provider if credentials are not provided
+            }
+            else
+            {
+                throw new InvalidOperationException("LinkedIn OAuth is not configured. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in environment.");
+            }
+        }
+        else
+        {
             var liScope = GetValue("OAuth:LinkedIn:Scope", "LINKEDIN_SCOPE");
             if (string.IsNullOrWhiteSpace(liScope)) liScope = "openid profile email w_member_social";
 
@@ -368,19 +378,6 @@ public class OAuthService : IOAuthService
                 TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
                 UserInfoEndpoint = useOidc ? "https://api.linkedin.com/v2/userinfo" : "https://api.linkedin.com/v2/me",
                 Scope = liScope
-            };
-        }
-        else
-        {
-            // Use hardcoded credentials if environment variables not set
-            providers["linkedin"] = new OAuthProvider
-            {
-                ClientId = "865elk5ovamkag",
-                ClientSecret = "WPL_AP1.20cFb7CPs2ohQjly.dlzpRA==",
-                AuthorizationEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
-                TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
-                UserInfoEndpoint = "https://api.linkedin.com/v2/userinfo",
-                Scope = "openid profile email w_member_social"
             };
         }
 
