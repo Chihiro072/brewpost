@@ -179,12 +179,6 @@ public class OAuthService : IOAuthService
             request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        // LinkedIn requires Rest.li header
-        if (socialProvider.ToLower() == "linkedin")
-        {
-            request.Headers.TryAddWithoutValidation("X-Restli-Protocol-Version", "2.0.0");
-        }
-
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
@@ -195,57 +189,11 @@ public class OAuthService : IOAuthService
         var responseContent = await response.Content.ReadAsStringAsync();
         var userData = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
-        if (socialProvider.ToLower() == "linkedin")
-        {
-            // If using OIDC, /userinfo returns sub/name/email
-            if (providerConfig.UserInfoEndpoint.EndsWith("/userinfo"))
-            {
-                return ParseLinkedInProfile(userData);
-            }
-            // Legacy: /v2/me + /v2/emailAddress with r_liteprofile r_emailaddress
-            var id = userData.TryGetProperty("id", out var idProp) ? idProp.GetString() ?? string.Empty : string.Empty;
-            var first = userData.TryGetProperty("localizedFirstName", out var fProp) ? fProp.GetString() ?? string.Empty : string.Empty;
-            var last = userData.TryGetProperty("localizedLastName", out var lProp) ? lProp.GetString() ?? string.Empty : string.Empty;
-            var name = string.Join(" ", new[] { first, last }.Where(s => !string.IsNullOrWhiteSpace(s)));
-
-            // Fetch email
-            var emailReq = new HttpRequestMessage(HttpMethod.Get, "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))");
-            emailReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            emailReq.Headers.TryAddWithoutValidation("X-Restli-Protocol-Version", "2.0.0");
-            var emailResp = await _httpClient.SendAsync(emailReq);
-            string email = string.Empty;
-            if (emailResp.IsSuccessStatusCode)
-            {
-                var emailJson = await emailResp.Content.ReadAsStringAsync();
-                var emailDoc = JsonSerializer.Deserialize<JsonElement>(emailJson);
-                if (emailDoc.TryGetProperty("elements", out var elements) && elements.ValueKind == JsonValueKind.Array && elements.GetArrayLength() > 0)
-                {
-                    var firstEl = elements[0];
-                    if (firstEl.TryGetProperty("handle~", out var handle) && handle.TryGetProperty("emailAddress", out var emailProp))
-                    {
-                        email = emailProp.GetString() ?? string.Empty;
-                    }
-                }
-            }
-
-            return new SocialUserProfile
-            {
-                ProviderId = id,
-                Name = name,
-                Email = email,
-                AdditionalData = new Dictionary<string, object>
-                {
-                    ["linkedin_id"] = id,
-                    ["firstName"] = first,
-                    ["lastName"] = last
-                }
-            };
-        }
-
         return socialProvider.ToLower() switch
         {
             "instagram" => ParseInstagramProfile(userData),
             "facebook" => ParseFacebookProfile(userData),
+            "linkedin" => ParseLinkedInProfile(userData),
             "github" => ParseGitHubProfile(userData),
             "pinterest" => ParsePinterestProfile(userData),
             "reddit" => ParseRedditProfile(userData),
@@ -350,25 +298,12 @@ public class OAuthService : IOAuthService
         // LinkedIn
         var liClientId = GetValue("LINKEDIN_CLIENT_ID", "OAuth:LinkedIn:ClientId");
         var liClientSecret = GetValue("LINKEDIN_CLIENT_SECRET", "OAuth:LinkedIn:ClientSecret");
-        var devMode = (GetValue("OAUTH_DEV_MODE") ?? "").Equals("true", StringComparison.OrdinalIgnoreCase);
-        if (string.IsNullOrWhiteSpace(liClientId) || string.IsNullOrWhiteSpace(liClientSecret))
+        if (!string.IsNullOrWhiteSpace(liClientId) && !string.IsNullOrWhiteSpace(liClientSecret))
         {
-            if (devMode)
-            {
-                // In dev mode, skip LinkedIn provider if credentials are not provided
-            }
-            else
-            {
-                throw new InvalidOperationException("LinkedIn OAuth is not configured. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in environment.");
-            }
-        }
-        else
-        {
+            // Allow overriding LinkedIn scopes via configuration (useful if app hasn't been approved for certain scopes)
+            // Default to v2 API scopes (v1 scopes like r_liteprofile are deprecated)
             var liScope = GetValue("OAuth:LinkedIn:Scope", "LINKEDIN_SCOPE");
             if (string.IsNullOrWhiteSpace(liScope)) liScope = "openid profile email w_member_social";
-
-            var useOidc = liScope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                                  .Any(s => s.Equals("openid", StringComparison.OrdinalIgnoreCase));
 
             providers["linkedin"] = new OAuthProvider
             {
@@ -376,8 +311,22 @@ public class OAuthService : IOAuthService
                 ClientSecret = liClientSecret,
                 AuthorizationEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
                 TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
-                UserInfoEndpoint = useOidc ? "https://api.linkedin.com/v2/userinfo" : "https://api.linkedin.com/v2/me",
+                // Using v2 API userinfo endpoint
+                UserInfoEndpoint = "https://api.linkedin.com/v2/userinfo",
                 Scope = liScope
+            };
+        }
+        else
+        {
+            // Use hardcoded credentials if environment variables not set
+            providers["linkedin"] = new OAuthProvider
+            {
+                ClientId = "865elk5ovamkag",
+                ClientSecret = "WPL_AP1.20cFb7CPs2ohQjly.dlzpRA==",
+                AuthorizationEndpoint = "https://www.linkedin.com/oauth/v2/authorization",
+                TokenEndpoint = "https://www.linkedin.com/oauth/v2/accessToken",
+                UserInfoEndpoint = "https://api.linkedin.com/v2/userinfo",
+                Scope = "openid profile email w_member_social"
             };
         }
 
