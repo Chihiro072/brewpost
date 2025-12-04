@@ -1,6 +1,6 @@
 export type LanguageCode = 'en' | 'ms' | 'zh';
 
-export type TranslationDict = Record<string, string | TranslationDict>;
+export type TranslationDict = Record<string, string | Record<string, any>>;
 
 export const dictionaries: Record<LanguageCode, TranslationDict> = {
   en: {
@@ -57,6 +57,10 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       image_click_zoom: 'Click to zoom',
       payment_success:
         'Payment successful! {messages} messages have been added to your account. You can now continue using the AI Content Generator.',
+      clear_chat: 'Clear chat',
+      clear_chat_title: 'Clear Chat History',
+      clear_chat_message: 'Are you sure you want to clear your entire conversation history? This action cannot be undone.',
+      clear_chat_confirm: 'Clear Chat',
     },
     quota: {
       free_left: 'Free messages left:',
@@ -259,6 +263,10 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       image_click_zoom: 'Klik untuk zum',
       payment_success:
         'Pembayaran berjaya! {messages} mesej telah ditambah ke akaun anda. Anda boleh terus gunakan Penjana Kandungan AI.',
+      clear_chat: 'Kosongkan sembang',
+      clear_chat_title: 'Kosongkan Sejarah Sembang',
+      clear_chat_message: 'Adakah anda pasti mahu mengosongkan keseluruhan sejarah perbualan anda? Tindakan ini tidak boleh dibatalkan.',
+      clear_chat_confirm: 'Kosongkan Sembang',
     },
     quota: {
       free_left: 'Mesej percuma tinggal:',
@@ -462,6 +470,10 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       image_click_zoom: '点击放大',
       payment_success:
         '支付成功！已为你的账户添加 {messages} 条消息。你可以继续使用 AI 内容生成器。',
+      clear_chat: '清除聊天',
+      clear_chat_title: '清除聊天记录',
+      clear_chat_message: '确定要清除整个对话历史吗？此操作不可撤销。',
+      clear_chat_confirm: '清除聊天',
     },
     quota: {
       free_left: '剩余免费消息：',

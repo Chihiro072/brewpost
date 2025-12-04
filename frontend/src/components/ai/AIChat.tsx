@@ -22,6 +22,7 @@ import {
   X,
   Maximize2,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { ContentNode } from '@/components/planning/PlanningPanel';
@@ -405,6 +406,9 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Clear chat confirmation dialog state
+  const [showClearChatDialog, setShowClearChatDialog] = useState(false);
+
   // Image zoom state
   const [showZoomModal, setShowZoomModal] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string>('');
@@ -440,6 +444,40 @@ export const AIChat: React.FC<AIChatProps> = ({ setPlanningNodes }) => {
       document.body.removeChild(link);
     }
   };
+
+  // Clear chat function
+  const handleClearChat = () => {
+    try {
+      // Get the current user's chat storage key
+      const key = getChatStorageKey();
+      
+      // Remove chat history from localStorage
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(key);
+      }
+      
+      // Reset messages to only contain the seed message
+      setMessages([seedMessage]);
+      
+      // Clear the input field
+      setInput('');
+      
+      // Cancel any ongoing generation
+      setIsGenerating(false);
+      
+      // Close the confirmation dialog
+      setShowClearChatDialog(false);
+      
+      console.log('Chat history cleared successfully');
+    } catch (e) {
+      console.warn('Failed to clear chat history:', e);
+      // Even if there's an error, close the dialog
+      setShowClearChatDialog(false);
+    }
+  };
+
+  // Determine if clear button should be shown
+  const shouldShowClearButton = messages.length > 1 || input.trim().length > 0;
 
   // Update quota state periodically
   useEffect(() => {
@@ -573,7 +611,16 @@ Please try again or refine your request. For a quick start, tell me what topic y
     setIsRefining(true);
 
     try {
-      const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.\n\nUser prompt: "${input.trim()}"\n\nGuidelines:\n- Make it clear, specific and actionable for content creation.\n- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).\n- Keep the original intent and tone.\n\nPlease respond in ${
+      const prompt = `Refine this user prompt for social media content planning and generation. Return ONLY the improved prompt (one or two sentences), do not include any extra explanation.
+
+User prompt: "${input.trim()}"
+
+Guidelines:
+- Make it clear, specific and actionable for content creation.
+- Add topical context and suggest a desired outcome (e.g., increase engagement, attract customers).
+- Keep the original intent and tone.
+
+Please respond in ${
         langName[language]
       }.`;
 
@@ -1108,6 +1155,19 @@ Please respond in ${langName[language]}.`;
           <div className="flex items-center gap-3">
             <Sparkles className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-semibold">{t('ai.header_title')}</h2>
+            
+            {/* Clear Chat Button */}
+            {shouldShowClearButton && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-2 text-muted-foreground hover:text-destructive transition-colors"
+                onClick={() => setShowClearChatDialog(true)}
+                title={t('ai.clear_chat')}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
           {/* Quota Display */}
@@ -1677,6 +1737,34 @@ Please respond in ${langName[language]}.`;
         onClose={() => setShowPaymentModal(false)}
         onPaymentSuccess={handlePaymentSuccess}
       />
+
+      {/* Clear Chat Confirmation Dialog */}
+      <Dialog open={showClearChatDialog} onOpenChange={setShowClearChatDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('ai.clear_chat_title')}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              {t('ai.clear_chat_message')}
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearChatDialog(false)}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearChat}
+            >
+              {t('ai.clear_chat_confirm')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
