@@ -957,7 +957,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         setCurrentPlanId(id)
         return id
       } else {
-        await plannerService.updatePlan(currentPlanId, title)
+        await plannerService.updatePlan(currentPlanId, title, plannerData.nodes)
         return currentPlanId
       }
     },

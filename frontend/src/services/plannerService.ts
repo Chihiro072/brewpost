@@ -12,6 +12,7 @@ export type PlannerDetail = {
   id: string
   title: string
   prompt: string
+  brandInfo?: any
   status: string
   createdAt: string
   posts: Array<{
@@ -48,6 +49,7 @@ export const plannerService = {
       id: String(d.id),
       title: d.title,
       prompt: d.prompt,
+      brandInfo: d.brandInfo,
       status: d.status,
       createdAt: d.createdAt,
       posts: (d.posts || []).map((p: any) => ({
@@ -76,9 +78,22 @@ export const plannerService = {
             .map(n => n.title)
             .join(', ')}`
         : 'Auto-generated draft'
+    const brandInfo = {
+      nodes: (nodes || []).map((n, idx) => ({
+        idx,
+        day: n.day ?? null,
+        postType: n.postType ?? null,
+        templateColor: (n as any).templateColor ?? null,
+        connections: (n.connections || []).map(cId => ({ toId: cId })),
+        imagePrompt: n.imagePrompt ?? null,
+        scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
+        selectedImageUrl: n.selectedImageUrl ?? null
+      }))
+    }
     const planRes = await apiClient.post('/api/content/plans', {
       title,
-      prompt
+      prompt,
+      brandInfo
     })
     const planId = String(planRes.data?.id)
     if (planId) {
@@ -93,12 +108,41 @@ export const plannerService = {
           })
         } catch {}
       }
+      // Attempt to schedule posts if nodes include scheduledDate
+      try {
+        const detail = await this.get(planId)
+        const posts = detail.posts || []
+        ;(nodes || []).forEach(async (n, i) => {
+          if (n.scheduledDate && posts[i]) {
+            try {
+              await apiClient.post(`/api/posts/${posts[i].id}/schedule`, {
+                platform: 'generic',
+                scheduledAt: new Date(n.scheduledDate).toISOString()
+              })
+            } catch {}
+          }
+        })
+      } catch {}
     }
     return planId
   },
 
-  async updatePlan (id: string, title: string, prompt?: string): Promise<void> {
-    await apiClient.put(`/api/content/plans/${id}`, { title, prompt })
+  async updatePlan (id: string, title: string, nodes?: ContentNode[], prompt?: string): Promise<void> {
+    const brandInfo = nodes
+      ? {
+          nodes: (nodes || []).map((n, idx) => ({
+            idx,
+            day: n.day ?? null,
+            postType: n.postType ?? null,
+            templateColor: (n as any).templateColor ?? null,
+            connections: (n.connections || []).map(cId => ({ toId: cId })),
+            imagePrompt: n.imagePrompt ?? null,
+            scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
+            selectedImageUrl: n.selectedImageUrl ?? null
+          }))
+        }
+      : undefined
+    await apiClient.put(`/api/content/plans/${id}`, { title, prompt, brandInfo })
   }
 }
 
@@ -141,11 +185,14 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
   const ordered = [...detail.posts].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
+  const brandNodes = Array.isArray(detail.brandInfo?.nodes) ? detail.brandInfo.nodes : []
   return ordered.map((p, idx) => {
     // Zigzag pattern: alternating top and bottom rows
     const isBottom = idx % 2 === 1
     const x = startX + idx * (spacing / 2)
     const y = isBottom ? bottomY : topY
+    const bn = brandNodes[idx] || {}
+    const connectionId = bn?.connections?.[0]?.toId ?? undefined
 
     return {
       id: p.id,
@@ -156,15 +203,15 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       content: p.caption || '',
       imageUrl: undefined,
       imageUrls: undefined,
-      imagePrompt: undefined,
-      day: undefined,
-      postType: detectPostType(p.title, p.caption || ''),
-      connections: idx < ordered.length - 1 ? [ordered[idx + 1].id] : [],
+      imagePrompt: bn.imagePrompt ?? undefined,
+      day: bn.day ?? undefined,
+      postType: bn.postType ?? detectPostType(p.title, p.caption || ''),
+      connections: connectionId ? [connectionId] : (idx < ordered.length - 1 ? [ordered[idx + 1].id] : []),
       position: { x, y },
       postedAt: p.publishedAt ? new Date(p.publishedAt) : undefined,
       postedTo: [],
       tweetId: undefined,
-      selectedImageUrl: undefined
+      selectedImageUrl: bn.selectedImageUrl ?? undefined
     }
   })
 }

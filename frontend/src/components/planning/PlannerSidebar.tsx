@@ -168,10 +168,13 @@ export default function PlannerSidebar ({
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
+                        type='button'
                         variant='ghost'
                         size='icon'
                         className='absolute right-3 top-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100'
                         aria-label='Delete planner'
+                        onClick={(e) => { e.stopPropagation() }}
+                        onMouseDown={(e) => { e.stopPropagation() }}
                       >
                         <Trash2 className='h-4 w-4' />
                       </Button>
