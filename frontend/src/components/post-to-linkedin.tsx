@@ -269,25 +269,25 @@ export const PostToLinkedIn: React.FC<PostToLinkedInProps> = ({
         {/* Result Message */}
         {postResult && (
           <Card className={`p-3 ${postResult.success 
-            ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 
+            ? 'bg-card/95 border-border/50' 
             : 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
           }`}>
             <div className="flex items-start gap-2">
               {postResult.success ? (
-                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-foreground/80 mt-0.5 flex-shrink-0" />
               ) : (
                 <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
               )}
               <div className="flex-1">
                 <p className={`text-sm ${postResult.success 
-                  ? 'text-green-800 dark:text-green-200' 
+                  ? 'text-foreground' 
                   : 'text-red-800 dark:text-red-200'
                 }`}>
                   {postResult.message}
                 </p>
                 {postResult.success && postResult.postId && (
-                  <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
-                    <p className="text-xs text-green-600 dark:text-green-400">
+                  <div className="mt-2 pt-2 border-t border-border/40">
+                    <p className="text-xs text-muted-foreground">
                       Post ID: {postResult.postId}
                     </p>
                   </div>

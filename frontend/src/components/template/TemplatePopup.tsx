@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Check, Palette } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface TemplatePopupProps {
   isOpen: boolean;
@@ -104,14 +104,7 @@ export const TemplatePopup: React.FC<TemplatePopupProps> = ({ isOpen, onClose })
     });
     
     // Show success message with toast
-    toast.success('Template saved successfully! Your template will be applied to all future generated images.', {
-      duration: 4000,
-      style: {
-        background: 'rgba(3, 98, 76, 0.95)',
-        color: '#00DF81',
-        border: '1px solid rgba(44, 194, 149, 0.3)',
-      },
-    });
+    toast({ title: 'Template saved successfully! Your template will be applied to all future generated images.', variant: 'success' });
     
     onClose();
   };

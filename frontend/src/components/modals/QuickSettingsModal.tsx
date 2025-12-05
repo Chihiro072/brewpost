@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { LanguageCode } from '@/utils/translations';
 
@@ -69,7 +69,7 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('bp_theme', checked ? 'white' : 'dark');
       }
-      toast.success(`${t('settings.dark_mode')}: ${checked ? 'On' : 'Off'}`);
+      toast({ title: `${t('settings.dark_mode')}: ${checked ? 'On' : 'Off'}`, variant: 'success' });
     } catch {}
   };
 
@@ -79,11 +79,7 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('bp_notifications', checked ? 'on' : 'off');
       }
-      toast.success(
-        checked
-          ? t('settings.notifications') + ' On'
-          : t('settings.notifications') + ' Off'
-      );
+      toast({ title: checked ? t('settings.notifications') + ' On' : t('settings.notifications') + ' Off', variant: 'success' });
     } catch {}
   };
 
@@ -91,7 +87,7 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
     onOpenChange(false);
     setTimeout(() => {
       setLanguage(value);
-      toast.success(`${t('settings.language')}: ${value.toUpperCase()}`);
+      toast({ title: `${t('settings.language')}: ${value.toUpperCase()}`, variant: 'success' });
     }, 0);
   };
 

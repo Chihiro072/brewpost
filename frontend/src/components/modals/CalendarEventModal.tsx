@@ -532,7 +532,9 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                     </Label>
                     <div className='border border-border/20 rounded-lg overflow-hidden bg-card/50 flex justify-start'>
                       <img
-                        src={convertToProxyUrl(formData.imageUrl || event?.imageUrl || '')}
+                        src={convertToProxyUrl(
+                          formData.imageUrl || event?.imageUrl || ''
+                        )}
                         alt='Preview'
                         className='max-h-60 object-cover rounded-lg'
                         onError={e => {
@@ -624,21 +626,19 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
               pointerEvents: 'none'
             }}
           >
-
-
             {postResults.linkedin && (
               <div
                 className={`p-4 rounded-lg border-2 shadow-2xl backdrop-blur-md max-w-sm animate-in slide-in-from-right-2 pointer-events-auto transform transition-all duration-300 ${
                   postResults.linkedin.success
-                    ? 'bg-green-50/98 border-green-400 text-green-900 dark:bg-green-900/98 dark:border-green-500 dark:text-green-100'
+                    ? 'bg-card/95 border-border/50 text-foreground'
                     : 'bg-red-50/98 border-red-400 text-red-900 dark:bg-red-900/98 dark:border-red-500 dark:text-red-100'
                 }`}
               >
                 <div className='flex items-center gap-3'>
                   {postResults.linkedin.success ? (
-                    <CheckCircle className='w-5 h-5 flex-shrink-0' />
+                    <CheckCircle className='w-5 h-5 flex-shrink-0 text-foreground/80' />
                   ) : (
-                    <X className='w-5 h-5 flex-shrink-0' />
+                    <X className='w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400' />
                   )}
                   <div className='flex-1'>
                     <span className='text-sm font-semibold block'>

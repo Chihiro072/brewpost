@@ -95,14 +95,17 @@ export default function PlannerSidebar ({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
-          className='h-12 w-12 rounded-full text-white shadow-lg transition-colors hover:opacity-90'
-          style={{ backgroundColor: '#03624C' }}
-          onMouseEnter={e =>
-            (e.currentTarget.style.backgroundColor = '#2CC295')
-          }
-          onMouseLeave={e =>
-            (e.currentTarget.style.backgroundColor = '#03624C')
-          }
+          variant='outline'
+          className='border-[#03624C]/50 rounded-full w-10 h-10 p-0 text-[#00DF81] transition-colors'
+          style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.backgroundColor = 'rgba(3, 98, 76, 0.3)'
+            e.currentTarget.style.borderColor = 'rgba(44, 194, 149, 0.7)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 15, 49, 0.5)'
+            e.currentTarget.style.borderColor = 'rgba(3, 98, 76, 0.5)'
+          }}
           aria-label='Open Saved Planners'
         >
           <FolderClock className='h-5 w-5' />

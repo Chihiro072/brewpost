@@ -8,7 +8,7 @@ import { ComponentSidebar } from "./ComponentSidebar"
 import { enhanceImagePromptWithTemplate, applyTemplateToImage, applyComponentsToImage, getTemplateSettings } from '@/utils/templateUtils'
 import { useState, useRef, useEffect } from 'react'
 import { nodeService } from '@/services/nodeService'
-import { toast } from 'sonner'
+import { toast } from '@/hooks/use-toast'
 import { useLanguage } from '@/contexts/LanguageContext'
 
 interface SelectedComponent {
@@ -259,12 +259,12 @@ export function CircleCanvas({
     }
   };
 
-  const handleGenerateImage = async () => {
+const handleGenerateImage = async () => {
     console.log('[CircleCanvas] Starting image generation process');
     
     if (!selectedComponents.length) {
       console.warn('[CircleCanvas] No components selected for image generation');
-      toast.error(t('canvas.select_component_warning'));
+      toast({ title: t('canvas.select_component_warning'), variant: 'warning' });
       return;
     }
 
@@ -303,7 +303,7 @@ export function CircleCanvas({
           if (isTemporaryId) {
             console.warn('[CircleCanvas] ⚠️ Cannot update node with temporary ID:', selectedNode.id);
             console.warn('[CircleCanvas] This node needs to be created in the backend first');
-            toast.warning(t('canvas.node_save_warning'));
+            toast({ title: t('canvas.node_save_warning'), variant: 'warning' });
             
             // Still update the local state for UI purposes
             const updatedNode = {
@@ -315,7 +315,7 @@ export function CircleCanvas({
             
             // Call onSaveNode but it won't persist to backend due to temporary ID
             onSaveNode(updatedNode);
-            toast.success(t('canvas.local_update_success'));
+            toast({ title: t('canvas.local_update_success'), variant: 'success' });
           } else {
             // This is a proper GUID, safe to update
             const updatedNode = {
@@ -329,13 +329,13 @@ export function CircleCanvas({
             onSaveNode(updatedNode);
             console.log('[CircleCanvas] Node updated successfully with final image');
             
-            toast.success(t('canvas.saved_success'));
+            toast({ title: t('canvas.saved_success'), variant: 'success' });
           }
         }
       }
     } catch (error) {
       console.error('[CircleCanvas] Error in image generation process:', error);
-      toast.error(t('canvas.failed'));
+      toast({ title: t('canvas.failed'), variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }

@@ -1240,12 +1240,6 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
               className='flex items-center gap-4 backdrop-blur-xl border border-[#03624C]/50 rounded-2xl px-6 py-3 shadow-2xl'
               style={{ backgroundColor: 'rgba(3, 34, 33, 0.95)' }}
             >
-              <PlannerSidebar
-                onLoadPlanner={nodes => {
-                  setNodes(nodes)
-                  setIsDirty(false)
-                }}
-              />
               <Button
                 onClick={handleScheduleAll}
                 className='text-white shadow-lg transition-colors hover:opacity-90'
@@ -1285,6 +1279,13 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
                 <Save className='w-4 h-4 mr-2' />
                 Save Draft
               </Button>
+
+              <PlannerSidebar
+                onLoadPlanner={nodes => {
+                  setNodes(nodes)
+                  setIsDirty(false)
+                }}
+              />
 
               <Button
                 variant='outline'
