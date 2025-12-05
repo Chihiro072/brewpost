@@ -768,12 +768,14 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
         if (count && count > 0) {
           toast({
             title: 'Scheduled',
-            description: `Scheduled ${count} nodes`
+            description: `Scheduled ${count} nodes`,
+            variant: 'success'
           })
         } else {
           toast({
             title: 'Scheduled',
-            description: 'Scheduled nodes successfully'
+            description: 'Scheduled nodes successfully',
+            variant: 'success'
           })
         }
       } catch (e) {

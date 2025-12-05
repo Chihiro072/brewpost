@@ -589,6 +589,7 @@ export const PlanningPanel = React.forwardRef<
           toast({
             title: "Scheduled",
             description: `Scheduled ${count} nodes`,
+            variant: "success",
           });
           navigate("/calendar", { state: { nodes: updated, editable: true } });
         } else {

@@ -628,23 +628,25 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
           >
             {postResults.linkedin && (
               <div
-                className={`p-4 rounded-lg border-2 shadow-2xl backdrop-blur-md max-w-sm animate-in slide-in-from-right-2 pointer-events-auto transform transition-all duration-300 ${
+                className={`group p-4 rounded-lg border-2 shadow-2xl max-w-sm animate-in slide-in-from-right-2 pointer-events-auto transform transition-all duration-300 overflow-hidden ${
                   postResults.linkedin.success
-                    ? 'bg-card/95 border-border/50 text-foreground'
-                    : 'bg-red-50/98 border-red-400 text-red-900 dark:bg-red-900/98 dark:border-red-500 dark:text-red-100'
+                    ? 'bg-green-600 border-green-500 text-white dark:bg-green-700 dark:border-green-500'
+                    : 'bg-red-600 border-red-500 text-white dark:bg-red-700 dark:border-red-500'
                 }`}
               >
                 <div className='flex items-center gap-3'>
                   {postResults.linkedin.success ? (
-                    <CheckCircle className='w-5 h-5 flex-shrink-0 text-foreground/80' />
+                    <CheckCircle className='w-5 h-5 flex-shrink-0 text-white' />
                   ) : (
                     <X className='w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400' />
                   )}
-                  <div className='flex-1'>
-                    <span className='text-sm font-semibold block'>
+                  <div className='flex-1 overflow-hidden'>
+                    <span className={`text-sm font-semibold block`}>
                       LinkedIn
                     </span>
-                    <p className='text-xs mt-1 opacity-90'>
+                    <p
+                      className={`text-xs mt-1 opacity-90 break-words whitespace-pre-wrap`}
+                    >
                       {postResults.linkedin.message}
                     </p>
                   </div>
@@ -652,7 +654,7 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                     onClick={() =>
                       setPostResults(prev => ({ ...prev, linkedin: undefined }))
                     }
-                    className='ml-2 opacity-70 hover:opacity-100 transition-opacity'
+                    className='ml-2 opacity-0 group-hover:opacity-100 transition-opacity'
                   >
                     <X className='w-4 h-4' />
                   </button>
