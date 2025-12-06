@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Calendar,
   Clock,
@@ -30,45 +30,46 @@ import {
   Send,
   X,
   CheckCircle,
-  Loader2
-} from 'lucide-react'
-import { AIChat } from '@/components/ai/AIChat'
-import { LinkedInService } from '@/lib/linkedin-service'
-import { convertToProxyUrl } from '@/utils/templateUtils'
+  Loader2,
+} from "lucide-react";
+import { AIChat } from "@/components/ai/AIChat";
+import { LinkedInService } from "@/lib/linkedin-service";
+import { LinkedInAuthWarningModal } from "@/components/modals/LinkedInAuthWarningModal";
+import { convertToProxyUrl } from "@/utils/templateUtils";
 
 // LinkedIn Icon Component
 const LinkedInIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
-    viewBox='0 0 24 24'
-    fill='currentColor'
-    xmlns='http://www.w3.org/2000/svg'
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
   >
-    <path d='M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z' />
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
   </svg>
-)
+);
 
 interface ContentNode {
-  id: string
-  title: string
-  type: 'post' | 'image' | 'story'
-  status: 'draft' | 'scheduled' | 'published'
-  scheduledDate?: Date
-  content: string
-  imageUrl?: string
-  connections: string[]
-  position: { x: number; y: number }
-  postedAt?: Date
-  postedTo?: string[]
-  linkedInId?: string
+  id: string;
+  title: string;
+  type: "post" | "image" | "story";
+  status: "draft" | "scheduled" | "published";
+  scheduledDate?: Date;
+  content: string;
+  imageUrl?: string;
+  connections: string[];
+  position: { x: number; y: number };
+  postedAt?: Date;
+  postedTo?: string[];
+  linkedInId?: string;
 }
 
 interface CalendarEventModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  event: ContentNode | null
-  onSave: (updatedEvent: ContentNode) => void
-  onDelete?: (eventId: string) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  event: ContentNode | null;
+  onSave: (updatedEvent: ContentNode) => void;
+  onDelete?: (eventId: string) => void;
 }
 
 export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
@@ -76,28 +77,29 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
   onOpenChange,
   event,
   onSave,
-  onDelete
+  onDelete,
 }) => {
-  const [formData, setFormData] = useState<Partial<ContentNode>>({})
-  const [isPostingToLinkedIn, setIsPostingToLinkedIn] = useState(false)
+  const [formData, setFormData] = useState<Partial<ContentNode>>({});
+  const [isPostingToLinkedIn, setIsPostingToLinkedIn] = useState(false);
   const [postResults, setPostResults] = useState<{
-    linkedin?: { success: boolean; message: string }
-  }>({})
+    linkedin?: { success: boolean; message: string };
+  }>({});
   const [linkedInAuthorized, setLinkedInAuthorized] = useState<boolean | null>(
     null
-  )
+  );
+  const [showAuthWarning, setShowAuthWarning] = useState(false);
 
   const checkLinkedInAuthStatus = async () => {
     try {
-      console.log('🔍 Checking LinkedIn authorization status in modal...')
-      const result = await LinkedInService.checkTokens()
-      console.log('LinkedIn auth check result:', result)
-      setLinkedInAuthorized(result.valid)
+      console.log("🔍 Checking LinkedIn authorization status in modal...");
+      const result = await LinkedInService.checkTokens();
+      console.log("LinkedIn auth check result:", result);
+      setLinkedInAuthorized(result.valid);
     } catch (error) {
-      console.error('❌ LinkedIn auth check failed in modal:', error)
-      setLinkedInAuthorized(false)
+      console.error("❌ LinkedIn auth check failed in modal:", error);
+      setLinkedInAuthorized(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (event) {
@@ -107,50 +109,50 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
         status: event.status,
         content: event.content,
         scheduledDate: event.scheduledDate,
-        imageUrl: event.imageUrl
-      })
+        imageUrl: event.imageUrl,
+      });
     }
     // Reset post results when event changes
-    setPostResults({})
+    setPostResults({});
 
     // Check LinkedIn authorization when modal opens
     if (open) {
-      checkLinkedInAuthStatus()
+      checkLinkedInAuthStatus();
     }
-  }, [event, open])
+  }, [event, open]);
 
   // Listen for window focus to recheck auth after authorization (only if not authorized)
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const handleFocus = () => {
       if (linkedInAuthorized === false) {
         console.log(
-          '🔄 Window focused, rechecking LinkedIn auth status in modal...'
-        )
-        checkLinkedInAuthStatus()
+          "🔄 Window focused, rechecking LinkedIn auth status in modal..."
+        );
+        checkLinkedInAuthStatus();
       }
-    }
+    };
 
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [open, linkedInAuthorized])
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [open, linkedInAuthorized]);
 
   // Auto-dismiss success messages after 10 seconds
   useEffect(() => {
     if (postResults.linkedin?.success) {
       const timer = setTimeout(() => {
-        setPostResults(prev => ({
+        setPostResults((prev) => ({
           ...prev,
-          ...(postResults.linkedin?.success && { linkedin: undefined })
-        }))
-      }, 10000)
-      return () => clearTimeout(timer)
+          ...(postResults.linkedin?.success && { linkedin: undefined }),
+        }));
+      }, 10000);
+      return () => clearTimeout(timer);
     }
-  }, [postResults])
+  }, [postResults]);
 
   const handleSave = () => {
-    if (!event) return
+    if (!event) return;
 
     const updatedEvent: ContentNode = {
       ...event,
@@ -160,325 +162,274 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
       status: formData.status || event.status,
       content: formData.content || event.content,
       scheduledDate: formData.scheduledDate,
-      imageUrl: formData.imageUrl
-    }
+      imageUrl: formData.imageUrl,
+    };
 
-    console.log('CalendarEventModal handleSave - updatedEvent:', updatedEvent)
-    onSave(updatedEvent)
-    onOpenChange(false)
-  }
+    console.log("CalendarEventModal handleSave - updatedEvent:", updatedEvent);
+    onSave(updatedEvent);
+    onOpenChange(false);
+  };
 
   const handleDelete = () => {
     if (event && onDelete) {
-      onDelete(event.id)
-      onOpenChange(false)
+      onDelete(event.id);
+      onOpenChange(false);
     }
-  }
+  };
 
   const getLinkedInButtonText = () => {
-    if (linkedInAuthorized === null) return 'Checking...'
-    if (!linkedInAuthorized) return 'Authorize LinkedIn'
-    return 'Post to LinkedIn'
-  }
+    if (linkedInAuthorized === null) return "Checking...";
+    return "Post to LinkedIn";
+  };
 
   const getLinkedInButtonIcon = () => {
     if (linkedInAuthorized === null)
-      return <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-    if (!linkedInAuthorized) return <LinkedInIcon className='w-4 h-4 mr-2' />
+      return <Loader2 className="w-4 h-4 mr-2 animate-spin" />;
     return isPostingToLinkedIn ? (
-      <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
     ) : (
-      <LinkedInIcon className='w-4 h-4 mr-2' />
-    )
-  }
+      <LinkedInIcon className="w-4 h-4 mr-2" />
+    );
+  };
 
-  const handleSmartLinkedInAction = async () => {
-    if (linkedInAuthorized === null) {
-      // Still checking auth status
-      return
-    }
+  const handleLinkedInPostClick = async () => {
+    if (linkedInAuthorized === null) return; // still checking
 
     if (!linkedInAuthorized) {
-      // Need to authorize first
-      setIsPostingToLinkedIn(true)
-      try {
-        const result = await LinkedInService.getAuthUrl()
-
-        if (result.url) {
-          window.open(result.url, '_blank')
-          setPostResults(prev => ({
-            ...prev,
-            linkedin: {
-              success: true,
-              message:
-                'Authorization window opened. Complete the authorization and try again.'
-            }
-          }))
-
-          // Set up periodic recheck for authorization
-          const recheckInterval = setInterval(() => {
-            console.log(
-              '🔄 Rechecking LinkedIn auth status in modal after authorization...'
-            )
-            checkLinkedInAuthStatus()
-          }, 5000)
-
-          // Clear interval after 1 minute
-          setTimeout(() => {
-            clearInterval(recheckInterval)
-          }, 60000)
-        } else {
-          setPostResults(prev => ({
-            ...prev,
-            linkedin: {
-              success: false,
-              message: result.error || 'Failed to get authorization URL'
-            }
-          }))
-        }
-      } catch (error) {
-        setPostResults(prev => ({
-          ...prev,
-          linkedin: {
-            success: false,
-            message: 'Failed to get authorization URL'
-          }
-        }))
-      } finally {
-        setIsPostingToLinkedIn(false)
-      }
-      return
+      // show warning modal directing user to Settings → Connections
+      setShowAuthWarning(true);
+      return;
     }
 
-    // Already authorized, proceed with posting
-    await handlePostToLinkedIn()
-  }
+    // already authorized, proceed with posting
+    await handlePostToLinkedIn();
+  };
 
   const handlePostToLinkedIn = async () => {
     if (!event?.content && !event?.imageUrl) {
-      setPostResults(prev => ({
+      setPostResults((prev) => ({
         ...prev,
-        linkedin: { success: false, message: 'No content or image to post' }
-      }))
-      return
+        linkedin: { success: false, message: "No content or image to post" },
+      }));
+      return;
     }
 
     if (event.content && event.content.length > 3000) {
-      setPostResults(prev => ({
+      setPostResults((prev) => ({
         ...prev,
         linkedin: {
           success: false,
-          message: 'Content exceeds 3000 character limit for LinkedIn'
-        }
-      }))
-      return
+          message: "Content exceeds 3000 character limit for LinkedIn",
+        },
+      }));
+      return;
     }
 
-    setIsPostingToLinkedIn(true)
-    setPostResults(prev => ({ ...prev, linkedin: undefined }))
+    setIsPostingToLinkedIn(true);
+    setPostResults((prev) => ({ ...prev, linkedin: undefined }));
 
     try {
-      let result
+      let result;
 
       // If we have both content and image, or just image
       if (event.imageUrl) {
         result = await LinkedInService.postToLinkedInWithImage({
-          text: event.content || '',
-          imageUrl: convertToProxyUrl(event.imageUrl || '')
-        })
+          text: event.content || "",
+          imageUrl: convertToProxyUrl(event.imageUrl || ""),
+        });
       } else {
         // Text only post
-        result = await LinkedInService.postToLinkedIn(event.content)
+        result = await LinkedInService.postToLinkedIn(event.content);
       }
 
       if (result.ok && result.postId) {
         const updatedEvent = {
           ...event,
-          status: 'published' as const,
+          status: "published" as const,
           postedAt: new Date(),
-          postedTo: [...(event.postedTo || []), 'LinkedIn'],
-          linkedInId: result.postId
-        }
+          postedTo: [...(event.postedTo || []), "LinkedIn"],
+          linkedInId: result.postId,
+        };
 
-        onSave(updatedEvent)
+        onSave(updatedEvent);
 
-        setPostResults(prev => ({
+        setPostResults((prev) => ({
           ...prev,
           linkedin: {
             success: true,
-            message: `Successfully posted to LinkedIn! Post ID: ${result.postId}`
-          }
-        }))
+            message: `Successfully posted to LinkedIn! Post ID: ${result.postId}`,
+          },
+        }));
       } else {
-        const errorMessage = result.error || 'Failed to post to LinkedIn'
-        setPostResults(prev => ({
+        const errorMessage = result.error || "Failed to post to LinkedIn";
+        setPostResults((prev) => ({
           ...prev,
           linkedin: {
             success: false,
-            message: errorMessage
-          }
-        }))
+            message: errorMessage,
+          },
+        }));
       }
     } catch (error) {
-      setPostResults(prev => ({
+      setPostResults((prev) => ({
         ...prev,
         linkedin: {
           success: false,
-          message: 'An unexpected error occurred while posting to LinkedIn'
-        }
-      }))
+          message: "An unexpected error occurred while posting to LinkedIn",
+        },
+      }));
     } finally {
-      setIsPostingToLinkedIn(false)
+      setIsPostingToLinkedIn(false);
     }
-  }
+  };
 
-  const getTypeIcon = (type: ContentNode['type']) => {
+  const getTypeIcon = (type: ContentNode["type"]) => {
     switch (type) {
-      case 'post':
-        return Target
-      case 'image':
-        return Eye
-      case 'story':
-        return Zap
+      case "post":
+        return Target;
+      case "image":
+        return Eye;
+      case "story":
+        return Zap;
       default:
-        return Target
+        return Target;
     }
-  }
+  };
 
-  const getStatusColor = (status: ContentNode['status']) => {
+  const getStatusColor = (status: ContentNode["status"]) => {
     switch (status) {
-      case 'published':
-        return 'bg-success text-success-foreground'
-      case 'scheduled':
-        return 'text-white'
-      case 'draft':
-        return 'bg-muted text-muted-foreground'
+      case "published":
+        return "bg-success text-success-foreground";
+      case "scheduled":
+        return "text-white";
+      case "draft":
+        return "bg-muted text-muted-foreground";
       default:
-        return 'bg-muted text-muted-foreground'
+        return "bg-muted text-muted-foreground";
     }
-  }
+  };
 
-  if (!event) return null
+  if (!event) return null;
 
-  const TypeIcon = getTypeIcon(event.type)
+  const TypeIcon = getTypeIcon(event.type);
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className='max-w-4xl max-h-[90vh] border-[#03624C]/50'
+          className="max-w-4xl max-h-[90vh] border-[#03624C]/50"
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            backdropFilter: 'blur(12px)'
+            backgroundColor: "rgba(0, 0, 0, 0.95)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <DialogHeader>
-            <DialogTitle className='flex items-center gap-2'>
+            <DialogTitle className="flex items-center gap-2">
               <div
-                className='w-8 h-8 rounded-lg flex items-center justify-center'
-                style={{ backgroundColor: '#03624C' }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "#03624C" }}
               >
-                <TypeIcon className='w-4 h-4 text-white' />
+                <TypeIcon className="w-4 h-4 text-white" />
               </div>
               Edit Scheduled Event
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue='edit' className='w-full'>
-            <TabsList className='grid w-full grid-cols-2'>
-              <TabsTrigger value='edit'>Edit Event</TabsTrigger>
-              <TabsTrigger value='ai' className='flex items-center gap-2'>
-                <Bot className='w-4 h-4' />
+          <Tabs defaultValue="edit" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="edit">Edit Event</TabsTrigger>
+              <TabsTrigger value="ai" className="flex items-center gap-2">
+                <Bot className="w-4 h-4" />
                 AI Assistant
               </TabsTrigger>
             </TabsList>
 
             <TabsContent
-              value='edit'
-              className='space-y-4 max-h-[60vh] overflow-y-auto'
+              value="edit"
+              className="space-y-4 max-h-[60vh] overflow-y-auto"
             >
               {/* Event Info */}
-              <div className='flex items-center gap-2 p-3 bg-card/50 rounded-lg border border-border/20'>
-                <Calendar className='w-4 h-4 text-primary' />
-                <span className='text-sm'>
-                  {event.scheduledDate?.toLocaleDateString()} at{' '}
+              <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg border border-border/20">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-sm">
+                  {event.scheduledDate?.toLocaleDateString()} at{" "}
                   {event.scheduledDate?.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
                 <Badge
                   className={`ml-auto text-white`}
                   style={{
                     backgroundColor:
-                      event.status === 'scheduled'
-                        ? '#03624C'
-                        : event.status === 'published'
-                        ? '#2CC295'
-                        : '#6B7280'
+                      event.status === "scheduled"
+                        ? "#03624C"
+                        : event.status === "published"
+                        ? "#2CC295"
+                        : "#6B7280",
                   }}
                 >
                   {event.status}
                 </Badge>
               </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='title'>Title</Label>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
                 <Input
-                  id='title'
-                  value={formData.title || ''}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, title: e.target.value }))
+                  id="title"
+                  value={formData.title || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  placeholder='Enter event title...'
+                  placeholder="Enter event title..."
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='type'>Type</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value: 'post' | 'image' | 'story') =>
-                      setFormData(prev => ({ ...prev, type: value }))
+                    onValueChange={(value: "post" | "image" | "story") =>
+                      setFormData((prev) => ({ ...prev, type: value }))
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder='Select type' />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='post'>Post</SelectItem>
-                      <SelectItem value='image'>Image</SelectItem>
-                      <SelectItem value='story'>Story</SelectItem>
+                      <SelectItem value="post">Post</SelectItem>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="story">Story</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className='space-y-2'>
-                  <Label htmlFor='status'>Status</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(
-                      value: 'draft' | 'scheduled' | 'published'
-                    ) => setFormData(prev => ({ ...prev, status: value }))}
+                      value: "draft" | "scheduled" | "published"
+                    ) => setFormData((prev) => ({ ...prev, status: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder='Select status' />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='draft'>Draft</SelectItem>
-                      <SelectItem value='scheduled'>Scheduled</SelectItem>
-                      <SelectItem value='published'>Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='scheduledDate'>Scheduled Date & Time</Label>
+              <div className="space-y-2">
+                <Label htmlFor="scheduledDate">Scheduled Date & Time</Label>
                 <Input
-                  id='scheduledDate'
-                  type='datetime-local'
+                  id="scheduledDate"
+                  type="datetime-local"
                   value={
                     formData.scheduledDate
                       ? new Date(
@@ -487,59 +438,65 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                         )
                           .toISOString()
                           .slice(0, 16)
-                      : ''
+                      : ""
                   }
-                  onChange={e =>
-                    setFormData(prev => ({
+                  onChange={(e) =>
+                    setFormData((prev) => ({
                       ...prev,
                       scheduledDate: e.target.value
                         ? new Date(e.target.value)
-                        : undefined
+                        : undefined,
                     }))
                   }
                 />
               </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='content'>Content</Label>
+              <div className="space-y-2">
+                <Label htmlFor="content">Content</Label>
                 <Textarea
-                  id='content'
-                  value={formData.content || ''}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, content: e.target.value }))
+                  id="content"
+                  value={formData.content || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
                   }
-                  placeholder='Enter your content...'
-                  className='min-h-[100px]'
+                  placeholder="Enter your content..."
+                  className="min-h-[100px]"
                 />
               </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='imageUrl'>Image URL (optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">Image URL (optional)</Label>
                 <Input
-                  id='imageUrl'
-                  value={formData.imageUrl || ''}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, imageUrl: e.target.value }))
+                  id="imageUrl"
+                  value={formData.imageUrl || ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      imageUrl: e.target.value,
+                    }))
                   }
-                  placeholder='https://example.com/image.jpg'
+                  placeholder="https://example.com/image.jpg"
                 />
 
                 {/* Image Preview */}
                 {(formData.imageUrl || event?.imageUrl) && (
-                  <div className='mt-3'>
-                    <Label className='text-sm font-medium mb-2 block'>
+                  <div className="mt-3">
+                    <Label className="text-sm font-medium mb-2 block">
                       Image Preview
                     </Label>
-                    <div className='border border-border/20 rounded-lg overflow-hidden bg-card/50 flex justify-start'>
+                    <div className="border border-border/20 rounded-lg overflow-hidden bg-card/50 flex justify-start">
                       <img
                         src={convertToProxyUrl(
-                          formData.imageUrl || event?.imageUrl || ''
+                          formData.imageUrl || event?.imageUrl || ""
                         )}
-                        alt='Preview'
-                        className='max-h-60 object-cover rounded-lg'
-                        onError={e => {
-                          const target = e.target as HTMLImageElement
-                          target.style.display = 'none'
+                        alt="Preview"
+                        className="max-h-60 object-cover rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
                         }}
                       />
                     </div>
@@ -548,32 +505,32 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
               </div>
             </TabsContent>
 
-            <TabsContent value='ai' className='h-[60vh]'>
-              <div className='h-full border border-border/20 rounded-lg'>
+            <TabsContent value="ai" className="h-[60vh]">
+              <div className="h-full border border-border/20 rounded-lg">
                 <AIChat />
               </div>
             </TabsContent>
           </Tabs>
 
-          <div className='flex gap-2 pt-4 border-t'>
+          <div className="flex gap-2 pt-4 border-t">
             <Button
               onClick={handleSave}
-              className='text-white shadow-lg transition-colors'
-              style={{ backgroundColor: '#03624C' }}
-              onMouseEnter={e =>
-                (e.currentTarget.style.backgroundColor = '#2CC295')
+              className="text-white shadow-lg transition-colors"
+              style={{ backgroundColor: "#03624C" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#2CC295")
               }
-              onMouseLeave={e =>
-                (e.currentTarget.style.backgroundColor = '#03624C')
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#03624C")
               }
             >
               Save Changes
             </Button>
 
             <Button
-              variant='outline'
-              size='default'
-              onClick={handleSmartLinkedInAction}
+              variant="outline"
+              size="default"
+              onClick={handleLinkedInPostClick}
               disabled={
                 isPostingToLinkedIn ||
                 linkedInAuthorized === null ||
@@ -582,30 +539,30 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                   event?.content &&
                   event.content.length > 3000)
               }
-              className='transition-all duration-200 border-[#03624C]/50 text-[#00DF81]'
-              style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.backgroundColor = 'rgba(3, 98, 76, 0.3)'
-                e.currentTarget.style.borderColor = 'rgba(44, 194, 149, 0.7)'
+              className="transition-all duration-200 border-[#03624C]/50 text-[#00DF81]"
+              style={{ backgroundColor: "rgba(0, 15, 49, 0.5)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(3, 98, 76, 0.3)";
+                e.currentTarget.style.borderColor = "rgba(44, 194, 149, 0.7)";
               }}
-              onMouseLeave={e => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 15, 49, 0.5)'
-                e.currentTarget.style.borderColor = 'rgba(3, 98, 76, 0.5)'
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(0, 15, 49, 0.5)";
+                e.currentTarget.style.borderColor = "rgba(3, 98, 76, 0.5)";
               }}
             >
               {getLinkedInButtonIcon()}
-              {isPostingToLinkedIn ? 'Processing...' : getLinkedInButtonText()}
+              {isPostingToLinkedIn ? "Processing..." : getLinkedInButtonText()}
             </Button>
 
-            <Button variant='outline' onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
 
             {onDelete && (
               <Button
-                variant='outline'
+                variant="outline"
                 onClick={handleDelete}
-                className='ml-auto border-destructive/20 hover:border-destructive/40 text-destructive'
+                className="ml-auto border-destructive/20 hover:border-destructive/40 text-destructive"
               >
                 Delete Event
               </Button>
@@ -616,31 +573,31 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
 
       {/* Post Results - Portal to Body for Top Layer */}
       {open &&
-        (postResults.x || postResults.linkedin) &&
+        postResults.linkedin &&
         createPortal(
           <div
-            className='fixed bottom-4 right-4 space-y-2'
+            className="fixed bottom-4 right-4 space-y-2"
             style={{
-              position: 'fixed',
+              position: "fixed",
               zIndex: 999999999,
-              pointerEvents: 'none'
+              pointerEvents: "none",
             }}
           >
             {postResults.linkedin && (
               <div
                 className={`group p-4 rounded-lg border-2 shadow-2xl max-w-sm animate-in slide-in-from-right-2 pointer-events-auto transform transition-all duration-300 overflow-hidden ${
                   postResults.linkedin.success
-                    ? 'bg-green-600 border-green-500 text-white dark:bg-green-700 dark:border-green-500'
-                    : 'bg-red-600 border-red-500 text-white dark:bg-red-700 dark:border-red-500'
+                    ? "bg-green-600 border-green-500 text-white dark:bg-green-700 dark:border-green-500"
+                    : "bg-red-600 border-red-500 text-white dark:bg-red-700 dark:border-red-500"
                 }`}
               >
-                <div className='flex items-center gap-3'>
+                <div className="flex items-center gap-3">
                   {postResults.linkedin.success ? (
-                    <CheckCircle className='w-5 h-5 flex-shrink-0 text-white' />
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 text-white" />
                   ) : (
-                    <X className='w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400' />
+                    <X className="w-5 h-5 flex-shrink-0 text-red-600 dark:text-red-400" />
                   )}
-                  <div className='flex-1 overflow-hidden'>
+                  <div className="flex-1 overflow-hidden">
                     <span className={`text-sm font-semibold block`}>
                       LinkedIn
                     </span>
@@ -652,11 +609,14 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
                   </div>
                   <button
                     onClick={() =>
-                      setPostResults(prev => ({ ...prev, linkedin: undefined }))
+                      setPostResults((prev) => ({
+                        ...prev,
+                        linkedin: undefined,
+                      }))
                     }
-                    className='ml-2 opacity-0 group-hover:opacity-100 transition-opacity'
+                    className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className='w-4 h-4' />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -664,6 +624,10 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
           </div>,
           document.body
         )}
+      <LinkedInAuthWarningModal
+        open={showAuthWarning}
+        onOpenChange={setShowAuthWarning}
+      />
     </>
-  )
-}
+  );
+};

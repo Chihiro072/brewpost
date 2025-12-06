@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import { QuickSettingsModal } from "@/components/modals/QuickSettingsModal";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LinkedInService } from "@/lib/linkedin-service";
 
 // Error boundary wrapper for Settings
 class SettingsErrorBoundary extends React.Component<
@@ -208,6 +209,9 @@ const SettingsContent: React.FC<{
   const [editValue, setEditValue] = useState("");
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
+  const [postResults, setPostResults] = useState<{
+    linkedin?: { success: boolean; message: string };
+  }>({});
   // Social connections state
   type PlatformKey =
     | "linkedin"
@@ -245,6 +249,10 @@ const SettingsContent: React.FC<{
   // Quick interactions state
   const [copied, setCopied] = useState(false);
   const [quickSettingsOpen, setQuickSettingsOpen] = useState(false);
+  const [linkedInAuthWindow, setLinkedInAuthWindow] = useState<Window | null>(
+    null
+  );
+  const [isLinkedInAuthLoading, setIsLinkedInAuthLoading] = useState(false);
   const openChangePassword = () => {
     setIsChangePasswordOpen(true);
     setCurrentPassword("");
@@ -298,6 +306,132 @@ const SettingsContent: React.FC<{
     }
   };
   const [stripeError, setStripeError] = useState<string | null>(null);
+
+  const handleLinkedinAuth = async () => {
+    setIsLinkedInAuthLoading(true);
+    try {
+      const result = await LinkedInService.getAuthUrl();
+
+      if (result.url) {
+        console.log("[Settings] LinkedIn auth URL:", result.url);
+
+        // Open in modal window (like Google does)
+        const authWindow = window.open(
+          result.url,
+          "LinkedIn Auth",
+          "width=500,height=600,left=200,top=100"
+        );
+
+        if (!authWindow) {
+          setPostResults((prev) => ({
+            ...prev,
+            linkedin: {
+              success: false,
+              message:
+                "Failed to open authorization window. Please check popup blocker.",
+            },
+          }));
+          setIsLinkedInAuthLoading(false);
+          return;
+        }
+
+        setLinkedInAuthWindow(authWindow);
+
+        // Poll to check if auth window has closed
+        const pollInterval = setInterval(async () => {
+          if (authWindow.closed) {
+            clearInterval(pollInterval);
+            setLinkedInAuthWindow(null);
+            console.log(
+              "[Settings] Auth window closed, checking auth status..."
+            );
+
+            // Give backend a moment to sync the token
+            setTimeout(async () => {
+              const token = localStorage.getItem("authToken") || "";
+              const apiBase =
+                import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
+
+              try {
+                const resp = await fetch(`${apiBase}/api/social/linked`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (resp.ok) {
+                  const linked: { provider: string }[] = await resp.json();
+                  const isLinkedInConnected = linked.some(
+                    (l) => l.provider === "linkedin"
+                  );
+
+                  if (isLinkedInConnected) {
+                    // Auth successful, update state and show message
+                    setSocialConnections((prev) => ({
+                      ...prev,
+                      linkedin: true,
+                    }));
+                    setPostResults((prev) => ({
+                      ...prev,
+                      linkedin: {
+                        success: true,
+                        message: "Successfully connected to LinkedIn!",
+                      },
+                    }));
+
+                    // Auto-close success message after 3 seconds
+                    setTimeout(() => {
+                      setPostResults((prev) => ({
+                        ...prev,
+                        linkedin: undefined,
+                      }));
+                    }, 3000);
+                  } else {
+                    setPostResults((prev) => ({
+                      ...prev,
+                      linkedin: {
+                        success: false,
+                        message:
+                          "Authorization was not completed. Please try again.",
+                      },
+                    }));
+                  }
+                }
+              } catch (error) {
+                console.error("Error checking auth status:", error);
+                setPostResults((prev) => ({
+                  ...prev,
+                  linkedin: {
+                    success: false,
+                    message:
+                      "Failed to verify authorization. Please try again.",
+                  },
+                }));
+              } finally {
+                setIsLinkedInAuthLoading(false);
+              }
+            }, 1000);
+          }
+        }, 500);
+      } else {
+        setPostResults((prev) => ({
+          ...prev,
+          linkedin: {
+            success: false,
+            message: result.error || "Failed to get authorization URL",
+          },
+        }));
+        setIsLinkedInAuthLoading(false);
+      }
+    } catch (error) {
+      console.error("Error during LinkedIn auth:", error);
+      setPostResults((prev) => ({
+        ...prev,
+        linkedin: {
+          success: false,
+          message: "Failed to get authorization URL",
+        },
+      }));
+      setIsLinkedInAuthLoading(false);
+    }
+  };
 
   const plans: Record<
     PlanKey,
@@ -362,15 +496,17 @@ const SettingsContent: React.FC<{
   }, []);
 
   const toggleConnection = async (platform: PlatformKey) => {
+    if (platform === "linkedin" && !socialConnections.linkedin) {
+      return handleLinkedinAuth();
+    }
+
     const token = localStorage.getItem("authToken") || "";
     const apiBase =
       import.meta.env.VITE_API_BASE_URL || "http://localhost:5044";
 
     try {
       if (!socialConnections[platform]) {
-        // CONNECT social account
-        // Step 1: Get authorization URL
-        // Use a consistent redirect URI (no platform suffix) so it matches the callback handler
+        // For other platforms: generic connect
         const redirectUri = `${window.location.origin}/settings/connections/callback/`;
         const authResp = await fetch(
           `${apiBase}/api/social/authorize/${platform}?redirectUri=${encodeURIComponent(
@@ -378,15 +514,12 @@ const SettingsContent: React.FC<{
           )}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-
         if (!authResp.ok) throw new Error("Failed to get auth URL");
         const { url } = await authResp.json();
-
-        // Step 2: Redirect user to provider login
         window.location.href = url;
         return;
       } else {
-        // DISCONNECT social account
+        // Disconnect
         const unlinkResp = await fetch(
           `${apiBase}/api/social/unlink/${platform}`,
           {
@@ -395,7 +528,6 @@ const SettingsContent: React.FC<{
           }
         );
         if (!unlinkResp.ok) throw new Error("Failed to unlink social account");
-
         setSocialConnections((prev) => ({ ...prev, [platform]: false }));
       }
     } catch (err: any) {
@@ -892,13 +1024,18 @@ const SettingsContent: React.FC<{
                       size="sm"
                       variant={connected ? "outline" : "default"}
                       onClick={() => toggleConnection(key)}
+                      disabled={key === "linkedin" && isLinkedInAuthLoading}
                       className={
                         connected
                           ? "border-gray-500 text-gray-200"
                           : "bg-blue-600 hover:bg-blue-700 text-white"
                       }
                     >
-                      {connected ? "Disconnect" : "Connect"}
+                      {key === "linkedin" && isLinkedInAuthLoading
+                        ? "Connecting..."
+                        : connected
+                        ? "Disconnect"
+                        : "Connect"}
                     </Button>
                   </div>
                 </div>
@@ -1043,6 +1180,8 @@ const SettingsContent: React.FC<{
   );
 };
 
+// ...keep all imports and previous components (SettingsSidebar, SettingsContent, etc.)
+
 const Settings: React.FC = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -1052,47 +1191,15 @@ const Settings: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { user, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    console.log(
-      "[Settings] Mounted. user=",
-      user,
-      "loading=",
-      loading,
-      "isAuthenticated=",
-      isAuthenticated
-    );
-
     const fetchUserProfile = async () => {
-      // prevent duplicate fetches that could hang
-      if (hasFetchedRef.current) {
-        console.log("[Settings] skipping duplicate profile fetch");
-        return;
-      }
+      if (hasFetchedRef.current) return;
       hasFetchedRef.current = true;
 
       const controller = new AbortController();
-      const timeoutMs = 5000;
-      const timeoutId = setTimeout(() => {
-        console.warn(
-          "[Settings] profile request timed out after",
-          timeoutMs,
-          "ms"
-        );
-        controller.abort();
-        // still show UI with mock
-        setUserProfile({
-          id: "mock",
-          firstName: "ZeRoZz",
-          lastName: "",
-          username: "ckai17",
-          email: "user@gmail.com",
-          phoneNumber: "1234567890",
-          displayName: "ZeRoZz",
-        });
-      }, timeoutMs);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       try {
         const resp = await fetch(
@@ -1114,9 +1221,8 @@ const Settings: React.FC = () => {
         if (!resp.ok) throw new Error(`Profile fetch failed: ${resp.status}`);
         const profile = await resp.json();
         setUserProfile(profile);
-      } catch (error) {
-        console.error("[Settings] Failed to fetch user profile:", error);
-        // Use mock data for demo to avoid blank screen
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
         setUserProfile({
           id: "mock",
           firstName: "ZeRoZz",
@@ -1129,32 +1235,19 @@ const Settings: React.FC = () => {
       }
     };
 
-    if (isAuthenticated && !loading) {
-      fetchUserProfile();
-    }
+    if (isAuthenticated && !loading) fetchUserProfile();
   }, [isAuthenticated, loading]);
 
   const handleUpdateProfile = (updatedProfile: UserProfile) => {
     setUserProfile(updatedProfile);
-    // Here you would typically call an API to update the profile
     console.log("Profile updated:", updatedProfile);
   };
 
-  const handleClose = () => {
-    navigate("/app");
-  };
+  const handleClose = () => navigate("/app");
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-background text-foreground"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          backgroundColor: "rgba(0, 15, 49, 0.05)",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-lg">Loading...</p>
@@ -1165,15 +1258,7 @@ const Settings: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-background text-foreground"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          backgroundColor: "rgba(0, 15, 49, 0.05)",
-        }}
-      >
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Authentication Required</h1>
           <p className="text-gray-300 mb-4">
@@ -1192,15 +1277,8 @@ const Settings: React.FC = () => {
 
   return (
     <SettingsErrorBoundary>
-      <div
-        className="min-h-screen bg-background text-foreground"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(3, 98, 76, 1) 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          backgroundColor: "rgba(0, 15, 49, 0.05)",
-        }}
-      >
+      <div className="min-h-screen bg-background text-foreground relative">
+        {/* Header */}
         <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl relative z-50">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-3">
@@ -1218,20 +1296,19 @@ const Settings: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="ESC"
-                onClick={() => navigate("/app")}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                ESC
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="ESC"
+              onClick={handleClose}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ESC
+            </Button>
           </div>
         </header>
-        <div className="flex h-screen">
+
+        <div className="flex h-[calc(100vh-64px)]">
           {/* Sidebar */}
           <SettingsSidebar
             activeSection={activeSection}
@@ -1239,24 +1316,7 @@ const Settings: React.FC = () => {
           />
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col">
-            {/* Close Button */}
-            <div className="absolute top-4 right-4 z-10">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClose}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <div className="flex items-center space-x-2">
-                  <span className="w-6 h-6 rounded-full bg-card/60 border border-[#03624C]/40 flex items-center justify-center text-sm">
-                    ×
-                  </span>
-                  <span className="text-sm">ESC</span>
-                </div>
-              </Button>
-            </div>
-
+          <div className="flex-1 flex flex-col overflow-y-auto p-6">
             <SettingsContent
               activeSection={activeSection}
               userProfile={userProfile}
