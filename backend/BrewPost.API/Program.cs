@@ -208,6 +208,8 @@ builder.Services.AddScoped<IS3Service, S3Service>();
 builder.Services.AddScoped<IBedrockService, BedrockService>();
 builder.Services.AddScoped<ITrendingService, TrendingService>();
 builder.Services.AddScoped<BrewPost.API.Models.IAnalysisService, BrewPost.API.Models.AnalysisService>();
+builder.Services.AddScoped<IPublisherService, BrewPost.Infrastructure.Services.PublisherService>();
+builder.Services.AddHostedService<BrewPost.API.Services.PollingSchedulerService>();
 builder.Services.AddHttpClient<IOAuthService, OAuthService>();
 builder.Services.AddHttpClient<ITrendingService, TrendingService>();
 builder.Services.AddMemoryCache();

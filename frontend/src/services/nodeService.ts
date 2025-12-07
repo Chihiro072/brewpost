@@ -5,7 +5,8 @@ import type { ContentNode } from "@/components/planning/PlanningPanel";
 export async function fetchNodes(): Promise<ContentNode[]> {
   try {
     console.log("[nodeService] fetchNodes called");
-    const response = await apiClient.get("/api/nodes");
+    // Add timestamp to bust cache on every request
+    const response = await apiClient.get(`/api/nodes?t=${Date.now()}`);
     console.log("[nodeService] fetchNodes result:", response.data);
 
     // Transform the API response to match ContentNode interface

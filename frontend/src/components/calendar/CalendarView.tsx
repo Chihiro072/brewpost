@@ -59,6 +59,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     (import.meta.env.VITE_BACKEND_URL as string) ??
     "https://brewpost.duckdns.org";
 
+  // Helper function to refetch nodes from backend
+  const refetchNodes = React.useCallback(async () => {
+    try {
+      const nodes = await fetchNodes();
+      const parsed = nodes.map((s: any) => ({
+        id: s.id,
+        title: s.title || "Untitled",
+        type: "post" as const,
+        status: s.status || ("draft" as const),
+        scheduledDate: s.scheduledDate ? new Date(s.scheduledDate) : undefined,
+        content: s.description || s.content || "",
+        imageUrl: s.imageUrl || undefined,
+        connections: s.connections || [],
+        position: { x: s.x || 0, y: s.y || 0 },
+        userId: s.userId,
+      }));
+      console.log("Refetched all nodes from nodes table:", parsed);
+      setFetchedNodes(parsed);
+    } catch (err) {
+      console.warn("Failed to refetch nodes:", err);
+    }
+  }, []);
+
   // If no nodes provided from parent, fetch from backend (DynamoDB/AppSync-backed schedules)
   React.useEffect(() => {
     if (Array.isArray(scheduledNodes) && scheduledNodes.length > 0) return;
@@ -128,26 +151,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         // NOTE: include credentials so server session cookies are sent when using session-based auth
         // Prefer fetching scheduled nodes directly from nodes table
         try {
-          const nodes = await fetchNodes();
           if (mounted) {
-            const parsed = nodes
-              .filter((n: any) => n.status === "scheduled")
-              .map((s: any) => ({
-                id: s.id,
-                title: s.title || "Untitled",
-                type: "post" as const,
-                status: s.status || ("scheduled" as const),
-                scheduledDate: s.scheduledDate
-                  ? new Date(s.scheduledDate)
-                  : undefined,
-                content: s.description || s.content || "",
-                imageUrl: s.imageUrl || undefined,
-                connections: s.connections || [],
-                position: { x: s.x || 0, y: s.y || 0 },
-                userId: s.userId,
-              }));
-            console.log("Fetched scheduled nodes from nodes table:", parsed);
-            setFetchedNodes(parsed);
+            await refetchNodes();
           }
         } catch (err) {
           console.warn(
@@ -261,7 +266,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return () => {
       mounted = false;
     };
-  }, [scheduledNodes]);
+  }, [scheduledNodes, refetchNodes]);
+
+  // Auto-refetch nodes every 10 seconds to show updated statuses after auto-posting
+  React.useEffect(() => {
+    const interval = setInterval(async () => {
+      await refetchNodes();
+    }, 10000); // Refetch every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [refetchNodes]);
 
   // Helper function to format date keys
   const formatDateKey = (year: number, month: number, day: number) => {
