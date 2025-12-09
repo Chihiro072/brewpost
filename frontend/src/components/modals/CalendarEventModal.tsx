@@ -18,8 +18,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Calendar,
   Clock,
@@ -32,7 +30,6 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
-import { AIChat } from "@/components/ai/AIChat";
 import { LinkedInService } from "@/lib/linkedin-service";
 import { LinkedInAuthWarningModal } from "@/components/modals/LinkedInAuthWarningModal";
 import { convertToProxyUrl } from "@/utils/templateUtils";
@@ -335,182 +332,163 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs defaultValue="edit" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="edit">Edit Event</TabsTrigger>
-              <TabsTrigger value="ai" className="flex items-center gap-2">
-                <Bot className="w-4 h-4" />
-                AI Assistant
-              </TabsTrigger>
-            </TabsList>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto px-2">
+            {/* Event Info */}
+            <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg border border-border/20">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span className="text-sm">
+                {event.scheduledDate?.toLocaleDateString()} at{" "}
+                {event.scheduledDate?.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+              <Badge
+                className={`ml-auto text-white`}
+                style={{
+                  backgroundColor:
+                    event.status === "scheduled"
+                      ? "#03624C"
+                      : event.status === "published"
+                      ? "#2CC295"
+                      : "#6B7280",
+                }}
+              >
+                {event.status}
+              </Badge>
+            </div>
 
-            <TabsContent
-              value="edit"
-              className="space-y-4 max-h-[60vh] overflow-y-auto"
-            >
-              {/* Event Info */}
-              <div className="flex items-center gap-2 p-3 bg-card/50 rounded-lg border border-border/20">
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="text-sm">
-                  {event.scheduledDate?.toLocaleDateString()} at{" "}
-                  {event.scheduledDate?.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <Badge
-                  className={`ml-auto text-white`}
-                  style={{
-                    backgroundColor:
-                      event.status === "scheduled"
-                        ? "#03624C"
-                        : event.status === "published"
-                        ? "#2CC295"
-                        : "#6B7280",
-                  }}
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={formData.title || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
+                placeholder="Enter event title..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: "post" | "image" | "story") =>
+                    setFormData((prev) => ({ ...prev, type: value }))
+                  }
                 >
-                  {event.status}
-                </Badge>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="post">Post</SelectItem>
+                    <SelectItem value="image">Image</SelectItem>
+                    <SelectItem value="story">Story</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, title: e.target.value }))
-                  }
-                  placeholder="Enter event title..."
-                />
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(
+                    value: "draft" | "scheduled" | "published"
+                  ) => setFormData((prev) => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value: "post" | "image" | "story") =>
-                      setFormData((prev) => ({ ...prev, type: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="post">Post</SelectItem>
-                      <SelectItem value="image">Image</SelectItem>
-                      <SelectItem value="story">Story</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="scheduledDate">Scheduled Date & Time</Label>
+              <Input
+                id="scheduledDate"
+                type="datetime-local"
+                value={
+                  formData.scheduledDate
+                    ? new Date(
+                        formData.scheduledDate.getTime() -
+                          formData.scheduledDate.getTimezoneOffset() * 60000
+                      )
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    scheduledDate: e.target.value
+                      ? new Date(e.target.value)
+                      : undefined,
+                  }))
+                }
+              />
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(
-                      value: "draft" | "scheduled" | "published"
-                    ) => setFormData((prev) => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={formData.content || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    content: e.target.value,
+                  }))
+                }
+                placeholder="Enter your content..."
+                className="min-h-[100px]"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="scheduledDate">Scheduled Date & Time</Label>
-                <Input
-                  id="scheduledDate"
-                  type="datetime-local"
-                  value={
-                    formData.scheduledDate
-                      ? new Date(
-                          formData.scheduledDate.getTime() -
-                            formData.scheduledDate.getTimezoneOffset() * 60000
-                        )
-                          .toISOString()
-                          .slice(0, 16)
-                      : ""
-                  }
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      scheduledDate: e.target.value
-                        ? new Date(e.target.value)
-                        : undefined,
-                    }))
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="imageUrl">Image URL (optional)</Label>
+              <Input
+                id="imageUrl"
+                value={formData.imageUrl || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    imageUrl: e.target.value,
+                  }))
+                }
+                placeholder="https://example.com/image.jpg"
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      content: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter your content..."
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="imageUrl">Image URL (optional)</Label>
-                <Input
-                  id="imageUrl"
-                  value={formData.imageUrl || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      imageUrl: e.target.value,
-                    }))
-                  }
-                  placeholder="https://example.com/image.jpg"
-                />
-
-                {/* Image Preview */}
-                {(formData.imageUrl || event?.imageUrl) && (
-                  <div className="mt-3">
-                    <Label className="text-sm font-medium mb-2 block">
-                      Image Preview
-                    </Label>
-                    <div className="border border-border/20 rounded-lg overflow-hidden bg-card/50 flex justify-start">
-                      <img
-                        src={convertToProxyUrl(
-                          formData.imageUrl || event?.imageUrl || ""
-                        )}
-                        alt="Preview"
-                        className="max-h-60 object-cover rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                    </div>
+              {/* Image Preview */}
+              {(formData.imageUrl || event?.imageUrl) && (
+                <div className="mt-3">
+                  <Label className="text-sm font-medium mb-2 block">
+                    Image Preview
+                  </Label>
+                  <div className="border border-border/20 rounded-lg overflow-hidden bg-card/50 flex justify-start">
+                    <img
+                      src={convertToProxyUrl(
+                        formData.imageUrl || event?.imageUrl || ""
+                      )}
+                      alt="Preview"
+                      className="max-h-60 object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                      }}
+                    />
                   </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="ai" className="h-[60vh]">
-              <div className="h-full border border-border/20 rounded-lg">
-                <AIChat />
-              </div>
-            </TabsContent>
-          </Tabs>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex gap-2 pt-4 border-t">
             <Button
@@ -552,10 +530,6 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
             >
               {getLinkedInButtonIcon()}
               {isPostingToLinkedIn ? "Processing..." : getLinkedInButtonText()}
-            </Button>
-
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
             </Button>
 
             {onDelete && (
