@@ -18,6 +18,8 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       quick_settings: 'Quick Settings',
       dark_mode: 'Dark Mode',
       dark_mode_desc: 'Toggle application theme',
+      light_mode: 'Light Mode',
+      light_mode_desc: 'Toggle application theme',
       notifications: 'Notifications',
       notifications_desc: 'Enable message and system alerts',
       language: 'Language',
@@ -59,7 +61,8 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
         'Payment successful! {messages} messages have been added to your account. You can now continue using the AI Content Generator.',
       clear_chat: 'Clear chat',
       clear_chat_title: 'Clear Chat History',
-      clear_chat_message: 'Are you sure you want to clear your entire conversation history? This action cannot be undone.',
+      clear_chat_message:
+        'Are you sure you want to clear your entire conversation history? This action cannot be undone.',
       clear_chat_confirm: 'Clear Chat',
     },
     quota: {
@@ -224,6 +227,8 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       quick_settings: 'Tetapan Pantas',
       dark_mode: 'Mod Gelap',
       dark_mode_desc: 'Tukar tema aplikasi',
+      light_mode: 'Mod Cerah',
+      light_mode_desc: 'Tukar tema aplikasi',
       notifications: 'Notifikasi',
       notifications_desc: 'Aktifkan amaran mesej dan sistem',
       language: 'Bahasa',
@@ -265,7 +270,8 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
         'Pembayaran berjaya! {messages} mesej telah ditambah ke akaun anda. Anda boleh terus gunakan Penjana Kandungan AI.',
       clear_chat: 'Kosongkan sembang',
       clear_chat_title: 'Kosongkan Sejarah Sembang',
-      clear_chat_message: 'Adakah anda pasti mahu mengosongkan keseluruhan sejarah perbualan anda? Tindakan ini tidak boleh dibatalkan.',
+      clear_chat_message:
+        'Adakah anda pasti mahu mengosongkan keseluruhan sejarah perbualan anda? Tindakan ini tidak boleh dibatalkan.',
       clear_chat_confirm: 'Kosongkan Sembang',
     },
     quota: {
@@ -432,6 +438,8 @@ export const dictionaries: Record<LanguageCode, TranslationDict> = {
       quick_settings: '快速设置',
       dark_mode: '深色模式',
       dark_mode_desc: '切换应用主题',
+      light_mode: '浅色模式',
+      light_mode_desc: '切换应用主题',
       notifications: '通知',
       notifications_desc: '启用消息和系统提醒',
       language: '语言',

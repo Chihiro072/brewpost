@@ -656,7 +656,10 @@ export const PlanningPanel = React.forwardRef<
             </div>
             <Button
               size="sm"
-              className="bg-gradient-secondary hover:opacity-90 glow-hover"
+              className="text-white shadow-lg transition-colors"
+              style={{ backgroundColor: '#03624C' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2CC295')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#03624C')}
               onClick={() => setShowAddModal(true)}
             >
               <Plus className="w-4 h-4 mr-1" />

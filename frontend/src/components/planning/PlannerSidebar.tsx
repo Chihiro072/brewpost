@@ -113,22 +113,24 @@ export default function PlannerSidebar ({
       </SheetTrigger>
       <SheetContent
         side='left'
-        className='bg-slate-950 border-slate-800 text-slate-100'
+        className='bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border-[#03624C]/60 text-white'
       >
         <SheetHeader>
-          <SheetTitle className='text-white'>Saved Planners</SheetTitle>
+          <SheetTitle className='bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent'>
+            Saved Planners
+          </SheetTitle>
         </SheetHeader>
         <ScrollArea className='mt-4 h-[80vh] pr-2'>
           <div className='space-y-3'>
             {plannersQuery.isLoading && (
               <div className='space-y-2'>
-                <Skeleton className='h-20 w-full bg-slate-800/50' />
-                <Skeleton className='h-20 w-full bg-slate-800/50' />
-                <Skeleton className='h-20 w-full bg-slate-800/50' />
+                <Skeleton className='h-20 w-full bg-[#03624C]/30' />
+                <Skeleton className='h-20 w-full bg-[#03624C]/30' />
+                <Skeleton className='h-20 w-full bg-[#03624C]/30' />
               </div>
             )}
             {!plannersQuery.isLoading && items.length === 0 && (
-              <div className='text-center text-slate-400 py-12'>
+              <div className='text-center text-[#9CEBC9] py-12'>
                 <div className='text-lg font-semibold text-white'>
                   No saved plans yet
                 </div>
@@ -140,7 +142,7 @@ export default function PlannerSidebar ({
             {items.map(p => (
               <Card
                 key={p.id}
-                className='group relative border-slate-800/60 bg-slate-900/50 hover:bg-slate-900/70 transition-colors cursor-pointer'
+                className='group relative border-[#03624C]/60 bg-[rgba(3,34,33,0.6)] hover:bg-[rgba(3,34,33,0.75)] transition-colors cursor-pointer'
                 onClick={async () => {
                   try {
                     const detail = await plannerService.get(p.id)
@@ -155,11 +157,11 @@ export default function PlannerSidebar ({
                     <div className='text-sm font-semibold text-white truncate'>
                       {p.name}
                     </div>
-                    <div className='mt-1 text-xs text-slate-400'>
+                    <div className='mt-1 text-xs text-[#9CEBC9]'>
                       {formatLastEdited(p.lastEdited)}
                     </div>
                     <div className='mt-2'>
-                      <Badge className='border-cyan-500/40 bg-cyan-500/20 text-cyan-400'>
+                      <Badge className='border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]'>
                         {p.postCount} posts
                       </Badge>
                     </div>

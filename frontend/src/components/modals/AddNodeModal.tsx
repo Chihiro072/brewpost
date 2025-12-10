@@ -294,7 +294,10 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             </Button>
             <Button 
               type="submit"
-              className="flex-1 bg-gradient-primary hover:opacity-90"
+              className="flex-1 text-white shadow-lg transition-colors"
+              style={{ backgroundColor: '#03624C' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2CC295')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#03624C')}
             >
               Add Node
             </Button>

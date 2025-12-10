@@ -69,7 +69,12 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('bp_theme', checked ? 'white' : 'dark');
       }
-      toast({ title: `${t('settings.dark_mode')}: ${checked ? 'On' : 'Off'}`, variant: 'success' });
+      toast({
+        title: `${
+          checked ? t('settings.light_mode') : t('settings.dark_mode')
+        }: ${checked ? 'On' : 'Off'}`,
+        variant: 'success',
+      });
     } catch {}
   };
 
@@ -79,7 +84,12 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('bp_notifications', checked ? 'on' : 'off');
       }
-      toast({ title: checked ? t('settings.notifications') + ' On' : t('settings.notifications') + ' Off', variant: 'success' });
+      toast({
+        title: checked
+          ? t('settings.notifications') + ' On'
+          : t('settings.notifications') + ' Off',
+        variant: 'success',
+      });
     } catch {}
   };
 
@@ -87,7 +97,10 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
     onOpenChange(false);
     setTimeout(() => {
       setLanguage(value);
-      toast({ title: `${t('settings.language')}: ${value.toUpperCase()}`, variant: 'success' });
+      toast({
+        title: `${t('settings.language')}: ${value.toUpperCase()}`,
+        variant: 'success',
+      });
     }, 0);
   };
 
@@ -122,7 +135,7 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
                     : 'text-sm text-muted-foreground'
                 }
               >
-                {t('settings.dark_mode')}
+                {darkMode ? t('settings.light_mode') : t('settings.dark_mode')}
               </Label>
               <p
                 className={
@@ -131,13 +144,15 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
                     : 'text-xs text-muted-foreground/80'
                 }
               >
-                {t('settings.dark_mode_desc')}
+                {darkMode
+                  ? t('settings.light_mode_desc')
+                  : t('settings.dark_mode_desc')}
               </p>
             </div>
             <Switch
               checked={darkMode}
               onCheckedChange={handleThemeToggle}
-              aria-label="Toggle dark mode"
+              aria-label="Toggle theme"
             />
           </div>
 

@@ -249,7 +249,7 @@ export const AnalysisPanel: React.FC<AnalysisPanelProps> = ({
           </div>
           <Badge
             variant="outline"
-            className="text-xs"
+            className="text-[10px] px-2 py-0.5 rounded-md whitespace-normal break-words leading-3"
             style={{
               borderColor: getScoreColor(score),
               color: getScoreColor(score),
