@@ -17,7 +17,7 @@ export function usePlanners() {
       await qc.cancelQueries({ queryKey: ["planners"] });
       const previous = qc.getQueryData<PlannerSummary[]>(["planners"]);
       qc.setQueryData<PlannerSummary[]>(["planners"], (old) => (old || []).filter((p) => p.id !== id));
-      toast({ title: "Planner deleted" });
+      toast({ title: "Planner deleted", variant: "success" });
       return { previous };
     },
     onError: (_err, _id, ctx) => {

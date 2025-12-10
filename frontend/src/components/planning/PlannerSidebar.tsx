@@ -50,21 +50,7 @@ function formatLastEdited (value: string | Date) {
   return `Last edited ${fmt.format(d)}`
 }
 
-const fallbackPlanners: PlannerItem[] = [
-  { id: 'p1', name: 'Q4 Launch Plan', lastEdited: new Date(), postCount: 12 },
-  {
-    id: 'p2',
-    name: 'Holiday Campaign',
-    lastEdited: new Date(Date.now() - 86400000 * 7),
-    postCount: 8
-  },
-  {
-    id: 'p3',
-    name: 'Influencer Collab',
-    lastEdited: new Date(Date.now() - 86400000 * 21),
-    postCount: 5
-  }
-]
+// No fallback sample data: show a clear empty state when there are no saved planners
 
 export default function PlannerSidebar ({
   planners,
@@ -88,7 +74,7 @@ export default function PlannerSidebar ({
       lastEdited: p.createdAt,
       postCount: p.postCount
     }))
-    return apiItems.length ? apiItems : fallbackPlanners
+    return apiItems
   }, [planners, plannersQuery.data])
 
   return (
@@ -132,10 +118,10 @@ export default function PlannerSidebar ({
             {!plannersQuery.isLoading && items.length === 0 && (
               <div className='text-center text-[#9CEBC9] py-12'>
                 <div className='text-lg font-semibold text-white'>
-                  No saved plans yet
+                  No drafts saved
                 </div>
                 <div className='mt-2 text-sm'>
-                  Start creating on the canvas!
+                  Create a planner and save your draft to see it here.
                 </div>
               </div>
             )}
@@ -175,8 +161,12 @@ export default function PlannerSidebar ({
                         size='icon'
                         className='absolute right-3 top-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100'
                         aria-label='Delete planner'
-                        onClick={(e) => { e.stopPropagation() }}
-                        onMouseDown={(e) => { e.stopPropagation() }}
+                        onClick={e => {
+                          e.stopPropagation()
+                        }}
+                        onMouseDown={e => {
+                          e.stopPropagation()
+                        }}
                       >
                         <Trash2 className='h-4 w-4' />
                       </Button>

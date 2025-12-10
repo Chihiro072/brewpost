@@ -108,21 +108,6 @@ export const plannerService = {
           })
         } catch {}
       }
-      // Attempt to schedule posts if nodes include scheduledDate
-      try {
-        const detail = await this.get(planId)
-        const posts = detail.posts || []
-        ;(nodes || []).forEach(async (n, i) => {
-          if (n.scheduledDate && posts[i]) {
-            try {
-              await apiClient.post(`/api/posts/${posts[i].id}/schedule`, {
-                platform: 'generic',
-                scheduledAt: new Date(n.scheduledDate).toISOString()
-              })
-            } catch {}
-          }
-        })
-      } catch {}
     }
     return planId
   },
@@ -186,19 +171,25 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
   const brandNodes = Array.isArray(detail.brandInfo?.nodes) ? detail.brandInfo.nodes : []
+  const idSet = new Set(ordered.map(post => post.id))
   return ordered.map((p, idx) => {
     // Zigzag pattern: alternating top and bottom rows
     const isBottom = idx % 2 === 1
     const x = startX + idx * (spacing / 2)
     const y = isBottom ? bottomY : topY
     const bn = brandNodes[idx] || {}
-    const connectionId = bn?.connections?.[0]?.toId ?? undefined
+    let connectionId = bn?.connections?.[0]?.toId ?? undefined
+
+    // Normalize connection target to ensure it references an ID in this planner
+    if (connectionId && !idSet.has(connectionId)) {
+      connectionId = undefined
+    }
 
     return {
       id: p.id,
       title: p.title,
       type: 'post',
-      status: (p.status?.toLowerCase() as ContentNode['status']) || 'draft',
+      status: (p.publishedAt ? 'published' : 'draft') as ContentNode['status'],
       scheduledDate: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
       content: p.caption || '',
       imageUrl: undefined,

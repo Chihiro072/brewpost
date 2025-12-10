@@ -365,18 +365,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-card/95 backdrop-blur-xl border-border/50">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border-[#03624C]/60 text-white">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <CalendarIcon className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-semibold">Content Calendar</h2>
+              <h2 className="text-2xl font-semibold bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">Content Calendar</h2>
             </div>
             <Button
               variant="outline"
               onClick={onClose}
-              className="border-primary/20 hover:border-primary/40"
+              className="border-[#03624C]/40 hover:border-[#2CC295]/60 text-white"
             >
               Close
             </Button>
@@ -412,7 +412,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {dayNames.map((day) => (
               <div
                 key={day}
-                className="p-3 text-center text-sm font-medium text-muted-foreground"
+                className="p-3 text-center text-sm font-medium text-[#9CEBC9]"
               >
                 {day}
               </div>
@@ -441,19 +441,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <Card
                   key={day}
                   className={`p-2 min-h-[100px] ${
-                    isToday ? "border-primary bg-primary/5" : "border-border/20"
-                  } hover:border-primary/40 transition-colors`}
+                    isToday
+                      ? "border-[#2CC295]/60 bg-[#2CC295]/10"
+                      : "border-[#03624C]/50"
+                  } hover:border-[#2CC295]/50 transition-colors bg-[rgba(3,34,33,0.6)]`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className={`text-sm font-medium ${
-                        isToday ? "text-primary" : ""
+                        isToday ? "text-[#00DF81]" : "text-white"
                       }`}
                     >
                       {day}
                     </span>
                     {dayContent.length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="text-xs border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]">
                         {dayContent.length}
                       </Badge>
                     )}
@@ -467,12 +469,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       return (
                         <div
                           key={content.id}
-                          className={`p-1 rounded text-xs ${
+                          className={`p-1 rounded text-xs border ${
                             editable ? "cursor-pointer hover:opacity-80" : ""
                           } transition-opacity ${
                             content.status === "published"
-                              ? "bg-success/20 text-success-foreground"
-                              : "bg-primary/20 text-primary-foreground"
+                              ? "border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]"
+                              : "border-[#03624C]/40 bg-[rgba(3,98,76,0.35)] text-[#9CEBC9]"
                           }`}
                           onClick={() => {
                             if (editable && fullEvent) {
@@ -505,12 +507,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {/* Legend */}
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-primary/20 rounded"></div>
-              <span className="text-muted-foreground">Scheduled</span>
+              <div className="w-3 h-3 bg-[rgba(3,98,76,0.35)] rounded border border-[#03624C]/40"></div>
+              <span className="text-[#9CEBC9]">Scheduled</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-success/20 rounded"></div>
-              <span className="text-muted-foreground">Published</span>
+              <div className="w-3 h-3 bg-[#2CC295]/20 rounded border border-[#2CC295]/40"></div>
+              <span className="text-[#00DF81]">Published</span>
             </div>
           </div>
         </div>

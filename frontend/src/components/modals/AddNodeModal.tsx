@@ -81,49 +81,49 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+      <DialogContent className="sm:max-w-md bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border-[#03624C]/60 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Target className="w-4 h-4 text-white" />
             </div>
-            Add New Content Node
+            <span className="bg-gradient-to-r from-[#2CC295] via-[#00DF81] to-[#03624C] bg-clip-text text-transparent">Add New Content Node</span>
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title" className="text-white">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter content title"
-              className="mt-1"
+              className="mt-1 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
               required
             />
           </div>
 
           <div>
-            <Label htmlFor="content">Content</Label>
+            <Label htmlFor="content" className="text-white">Content</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Describe your content idea..."
-              className="mt-1 min-h-[80px]"
+              className="mt-1 min-h-[80px] bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="type">Type</Label>
+              <Label htmlFor="type" className="text-white">Type</Label>
               <Select value={type} onValueChange={(value: any) => setType(value)}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[rgba(3,34,33,0.92)] border-[#03624C]/60 text-white">
                   <SelectItem value="post">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4" />
@@ -147,12 +147,12 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status" className="text-white">Status</Label>
               <Select value={status} onValueChange={(value: any) => setStatus(value)}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[rgba(3,34,33,0.92)] border-[#03624C]/60 text-white">
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
@@ -163,12 +163,12 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
 
           {status === 'scheduled' && (
             <div>
-              <Label>Schedule Date & Time</Label>
+              <Label className="text-white">Schedule Date & Time</Label>
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full mt-1 justify-start text-left font-normal"
+                    className="w-full mt-1 justify-start text-left font-normal bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 hover:border-[#2CC295]/60 text-white"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {scheduledDate ? (
@@ -207,7 +207,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                               setScheduledDate(newDate);
                             }
                           }}
-                          className={selectedTime === '09:00' ? 'bg-primary text-primary-foreground' : ''}
+                          className={`border-[#03624C]/40 ${selectedTime === '09:00' ? 'bg-[#2CC295]/20 text-[#00DF81]' : ''}`}
                         >
                           9:00 AM
                         </Button>
@@ -222,7 +222,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                               setScheduledDate(newDate);
                             }
                           }}
-                          className={selectedTime === '12:00' ? 'bg-primary text-primary-foreground' : ''}
+                          className={`border-[#03624C]/40 ${selectedTime === '12:00' ? 'bg-[#2CC295]/20 text-[#00DF81]' : ''}`}
                         >
                           12:00 PM
                         </Button>
@@ -237,7 +237,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                               setScheduledDate(newDate);
                             }
                           }}
-                          className={selectedTime === '18:00' ? 'bg-primary text-primary-foreground' : ''}
+                          className={`border-[#03624C]/40 ${selectedTime === '18:00' ? 'bg-[#2CC295]/20 text-[#00DF81]' : ''}`}
                         >
                           6:00 PM
                         </Button>
@@ -254,7 +254,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                             setScheduledDate(newDate);
                           }
                         }}
-                        className="mb-3"
+                        className="mb-3 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -264,14 +264,17 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                             setScheduledDate(undefined);
                             setCalendarOpen(false);
                           }}
-                          className="flex-1"
+                          className="flex-1 border-[#03624C]/50 hover:border-[#2CC295]/60 text-white"
                         >
                           Clear
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => setCalendarOpen(false)}
-                          className="flex-1"
+                          className="flex-1 text-white"
+                          style={{ backgroundColor: '#03624C' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#2CC295')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#03624C')}
                         >
                           Done
                         </Button>
@@ -288,7 +291,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="flex-1 border-[#03624C]/50 hover:border-[#2CC295]/60 text-white bg-[rgba(3,34,33,0.6)]"
             >
               Cancel
             </Button>

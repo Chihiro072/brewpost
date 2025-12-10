@@ -126,22 +126,13 @@ export const Register: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-conic from-primary/25 via-accent/14 to-primary/25 animate-pulse" />
         <div className="absolute top-1/4 left-1/4 w-[540px] h-[540px] bg-gradient-to-r from-primary/35 to-accent/35 rounded-full blur-2xl animate-float opacity-80" />
         <div className="absolute bottom-1/4 right-1/4 w-[520px] h-[520px] bg-gradient-to-l from-accent/35 to-primary/35 rounded-full blur-2xl animate-float-delayed opacity-80" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="pointer-events-none w-[860px] h-32 rounded-full blur-2xl opacity-90"
-            style={{
-              background:
-                'radial-gradient(120% 60% at 50% 50%, hsl(var(--primary)/.42) 0%, hsl(var(--accent)/.24) 45%, transparent 70%)'
-            }}
-          />
-        </div>
+        
       </div>
       <div className="relative z-10 min-h-screen px-6 flex items-center justify-center">
         <Card className="w-full max-w-md p-8 space-y-6 bg-card/60 backdrop-blur-xl border border-primary/30 shadow-[0_0_40px_hsl(var(--primary)/.35)] rounded-2xl">
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3 mb-4 relative">
             <img src="/logo.svg" alt="BrewPost" className="w-10 h-10" />
-            <div className="absolute -inset-1 bg-gradient-primary rounded-xl opacity-50 blur animate-pulse" />
             <h1 className="text-2xl font-extrabold bg-gradient-primary bg-clip-text text-transparent drop-shadow-[0_0_18px_hsl(var(--primary)/.35)]">
               BrewPost
             </h1>
