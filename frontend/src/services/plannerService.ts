@@ -99,13 +99,23 @@ export const plannerService = {
     if (planId) {
       for (const n of nodes) {
         try {
-          await apiClient.post('/api/posts', {
+          const created = await apiClient.post('/api/posts', {
             planId,
             title: n.title,
             caption: n.content || '',
             imagePrompt: n.imagePrompt || undefined,
-            platforms: null
+            platforms: null,
+            status: n.status
           })
+          const postId = created?.data?.id
+          if (postId && n.status === 'scheduled' && n.scheduledDate) {
+            try {
+              await apiClient.post(`/api/posts/${postId}/schedule`, {
+                platform: 'generic',
+                scheduledAt: new Date(n.scheduledDate).toISOString()
+              })
+            } catch {}
+          }
         } catch {}
       }
     }
@@ -189,7 +199,7 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       id: p.id,
       title: p.title,
       type: 'post',
-      status: (p.publishedAt ? 'published' : 'draft') as ContentNode['status'],
+      status: (p.status?.toLowerCase() as ContentNode['status']) || 'draft',
       scheduledDate: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
       content: p.caption || '',
       imageUrl: undefined,
