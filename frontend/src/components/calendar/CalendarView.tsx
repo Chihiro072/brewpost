@@ -365,7 +365,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border-[#03624C]/60 text-white">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-black backdrop-blur-xl border-[#03624C]/60 text-white">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -474,7 +474,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           } transition-opacity ${
                             content.status === "published"
                               ? "border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]"
-                              : "border-[#03624C]/40 bg-[rgba(3,98,76,0.35)] text-[#9CEBC9]"
+                              : "border-[#03624C]/40 bg[rgba(3,98,76,0.35)] text-[#00DF81]"
                           }`}
                           onClick={() => {
                             if (editable && fullEvent) {
@@ -504,17 +504,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             })}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-[rgba(3,98,76,0.35)] rounded border border-[#03624C]/40"></div>
-              <span className="text-[#9CEBC9]">Scheduled</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-[#2CC295]/20 rounded border border-[#2CC295]/40"></div>
-              <span className="text-[#00DF81]">Published</span>
-            </div>
-          </div>
+          
         </div>
       </Card>
 

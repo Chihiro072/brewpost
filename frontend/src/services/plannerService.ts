@@ -86,6 +86,7 @@ export const plannerService = {
         templateColor: (n as any).templateColor ?? null,
         connections: (n.connections || []).map(cId => ({ toId: cId })),
         imagePrompt: n.imagePrompt ?? null,
+        status: n.status ?? null,
         scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
         selectedImageUrl: n.selectedImageUrl ?? null
       }))
@@ -132,6 +133,7 @@ export const plannerService = {
             templateColor: (n as any).templateColor ?? null,
             connections: (n.connections || []).map(cId => ({ toId: cId })),
             imagePrompt: n.imagePrompt ?? null,
+            status: n.status ?? null,
             scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
             selectedImageUrl: n.selectedImageUrl ?? null
           }))
@@ -195,12 +197,23 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       connectionId = undefined
     }
 
+    const derivedStatus = ((): ContentNode['status'] => {
+      if (bn.status) return bn.status as ContentNode['status']
+      if (p.publishedAt) return 'published'
+      if (p.scheduledAt) return 'scheduled'
+      return (p.status?.toLowerCase() as ContentNode['status']) || 'draft'
+    })()
+
     return {
       id: p.id,
       title: p.title,
       type: 'post',
-      status: (p.status?.toLowerCase() as ContentNode['status']) || 'draft',
-      scheduledDate: p.scheduledAt ? new Date(p.scheduledAt) : undefined,
+      status: derivedStatus,
+      scheduledDate: p.scheduledAt
+        ? new Date(p.scheduledAt)
+        : bn.scheduledDate
+        ? new Date(bn.scheduledDate)
+        : undefined,
       content: p.caption || '',
       imageUrl: undefined,
       imageUrls: undefined,
