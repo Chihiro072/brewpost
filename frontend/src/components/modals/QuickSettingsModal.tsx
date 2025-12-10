@@ -110,7 +110,7 @@ export const QuickSettingsModal: React.FC<QuickSettingsModalProps> = ({
         className={
           darkMode
             ? 'max-w-md bg-white text-black border border-gray-200 shadow-xl rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
-            : 'max-w-md bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border border-[#03624C]/50 shadow-[0_0_30px_rgba(44,194,149,0.25)] rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
+            : 'max-w-md bg-[#051414] backdrop-blur-xl border border-[#03624C]/50 shadow-[0_0_30px_rgba(44,194,149,0.25)] rounded-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
         }
       >
         <DialogHeader>

@@ -54,8 +54,8 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
       imageUrl: undefined,
       position: {
         x: Math.random() * 300 + 50,
-        y: Math.random() * 200 + 50
-      }
+        y: Math.random() * 300 + 50,
+      },
     };
 
     onAddNode(newNode);
@@ -81,7 +81,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[rgba(3,34,33,0.92)] backdrop-blur-xl border-[#03624C]/60 text-white">
+      <DialogContent className="sm:max-w-md bg-[#051414] backdrop-blur-xl border-[#03624C]/60 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
@@ -99,7 +99,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter content title"
-              className="mt-1 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
+              className="mt-1 bg-[#051414] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
               required
             />
           </div>
@@ -111,7 +111,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Describe your content idea..."
-              className="mt-1 min-h-[80px] bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
+              className="mt-1 min-h-[80px] bg-[#051414] border-[#03624C]/50 text-white placeholder:text-[#9CEBC9]"
               required
             />
           </div>
@@ -254,7 +254,7 @@ export const AddNodeModal: React.FC<AddNodeModalProps> = ({
                             setScheduledDate(newDate);
                           }
                         }}
-                        className="mb-3 bg-[rgba(3,34,33,0.6)] border-[#03624C]/50 text-white"
+                        className="mb-3 bg-[#051414] border-[#03624C]/50 text-white"
                       />
                       <div className="flex gap-2">
                         <Button

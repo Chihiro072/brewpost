@@ -28,9 +28,8 @@ export const LinkedInAuthWarningModal: React.FC<
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="border-[#03624C]/50"
+        className="border-[#03624C]/50 bg-[#051414]"
         style={{
-          backgroundColor: "rgba(0, 0, 0, 0.95)",
           backdropFilter: "blur(12px)",
         }}
       >

@@ -88,7 +88,7 @@ export const ContentModal: React.FC<ContentModalProps> = ({
           onEditNode(updatedNode);
         }
         
-        setPostResult({ 
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50 bg-[#051414]">
           success: true, 
           message: `Successfully posted to X! Tweet ID: ${result.tweetId}` 
         });

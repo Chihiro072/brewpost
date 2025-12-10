@@ -440,22 +440,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               return (
                 <Card
                   key={day}
-                  className={`p-2 min-h-[100px] ${
-                    isToday
-                      ? "border-[#2CC295]/60 bg-[#2CC295]/10"
-                      : "border-[#03624C]/50"
-                  } hover:border-[#2CC295]/50 transition-colors bg-[rgba(3,34,33,0.6)]`}
+                  className={`p-2 min-h-[100px] rounded-xl bg-[#051414] shadow transition-colors`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className={`text-sm font-medium ${
-                        isToday ? "text-[#00DF81]" : "text-white"
+                        isToday ? "text-[#00DF81]" : "text-green-100"
                       }`}
                     >
                       {day}
                     </span>
                     {dayContent.length > 0 && (
-                      <Badge className="text-xs border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]">
+                      <Badge className="text-xs border-green-700 bg-green-900 text-green-400">
                         {dayContent.length}
                       </Badge>
                     )}
@@ -469,12 +465,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       return (
                         <div
                           key={content.id}
-                          className={`p-1 rounded text-xs border ${
+                          className={`p-1 rounded text-xs ${
                             editable ? "cursor-pointer hover:opacity-80" : ""
                           } transition-opacity ${
                             content.status === "published"
-                              ? "border-[#2CC295]/40 bg-[#2CC295]/20 text-[#00DF81]"
-                              : "border-[#03624C]/40 bg[rgba(3,98,76,0.35)] text-[#00DF81]"
+                              ? "bg-green-900 text-green-400"
+                              : "bg-[#051414] text-green-200"
                           }`}
                           onClick={() => {
                             if (editable && fullEvent) {
@@ -494,7 +490,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       );
                     })}
                     {dayContent.length > 2 && (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-green-400">
                         +{dayContent.length - 2} more
                       </div>
                     )}

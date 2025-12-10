@@ -43,7 +43,7 @@ export const EditNodeModal: React.FC<EditNodeModalProps> = ({
       setFormData({
         title: node.title,
         type: node.type,
-        status: node.status,
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-[#051414]">
         content: node.content,
         scheduledDate: node.scheduledDate,
         imageUrl: node.imageUrl

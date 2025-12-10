@@ -128,7 +128,7 @@ export default function PlannerSidebar ({
             {items.map(p => (
               <Card
                 key={p.id}
-                className='group relative border-[#03624C]/60 bg-[rgba(3,34,33,0.6)] hover:bg-[rgba(3,34,33,0.75)] transition-colors cursor-pointer'
+                className='group relative bg-[#051414] hover:bg-[#0a2323] transition-colors cursor-pointer'
                 onClick={async () => {
                   try {
                     const detail = await plannerService.get(p.id)

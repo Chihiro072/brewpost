@@ -314,11 +314,7 @@ export const CalendarEventModal: React.FC<CalendarEventModalProps> = ({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-4xl max-h-[90vh] border-[#03624C]/50"
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.95)",
-            backdropFilter: "blur(12px)",
-          }}
+          className="max-w-4xl max-h-[90vh] border-[#03624C]/50 bg-[#031f1e] backdrop-blur-xl text-white"
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
