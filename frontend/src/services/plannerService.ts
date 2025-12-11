@@ -87,7 +87,9 @@ export const plannerService = {
         connections: (n.connections || []).map(cId => ({ toId: cId })),
         imagePrompt: n.imagePrompt ?? null,
         status: n.status ?? null,
-        scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
+        scheduledDate: n.scheduledDate
+          ? new Date(n.scheduledDate).toISOString()
+          : null,
         selectedImageUrl: n.selectedImageUrl ?? null
       }))
     }
@@ -123,7 +125,12 @@ export const plannerService = {
     return planId
   },
 
-  async updatePlan (id: string, title: string, nodes?: ContentNode[], prompt?: string): Promise<void> {
+  async updatePlan (
+    id: string,
+    title: string,
+    nodes?: ContentNode[],
+    prompt?: string
+  ): Promise<void> {
     const brandInfo = nodes
       ? {
           nodes: (nodes || []).map((n, idx) => ({
@@ -134,30 +141,33 @@ export const plannerService = {
             connections: (n.connections || []).map(cId => ({ toId: cId })),
             imagePrompt: n.imagePrompt ?? null,
             status: n.status ?? null,
-            scheduledDate: n.scheduledDate ? new Date(n.scheduledDate).toISOString() : null,
+            scheduledDate: n.scheduledDate
+              ? new Date(n.scheduledDate).toISOString()
+              : null,
             selectedImageUrl: n.selectedImageUrl ?? null
           }))
         }
       : undefined
-    await apiClient.put(`/api/content/plans/${id}`, { title, prompt, brandInfo })
+    await apiClient.put(`/api/content/plans/${id}`, {
+      title,
+      prompt,
+      brandInfo
+    })
   }
 }
 
 export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
-  // Use the same zigzag layout as AIChat for consistency
   const spacing = 320
   const startX = 100
   const topY = 20
   const bottomY = topY + 180
 
-  // Post type detection function (same logic as AIChat)
   const detectPostType = (
     title: string,
     caption: string
   ): 'engaging' | 'promotional' | 'branding' => {
     const content = `${title} ${caption}`.toLowerCase()
 
-    // 🔵 PROMOTIONAL: Drive direct action (purchase, signup, visit, conversion)
     if (
       content.match(
         /\b(shop|order|buy|get yours|discount|available now|limited|offer|sale|use code|sign up|join|link in bio|free shipping|diy|recipe|create|make|try|get|start)\b/
@@ -166,7 +176,6 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       return 'promotional'
     }
 
-    // 🟡 BRANDING: Build brand identity, trust, and values
     if (
       content.match(
         /\b(crafted|behind the scenes|heritage|tradition|quality|meet|farmer|team|values|trust|story of|our process|secret|day in the life|art of|history|unveiling|science|grading|special)\b/
@@ -175,24 +184,23 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       return 'branding'
     }
 
-    // 🟢 ENGAGING: Spark conversation, curiosity, or sharing (default)
     return 'engaging'
   }
 
   const ordered = [...detail.posts].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   )
-  const brandNodes = Array.isArray(detail.brandInfo?.nodes) ? detail.brandInfo.nodes : []
+  const brandNodes = Array.isArray(detail.brandInfo?.nodes)
+    ? detail.brandInfo.nodes
+    : []
   const idSet = new Set(ordered.map(post => post.id))
   return ordered.map((p, idx) => {
-    // Zigzag pattern: alternating top and bottom rows
     const isBottom = idx % 2 === 1
     const x = startX + idx * (spacing / 2)
     const y = isBottom ? bottomY : topY
     const bn = brandNodes[idx] || {}
     let connectionId = bn?.connections?.[0]?.toId ?? undefined
 
-    // Normalize connection target to ensure it references an ID in this planner
     if (connectionId && !idSet.has(connectionId)) {
       connectionId = undefined
     }
@@ -220,7 +228,11 @@ export function mapPlannerToNodes (detail: PlannerDetail): ContentNode[] {
       imagePrompt: bn.imagePrompt ?? undefined,
       day: bn.day ?? undefined,
       postType: bn.postType ?? detectPostType(p.title, p.caption || ''),
-      connections: connectionId ? [connectionId] : (idx < ordered.length - 1 ? [ordered[idx + 1].id] : []),
+      connections: connectionId
+        ? [connectionId]
+        : idx < ordered.length - 1
+        ? [ordered[idx + 1].id]
+        : [],
       position: { x, y },
       postedAt: p.publishedAt ? new Date(p.publishedAt) : undefined,
       postedTo: [],

@@ -17,15 +17,7 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
     if (token) {
-      // Mask the token for logging to avoid leaking full credentials
-      const masked =
-        token.length > 12
-          ? `${token.substring(0, 6)}...${token.substring(token.length - 6)}`
-          : token;
-      console.log("[apiClient] Attaching auth token (masked):", masked);
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log("[apiClient] No auth token found in localStorage");
     }
     return config;
   },
@@ -130,20 +122,10 @@ export const authAPI = {
     firstName?: string;
     lastName?: string;
   }) => {
-    console.log("🔗 Making registration API call to:", "/api/auth/register");
-    console.log("📤 Sending data:", userData);
-
     try {
       const response = await apiClient.post("/api/auth/register", userData);
-      console.log("📥 Registration response:", response);
-      console.log("📥 Response data:", response.data);
-      console.log("📥 Response status:", response.status);
-
       if (response.data.token) {
-        console.log("🔑 Storing token in localStorage");
         localStorage.setItem("authToken", response.data.token);
-      } else {
-        console.warn("⚠️ No token in response");
       }
 
       return response.data;

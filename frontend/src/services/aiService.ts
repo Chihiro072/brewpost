@@ -28,11 +28,8 @@ export async function fetchComponentsForNode(node: ContentNode | null): Promise<
   while (attempt < maxAttempts) {
     attempt += 1;
     try {
-      console.log('[aiService] fetchComponentsForNode request', { nodeId: node.id, endpoint, attempt });
       const response = await apiClient.post(endpoint, { node });
       const data = response.data;
-
-      console.log('[aiService] response status/data', { status: response.status, data });
 
       type RespShape = { ok?: boolean; components?: GeneratedComponent[] };
       const parsed = (data && typeof data === 'object') ? (data as RespShape) : null;
@@ -52,7 +49,6 @@ export async function fetchComponentsForNode(node: ContentNode | null): Promise<
         category: (comp.category === 'Local Data' ? 'Campaign Type' : comp.category) as string,
       }));
       cache[node.id] = components;
-      console.log('[aiService] fetched components', { nodeId: node.id, count: components.length });
       return components;
     } catch (error: any) {
       console.error('[aiService] error details', { 
@@ -71,7 +67,6 @@ export async function fetchComponentsForNode(node: ContentNode | null): Promise<
       });
       // Retry on network errors or server errors (5xx)
       if (attempt < maxAttempts && (error.response?.status >= 500 || !error.response)) {
-        console.log(`[aiService] retrying in ${300 * attempt}ms...`);
         await new Promise(r => setTimeout(r, 300 * attempt));
         continue;
       }

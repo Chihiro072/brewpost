@@ -1,76 +1,69 @@
-import apiClient from "./apiService";
-import type { NodeDTO } from "./nodeService";
-import { NodeAPI, scheduleAllNodesService } from "./nodeService";
+import apiClient from './apiService'
+import type { Schedule } from './apiService'
+import type { NodeDTO } from './nodeService'
+import { NodeAPI, scheduleAllNodesService } from './nodeService'
 
-export async function createScheduleService(
-  scheduleData: Omit<Schedule, "id" | "createdAt" | "updatedAt">
+export async function createScheduleService (
+  scheduleData: Omit<Schedule, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<Schedule | null> {
   try {
-    const response = await apiClient.post("/api/schedules", scheduleData);
-    return response.data || null;
+    const response = await apiClient.post('/api/schedules', scheduleData)
+    return response.data || null
   } catch (error) {
-    console.error("Error creating schedule:", error);
-    return null;
+    console.error('Error creating schedule:', error)
+    return null
   }
 }
 
-export async function updateScheduleService(
+export async function updateScheduleService (
   id: string,
   scheduleData: Partial<Schedule>
 ): Promise<Schedule | null> {
   try {
-    const response = await apiClient.put(`/api/schedules/${id}`, scheduleData);
-    return response.data || null;
+    const response = await apiClient.put(`/api/schedules/${id}`, scheduleData)
+    return response.data || null
   } catch (error) {
-    console.error("Error updating schedule:", error);
-    return null;
+    console.error('Error updating schedule:', error)
+    return null
   }
 }
 
-export async function deleteScheduleService(id: string): Promise<boolean> {
+export async function deleteScheduleService (id: string): Promise<boolean> {
   try {
-    const response = await apiClient.delete(`/api/schedules/${id}`);
-    return response.status === 200 || response.status === 204;
+    const response = await apiClient.delete(`/api/schedules/${id}`)
+    return response.status === 200 || response.status === 204
   } catch (error) {
-    console.error("Error deleting schedule:", error);
-    return false;
+    console.error('Error deleting schedule:', error)
+    return false
   }
 }
 
 export const scheduleService = {
-  async createSchedules(nodes: Partial<NodeDTO>[]) {
+  async createSchedules (nodes: Partial<NodeDTO>[]) {
     try {
-      console.log("[scheduleService] Creating schedules for nodes:", nodes);
       // Use new REST endpoint: POST /api/nodes/schedule-all
-      const count = await scheduleAllNodesService();
-      console.log(
-        "[scheduleService] Batch schedule result: scheduled",
-        count,
-        "nodes"
-      );
-      return nodes.map((n) => ({ id: n.id, status: "scheduled" })) || [];
+      const count = await scheduleAllNodesService()
+      return nodes.map(n => ({ id: n.id, status: 'scheduled' })) || []
     } catch (error) {
-      console.error("[scheduleService] Error creating schedules:", error);
-      return [];
+      console.error('[scheduleService] Error creating schedules:', error)
+      return []
     }
   },
 
-  async fetchSchedules() {
+  async fetchSchedules () {
     try {
-      console.log("[scheduleService] Fetching schedules");
-      const response = await apiClient.get("/api/schedules");
-      console.log("[scheduleService] Fetch schedules result:", response.data);
-      return response.data || [];
+      const response = await apiClient.get('/api/schedules')
+      return response.data || []
     } catch (error) {
-      console.error("[scheduleService] Error fetching schedules:", error);
-      return [];
+      console.error('[scheduleService] Error fetching schedules:', error)
+      return []
     }
   },
 
-  async listSchedules() {
+  async listSchedules () {
     try {
-      const response = await apiClient.get("/api/schedules");
-      const raw = Array.isArray(response.data) ? response.data : [];
+      const response = await apiClient.get('/api/schedules')
+      const raw = Array.isArray(response.data) ? response.data : []
       const schedules = raw.map((item: any) => ({
         scheduleId: item.scheduleId || item.id,
         userId: item.userId,
@@ -80,19 +73,19 @@ export const scheduleService = {
         title: item.title,
         content: item.content,
         imageUrl: item.imageUrl,
-        type: item.type || "post",
-      }));
-      return { ok: true, schedules };
+        type: item.type || 'post'
+      }))
+      return { ok: true, schedules }
     } catch (error) {
-      console.error("Failed to list schedules:", error);
+      console.error('Failed to list schedules:', error)
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     }
   },
 
-  async updateSchedule(node: any) {
+  async updateSchedule (node: any) {
     try {
       const response = await apiClient.put(`/api/schedules/update/${node.id}`, {
         title: node.title,
@@ -101,31 +94,29 @@ export const scheduleService = {
         scheduledDate: node.scheduledDate
           ? node.scheduledDate.toISOString()
           : null,
-        status: node.status,
-      });
-      console.log(`✅ Updated schedule: ${node.id}`, response.status);
-      return { ok: true };
+        status: node.status
+      })
+
+      return { ok: true }
     } catch (error) {
-      console.error(`Failed to update schedule ${node.id}:`, error);
+      console.error(`Failed to update schedule ${node.id}:`, error)
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     }
   },
 
-  async deleteSchedule(scheduleId: string) {
+  async deleteSchedule (scheduleId: string) {
     try {
-      // Delete node via REST endpoint instead of legacy schedules endpoint
-      const response = await apiClient.delete(`/api/nodes/${scheduleId}`);
-      console.log(`✅ Deleted node: ${scheduleId}`, response.status);
-      return { ok: true };
+      const response = await apiClient.delete(`/api/nodes/${scheduleId}`)
+      return { ok: true }
     } catch (error) {
-      console.error(`Failed to delete node ${scheduleId}:`, error);
+      console.error(`Failed to delete node ${scheduleId}:`, error)
       return {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     }
-  },
-};
+  }
+}

@@ -19,45 +19,13 @@ export interface TemplateSettings {
 
 export const getTemplateSettings = (): TemplateSettings | null => {
   try {
-    console.log(
-      "🔧 [getTemplateSettings] ===== STARTING TEMPLATE SETTINGS RETRIEVAL ====="
-    );
-    console.log(
-      "🔧 [getTemplateSettings] localStorage available:",
-      typeof localStorage !== "undefined"
-    );
-
     const saved = localStorage.getItem("brewpost-template");
-    console.log("🔧 [getTemplateSettings] Raw localStorage value:", saved);
-    console.log(
-      "🔧 [getTemplateSettings] localStorage value type:",
-      typeof saved
-    );
-    console.log(
-      "🔧 [getTemplateSettings] localStorage value length:",
-      saved?.length || 0
-    );
 
     if (!saved) {
-      console.log(
-        "🔧 [getTemplateSettings] ❌ No template settings found in localStorage"
-      );
-      console.log(
-        "🔧 [getTemplateSettings] All localStorage keys:",
-        Object.keys(localStorage)
-      );
       return null;
     }
 
     const parsed = JSON.parse(saved);
-    console.log(
-      "🔧 [getTemplateSettings] ✅ Parsed template settings:",
-      parsed
-    );
-    console.log(
-      "🔧 [getTemplateSettings] Parsed object keys:",
-      Object.keys(parsed)
-    );
 
     // Check if template has meaningful content
     const hasLogo = !!parsed.logoPreview;
@@ -65,21 +33,6 @@ export const getTemplateSettings = (): TemplateSettings | null => {
     const hasColor =
       parsed.selectedColor && parsed.selectedColor !== "transparent";
 
-    console.log("🔧 [getTemplateSettings] 📊 Template analysis:", {
-      hasLogo,
-      hasCompanyText,
-      hasColor,
-      logoPreview: hasLogo
-        ? parsed.logoPreview.substring(0, 50) + "..."
-        : "none",
-      companyText: parsed.companyText || "none",
-      selectedColor: parsed.selectedColor || "none",
-      selectedPosition: parsed.selectedPosition || "none",
-    });
-
-    console.log(
-      "🔧 [getTemplateSettings] ===== TEMPLATE SETTINGS RETRIEVAL COMPLETE ====="
-    );
     return parsed;
   } catch (error) {
     console.error(
@@ -132,7 +85,6 @@ export const applyTemplateToImage = async (
   );
 
   const settings = getTemplateSettings();
-  console.log("[templateUtils] Template settings:", settings);
 
   if (
     !settings ||
@@ -140,40 +92,26 @@ export const applyTemplateToImage = async (
       !settings.companyText &&
       settings.selectedColor === "transparent")
   ) {
-    console.log(
-      "[templateUtils] No template settings configured, returning original image"
-    );
     return imageUrl;
   }
 
   try {
-    console.log("[templateUtils] Creating canvas for template overlay");
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
-      console.error("[templateUtils] Failed to get canvas context");
       throw new Error("Failed to get canvas context");
     }
 
-    console.log("[templateUtils] Loading base image...");
     const img = new Image();
     img.crossOrigin = "anonymous";
 
     return new Promise((resolve, reject) => {
       img.onload = () => {
-        console.log(
-          "[templateUtils] Base image loaded successfully, dimensions:",
-          img.width,
-          "x",
-          img.height
-        );
-
         canvas.width = img.width;
         canvas.height = img.height;
 
         // Draw the base image
-        console.log("[templateUtils] Drawing base image to canvas");
         ctx.drawImage(img, 0, 0);
 
         // Apply color overlay if specified
@@ -181,10 +119,6 @@ export const applyTemplateToImage = async (
           settings.selectedColor &&
           settings.selectedColor !== "transparent"
         ) {
-          console.log(
-            "[templateUtils] Applying color overlay:",
-            settings.selectedColor
-          );
           ctx.fillStyle = settings.selectedColor;
           ctx.globalAlpha = 0.1; // Light overlay
           ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -193,21 +127,10 @@ export const applyTemplateToImage = async (
 
         // Apply logo if specified
         if (settings.logoPreview) {
-          console.log(
-            "[templateUtils] Loading and applying logo:",
-            settings.logoPreview.substring(0, 50) + "..."
-          );
           const logoImg = new Image();
           logoImg.crossOrigin = "anonymous";
 
           logoImg.onload = () => {
-            console.log(
-              "[templateUtils] Logo loaded, dimensions:",
-              logoImg.width,
-              "x",
-              logoImg.height
-            );
-
             // Calculate logo size (10% of image width, maintain aspect ratio)
             const logoSize = Math.min(canvas.width * 0.1, 80);
             const logoAspectRatio = logoImg.width / logoImg.height;
@@ -272,16 +195,8 @@ export const applyTemplateToImage = async (
 
             try {
               const finalDataUrl = canvas.toDataURL("image/png");
-              console.log(
-                "[templateUtils] Template overlay completed successfully, final image size:",
-                finalDataUrl.length
-              );
               resolve(finalDataUrl);
             } catch (e) {
-              console.error(
-                "[templateUtils] Canvas tainted, returning original image:",
-                e
-              );
               resolve(imageUrl);
             }
           };
@@ -293,10 +208,6 @@ export const applyTemplateToImage = async (
 
             try {
               const finalDataUrl = canvas.toDataURL("image/png");
-              console.log(
-                "[templateUtils] Template overlay completed (no logo), final image size:",
-                finalDataUrl.length
-              );
               resolve(finalDataUrl);
             } catch (e) {
               console.error(
@@ -309,18 +220,10 @@ export const applyTemplateToImage = async (
 
           logoImg.src = settings.logoPreview;
         } else {
-          // No logo, just apply company text
-          console.log(
-            "[templateUtils] No logo specified, applying company text only"
-          );
           applyCompanyTextToCanvas(ctx, canvas, settings);
 
           try {
             const finalDataUrl = canvas.toDataURL("image/png");
-            console.log(
-              "[templateUtils] Template overlay completed (text only), final image size:",
-              finalDataUrl.length
-            );
             resolve(finalDataUrl);
           } catch (e) {
             console.error(
@@ -339,7 +242,6 @@ export const applyTemplateToImage = async (
 
       // Use proxy endpoint for S3 images to avoid CORS issues
       const proxyUrl = convertToProxyUrl(imageUrl);
-      console.log("[templateUtils] Using proxy URL:", proxyUrl);
       img.src = proxyUrl;
     });
   } catch (error) {
@@ -351,7 +253,6 @@ export const applyTemplateToImage = async (
 // Helper function to convert S3 URLs to proxy URLs
 export const convertToProxyUrl = (imageUrl: string): string => {
   if (!imageUrl) return imageUrl;
-  // Allow data URLs directly
   if (imageUrl.startsWith("data:")) return imageUrl;
   try {
     const url = new URL(imageUrl);
@@ -384,9 +285,6 @@ const applyCompanyTextToCanvas = (
   logoHeight?: number
 ) => {
   if (!settings.companyText) {
-    console.log(
-      "[templateUtils] No company text specified, skipping text overlay"
-    );
     return;
   }
 
@@ -405,7 +303,6 @@ const applyCompanyTextToCanvas = (
   let textX = padding;
   let textY = canvas.height - padding;
 
-  // If logo position is provided, calculate text position relative to logo
   if (
     logoX !== undefined &&
     logoY !== undefined &&
@@ -413,9 +310,8 @@ const applyCompanyTextToCanvas = (
     logoHeight !== undefined &&
     settings.textPosition
   ) {
-    const textSpacing = 10; // Space between logo and text
+    const textSpacing = 10;
 
-    // Measure text dimensions for better positioning
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     const textMetrics = ctx.measureText(settings.companyText);
@@ -426,7 +322,6 @@ const applyCompanyTextToCanvas = (
       case "above":
         textX = logoX;
         textY = logoY - textHeight - textSpacing;
-        // Adjust alignment based on textAlignment setting
         if (settings.textAlignment === "center") {
           textX = logoX + logoWidth / 2 - textWidth / 2;
           ctx.textAlign = "left";
@@ -470,7 +365,6 @@ const applyCompanyTextToCanvas = (
         break;
 
       default:
-        // Fallback to bottom-left if no valid position specified
         textX = padding;
         textY = canvas.height - padding;
         ctx.textAlign = "left";
@@ -478,7 +372,6 @@ const applyCompanyTextToCanvas = (
         break;
     }
 
-    // Ensure text stays within canvas bounds
     textX = Math.max(
       padding,
       Math.min(textX, canvas.width - textWidth - padding)
@@ -488,20 +381,11 @@ const applyCompanyTextToCanvas = (
       Math.min(textY, canvas.height - textHeight - padding)
     );
   } else {
-    // No logo position provided, use default bottom-left positioning
     textX = padding;
     textY = canvas.height - padding;
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
   }
-
-  console.log(
-    "[templateUtils] Drawing company text at position:",
-    textX,
-    textY,
-    "font size:",
-    fontSize
-  );
 
   // Draw text with stroke (outline) for better visibility
   ctx.strokeText(settings.companyText, textX, textY);
@@ -746,9 +630,6 @@ export const applyComponentsToImage = async (
             (c.name && /%|off|discount|promo/i.test(String(c.name)))
         );
         if (promo) {
-          // Choose badge color:
-          // - use promo.color if provided
-          // - otherwise pick a random color from a friendly palette so badges aren't always blue
           let baseHex: string;
           if (promo.color && typeof promo.color === "string") {
             const rawColor = promo.color;
@@ -776,19 +657,16 @@ export const applyComponentsToImage = async (
             12 + Math.floor(Math.random() * 20)
           );
 
-          // Badge size (inner/text size) and a larger visual circle size
           const badgeSize = Math.min(canvas.width, canvas.height) * 0.18;
           const circleBadgeSize = badgeSize * 1.25; // visual circle larger than inner/text area
           const padding = Math.max(12, canvas.width * 0.02);
 
-          // Determine badge position: use explicit position if provided, else choose anchor based on template
           let centerX = canvas.width - padding - circleBadgeSize / 2;
           let centerY = padding + circleBadgeSize / 2; // default top-right
 
           const clamp = (v: number, min: number, max: number) =>
             Math.min(max, Math.max(min, v));
 
-          // If promo provided a position, it can be a normalized pair, pixel pair, or a keyword string
           const maybePos: unknown = (promo as unknown as { position?: unknown })
             .position;
           let pos: { x?: number; y?: number } | string | undefined;
@@ -889,8 +767,6 @@ export const applyComponentsToImage = async (
                 }
             }
           } else {
-            // no explicit pos — choose randomly between center-right and center-left
-            // with small vertical jitter around the center. Overlap checks later will move it if needed.
             const side = Math.random() < 0.5 ? "center-right" : "center-left";
             const verticalJitter = (Math.random() - 0.5) * 0.1; // +/-5% of canvas height
             centerY = canvas.height * (0.5 + verticalJitter);
@@ -913,7 +789,6 @@ export const applyComponentsToImage = async (
             canvas.height - padding - circleBadgeSize / 2
           );
 
-          // If a template logo or company text exists, compute their estimated bounding boxes and avoid overlap
           try {
             const tpl = getTemplateSettings();
             if (tpl) {
@@ -1149,8 +1024,6 @@ export const applyComponentsToImage = async (
           );
           ctx.restore();
         }
-
-        // campaign/trend overlays removed — only promotion badges and template overlays are drawn
 
         try {
           resolve(canvas.toDataURL("image/png"));

@@ -1,15 +1,10 @@
-// src/services/nodeService.ts
 import apiClient from "./apiService";
 import type { ContentNode } from "@/components/planning/PlanningPanel";
 
 export async function fetchNodes(): Promise<ContentNode[]> {
   try {
-    console.log("[nodeService] fetchNodes called");
-    // Add timestamp to bust cache on every request
     const response = await apiClient.get(`/api/nodes?t=${Date.now()}`);
-    console.log("[nodeService] fetchNodes result:", response.data);
 
-    // Transform the API response to match ContentNode interface
     const nodes =
       response.data?.map((node: any) => ({
         id: node.id,
@@ -45,8 +40,6 @@ export async function createNodeService(
   nodeData: Partial<ContentNode>
 ): Promise<ContentNode | null> {
   try {
-    console.log("[nodeService] createNodeService called with:", nodeData);
-
     const requestData = {
       title: nodeData.title,
       description: nodeData.content,
@@ -67,9 +60,7 @@ export async function createNodeService(
     };
 
     const response = await apiClient.post("/api/nodes", requestData);
-    console.log("[nodeService] createNodeService result:", response.data);
 
-    // Transform response to ContentNode
     const node = response.data;
     return {
       id: node.id,
@@ -104,11 +95,6 @@ export async function updateNodeService(
   nodeData: Partial<ContentNode>
 ): Promise<ContentNode | null> {
   try {
-    console.log("[nodeService] updateNodeService called with:", {
-      id,
-      nodeData,
-    });
-
     const requestData = {
       title: nodeData.title,
       description: nodeData.content,
@@ -129,16 +115,8 @@ export async function updateNodeService(
         : undefined,
     };
 
-    console.log("[nodeService] Sending PUT request to:", `/api/nodes/${id}`);
-    console.log(
-      "[nodeService] Request payload:",
-      JSON.stringify(requestData, null, 2)
-    );
-
     const response = await apiClient.put(`/api/nodes/${id}`, requestData);
-    console.log("[nodeService] updateNodeService result:", response.data);
 
-    // Transform response to ContentNode
     const node = response.data;
     return {
       id: node.id,
@@ -170,9 +148,7 @@ export async function updateNodeService(
 
 export async function deleteNodeService(id: string): Promise<boolean> {
   try {
-    console.log("[nodeService] deleteNodeService called with:", id);
     const response = await apiClient.delete(`/api/nodes/${id}`);
-    console.log("[nodeService] deleteNodeService result:", response.status);
     return response.status === 200 || response.status === 204;
   } catch (error) {
     console.error("[nodeService] Error deleting node:", error);
@@ -180,17 +156,13 @@ export async function deleteNodeService(id: string): Promise<boolean> {
   }
 }
 
-// Legacy GraphQL functions removed - now using REST API
-
 export async function scheduleNodeService(
   id: string
 ): Promise<ContentNode | null> {
   try {
-    console.log("[nodeService] scheduleNodeService called with id:", id);
     const response = await apiClient.post(`/api/nodes/${id}/schedule`);
 
     if (response.data) {
-      // Transform the response to match ContentNode interface
       return {
         id: response.data.id,
         title: response.data.title,
@@ -229,10 +201,6 @@ export async function scheduleAllNodesService(
   projectId?: string
 ): Promise<number> {
   try {
-    console.log(
-      "[nodeService] scheduleAllNodesService called with projectId:",
-      projectId
-    );
     const url = projectId
       ? `/api/nodes/schedule-all?projectId=${projectId}`
       : "/api/nodes/schedule-all";
@@ -296,13 +264,11 @@ const toNodeDTO = (node: any): NodeDTO => ({
 export const NodeAPI = {
   list: async (projectId?: string) => {
     try {
-      console.log("[NodeAPI] list called with projectId:", projectId);
       const resp = await apiClient.get("/api/nodes", {
         params: projectId ? { projectId } : {},
       });
       const raw = Array.isArray(resp.data) ? resp.data : [];
       const nodes: NodeDTO[] = raw.map(toNodeDTO);
-      console.log("[NodeAPI] list result:", nodes);
       return nodes;
     } catch (error) {
       console.error("[NodeAPI] Error in list:", error);
@@ -312,7 +278,6 @@ export const NodeAPI = {
 
   create: async (input: any) => {
     try {
-      console.log("[NodeAPI] create called with:", input);
       const requestData = {
         title: input.title,
         description: input.description ?? input.content,
@@ -341,7 +306,6 @@ export const NodeAPI = {
 
   update: async (input: any) => {
     try {
-      console.log("[NodeAPI] update called with:", input);
       const nodeId = input.id || input.nodeId;
       const requestData = {
         title: input.title,
@@ -373,7 +337,6 @@ export const NodeAPI = {
 
   async remove(projectId: string, nodeId: string) {
     try {
-      console.log("[NodeAPI] remove called for:", { projectId, nodeId });
       await apiClient.delete(`/api/nodes/${nodeId}`);
       return { ok: true };
     } catch (error) {
