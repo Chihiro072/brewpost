@@ -1318,7 +1318,7 @@ export const RedesignedMainLayout: React.FC<RedesignedMainLayoutProps> = ({
               <Button
                 variant='outline'
                 onClick={() => setShowCalendarModal(true)}
-                className='border-[#03624C]/50 text-[#00DF81] transition-colors'
+                className='border-[#03624C]/50 rounded-full w-10 h-10 p-0 text-[#00DF81] transition-colors'
                 style={{ backgroundColor: 'rgba(0, 15, 49, 0.5)' }}
                 onMouseEnter={e => {
                   e.currentTarget.style.backgroundColor = 'rgba(3, 98, 76, 0.3)'

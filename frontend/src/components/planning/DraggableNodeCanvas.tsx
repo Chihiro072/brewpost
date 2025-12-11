@@ -1286,7 +1286,7 @@ export const DraggableNodeCanvas: React.FC<NodeCanvasProps> = ({
       )}
 
       {/* Zoom Level Indicator */}
-      <div className="absolute bottom-4 left-4 bg-black/70 text-white text-sm px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 z-40">
+      <div className="absolute bottom-4 left-4 bg-black/70 text-white text-sm px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10 z-10">
         {Math.round(zoomLevel * 100)}%
       </div>
     </div>
